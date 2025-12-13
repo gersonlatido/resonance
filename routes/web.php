@@ -33,3 +33,6 @@ Route::get('/snacks-menu', [MenuController::class, 'snacks'])
 Route::get('/menu', function () {
     return response()->json(MenuItem::all());
 });
+
+// Order summary page (separate page instead of modal)
+Route::view('/order-summary', 'order-summary')->name('order.summary');

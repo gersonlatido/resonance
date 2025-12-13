@@ -472,5 +472,46 @@
     display: none;
 } 
 
+/* PROCEED TO PAYMENT */
+.order-summary-overlay {
+ position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.5);
+    z-index: 9999;
+}
+
+.order-summary {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background: #fff;
+    width: 90%;
+    max-width: 400px;
+    padding: 20px;
+      z-index: 10000;
+    border-radius: 10px;
+}
+
+.summary-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 10px;
+}
+
+.confirm-payment-btn {
+    width: 100%;
+    padding: 12px;
+    border-radius: 8px;
+    border: none;
+    background: #f7b413;
+    color: #111;
+    font-weight: 600;
+    cursor: pointer;
+}
 
 }   
+
+
+

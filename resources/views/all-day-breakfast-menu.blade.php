@@ -25,60 +25,77 @@
             </div>
         </div>
         <button type="button" class="cart-btn" aria-label="View cart">Cart</button>
-<!-- Cart Overlay -->
-<div class="cart-overlay hidden"></div>
+                
+        <!-- Cart Overlay -->
+        <div class="cart-overlay hidden"></div>
 
-<!-- Cart Sidebar -->
-<div class="cart-container" aria-hidden="true">
-    <!-- Cart Header -->
-    <div class="cart-header">
-        <h2>Your Cart</h2>
-        <button type="button" class="cart-close" aria-label="Close cart">
-            ✕
-        </button>
-    </div>
-
-    <!-- Cart Items -->
-    <div class="cart-items">
-        <!-- Cart Item -->
-        <div class="cart-item">
-            <div class="cart-item-image">
-                <img src="{{ asset('images/sample-item.png') }}" alt="Item name">
+        <!-- Cart Sidebar -->
+        <div class="cart-container" aria-hidden="true">
+            <!-- Cart Header -->
+            <div class="cart-header">
+                <h2>Your Cart</h2>
+                <button type="button" class="cart-close" aria-label="Close cart">
+                    ✕
+                </button>
             </div>
 
-            <div class="cart-item-details">
-                <h4 class="item-name">BEEFSILOG</h4>
-                <p class="item-price">₱150.00</p>
+            <!-- Cart Items -->
+            <div class="cart-items">
+                <!-- Cart Item -->
+                <div class="cart-item">
+                    <div class="cart-item-image">
+                        <img src="{{ asset('images/sample-item.png') }}" alt="Item name">
+                    </div>
 
-                <div class="quantity-controls">
-                    <button type="button" class="qty-btn minus" >−</button>
-                    <span class="item-qty">1</span>
-                    <button type="button" class="qty-btn plus">+</button>
+                    <div class="cart-item-details">
+                        <h4 class="item-name">BEEFSILOG</h4>
+                        <p class="item-price">₱150.00</p>
+
+                        <div class="quantity-controls">
+                            <button type="button" class="qty-btn minus" >−</button>
+                            <span class="item-qty">1</span>
+                            <button type="button" class="qty-btn plus">+</button>
+                        </div>
+                    </div>
+
+                    <button type="button" class="remove-item" aria-label="Remove item">
+                        🗑
+                    </button>
                 </div>
+                <!-- End Cart Item -->
             </div>
 
-            <button type="button" class="remove-item" aria-label="Remove item">
-                🗑
-            </button>
+            <!-- Cart Footer -->
+            <div class="cart-footer">
+                <div class="cart-summary">
+                    <span>Total</span>
+                    <span class="cart-total">₱150.00</span>
+                </div>
+
+                <button type="button" class="checkout-btn proceed-btn">
+                    Checkout
+                </button>
+            </div>
         </div>
-        <!-- End Cart Item -->
-    </div>
+                
+            </div>
 
-    <!-- Cart Footer -->
-    <div class="cart-footer">
-        <div class="cart-summary">
-            <span>Total</span>
-            <span class="cart-total">₱150.00</span>
-        </div>
+            <div class="order-summary-overlay hidden"></div>
 
-        <button type="button" class="checkout-btn">
-            Checkout
-        </button>
-    </div>
-</div>
+                <div class="order-summary hidden">
+                    <h2>Order Summary</h2>
 
-        
-    </div>
+                    <div class="summary-items"></div>
+
+                    <div class="summary-total">
+                        <strong>Total:</strong>
+                        <span class="summary-total-amount">₱0.00</span>
+                    </div>
+
+                    <button class="confirm-payment-btn">Confirm Payment</button>
+                    <button class="close-summary-btn">Cancel</button>
+                </div>
+
 
     <!-- Menu Bar -->
     <div class="menu-bar">
