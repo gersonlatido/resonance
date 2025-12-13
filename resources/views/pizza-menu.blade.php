@@ -25,6 +25,62 @@
             </div>
         </div>
         <button type="button" class="cart-btn" aria-label="View cart">Cart</button>
+
+                       
+        <!-- Cart Overlay -->
+        <div class="cart-overlay hidden"></div>
+
+        <!-- Cart Sidebar -->
+        <div class="cart-container" aria-hidden="true">
+            <!-- Cart Header -->
+            <div class="cart-header">
+                <h2>Your Cart</h2>
+                <button type="button" class="cart-close" aria-label="Close cart">
+                    ✕
+                </button>
+            </div>
+
+            <!-- Cart Items -->
+            <div class="cart-items">
+                <!-- Cart Item -->
+                <div class="cart-item">
+                    <div class="cart-item-image">
+                        <img src="{{ asset('images/sample-item.png') }}" alt="Item name">
+                    </div>
+
+                    <div class="cart-item-details">
+                        <h4 class="item-name">BEEFSILOG</h4>
+                        <p class="item-price">₱150.00</p>
+
+                        <div class="quantity-controls">
+                            <button type="button" class="qty-btn minus" >−</button>
+                            <span class="item-qty">1</span>
+                            <button type="button" class="qty-btn plus">+</button>
+                        </div>
+                    </div>
+
+                    <button type="button" class="remove-item" aria-label="Remove item">
+                        🗑
+                    </button>
+                </div>
+                <!-- End Cart Item -->
+            </div>
+
+            <!-- Cart Footer -->
+            <div class="cart-footer">
+                <div class="cart-summary">
+                    <span>Total</span>
+                    <span class="cart-total">₱150.00</span>
+                </div>
+
+                <button type="button" class="checkout-btn">
+                    Checkout
+                </button>
+            </div>
+        </div>
+
+                
+            </div>
     </div>
 
     <!-- Menu Bar -->
@@ -109,8 +165,46 @@
         </div>
     </div>
 
-    <!-- Pizza Section -->
-    <div class="pizza-container">
-    </div>
+   
+           <!-- Pizza Section -->
+            <div class="pizza-category"><h2>10” Overload Premium Pizza</h2></div>
+           <div class="overload-container">
+                <!-- <div class="menu-item">
+                    <div class="menu-item-image"><img src="/images/all-day-breakfast-entrees/beefsilog.png" alt=""></div>
+                    <div class="menu-item-details">
+                        <h3 class="menu-item-name">BEEFSILOG</h3>
+                            <p class="menu-item-description">
+                                Tender Beef Samgyup 
+                                with Egg and Fried Rice
+                                <b>(with Drinks Included)</b>
+                            </p>
+                              <div class="menu-item-button">
+                                <span class="menu-item-price">₱ 288</span>
+                                <button class="add-to-cart-btn">+ Add</button>
+                              </div>
+                    </div>
+                </div> -->
+           </div> 
+
+            <div class="pizza-category"><h2>6” Solo Mini Pizza</h2></div>
+          <div class="solo-mini-container">
+                <!-- <div class="menu-item">
+                    <div class="menu-item-image"><img src="/images/all-day-breakfast-entrees/beefsilog.png" alt=""></div>
+                    <div class="menu-item-details">
+                        <h3 class="menu-item-name">BEEFSILOG</h3>
+                            <p class="menu-item-description">
+                                Tender Beef Samgyup 
+                                with Egg and Fried Rice
+                                <b>(with Drinks Included)</b>
+                            </p>
+                              <div class="menu-item-button">
+                                <span class="menu-item-price">₱ 288</span>
+                                <button class="add-to-cart-btn">+ Add</button>
+                              </div>
+                    </div>
+                </div> -->
+           </div> 
+
+    
 </body>
 </html>
