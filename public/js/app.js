@@ -111,31 +111,6 @@ function renderAllCategories() {
     }
 }
 
-<<<<<<< HEAD
-// ===============================
-// ✅ SIMPLE CART LOGIC
-// ===============================
-let cart = [];
-
-function addToCart(product) {
-    const existing = cart.find(item => item.menu_id === product.menu_id);
-
-    if (existing) {
-        existing.qty += 1;
-    } else {
-        cart.push({
-            menu_id: product.menu_id,
-            name: product.name,
-            price: Number(product.price),
-            qty: 1
-        });
-    }
-
-    console.log('Cart:', cart);
-    alert(`${product.name} added to cart!`);
-}
-   
-=======
 // DISPLAY CARTTT
 document.addEventListener('DOMContentLoaded', async () => {
 
@@ -267,4 +242,3 @@ document.addEventListener('DOMContentLoaded', async () => {
         openCart();
     };
 });
->>>>>>> 714685bdaa2333ec89285d922f0c048b644d9ce6
