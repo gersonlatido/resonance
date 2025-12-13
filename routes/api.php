@@ -4,17 +4,20 @@ use Illuminate\Support\Facades\Route;
 use App\Models\MenuItem;
 use App\Http\Controllers\CartController;
 
+
+
 Route::get('/menu', function () {
     return response()->json(MenuItem::all());
 });
 
 
-Route::any('/cart/add', function () {
-    return response()->json([
-        'message' => 'Route hit!',
-        'method' => request()->method(),
-    ]);
-});
+
+// Route::any('/cart/add', function () {
+//     return response()->json([
+//         'message' => 'Route hit!',
+//         'method' => request()->method(),
+//     ]);
+// });
 
 // Route::get('/cart', [CartController::class, 'index']);            // Get all cart items
 // Route::post('/cart/add', [CartController::class, 'add']);        // Add item to cart

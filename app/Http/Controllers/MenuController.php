@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\MenuItem;
 use Illuminate\Http\Request;
 
 class MenuController extends Controller
@@ -36,5 +37,9 @@ class MenuController extends Controller
     public function snacks(){
         return view('snacks-menu');
     }
+
+    public function index() {
+    return MenuItem::all(); // Returns all menu items as JSON
+}
 }
 

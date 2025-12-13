@@ -2,6 +2,8 @@
 
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\MenuController;
+use App\Models\MenuItem;
+
 
 Route::get('/', function () {
     return view('home');
@@ -27,3 +29,7 @@ Route::get('/pizza-menu', [MenuController::class, 'pizza'])
 
 Route::get('/snacks-menu', [MenuController::class, 'snacks'])
 ->name('menu.snacks');
+
+Route::get('/menu', function () {
+    return response()->json(MenuItem::all());
+});
