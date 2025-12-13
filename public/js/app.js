@@ -111,6 +111,7 @@ function renderAllCategories() {
     }
 }
 
+<<<<<<< HEAD
 // ===============================
 // ✅ SIMPLE CART LOGIC
 // ===============================
@@ -134,3 +135,136 @@ function addToCart(product) {
     alert(`${product.name} added to cart!`);
 }
    
+=======
+// DISPLAY CARTTT
+document.addEventListener('DOMContentLoaded', async () => {
+
+    const cartBtn = document.querySelector('.cart-btn');
+    const cartContainer = document.querySelector('.cart-container');
+    const cartOverlay = document.querySelector('.cart-overlay');
+    const cartClose = document.querySelector('.cart-close');
+    const cartItemsContainer = document.querySelector('.cart-items');
+    const cartTotalEl = document.querySelector('.cart-total');
+
+    let cart = [];
+
+    // =========================
+    // FETCH MENU ITEMS FROM API
+    // =========================
+    try {
+        const response = await fetch('/api/menu');
+        const menuItems = await response.json();
+
+        // Optional: pre-fill cart with first 2 items for UI preview
+        cart = menuItems.slice(0, 2).map(item => ({
+            id: item.id,
+            name: item.name,
+            price: parseFloat(item.price),
+            image: item.image,  // only pick image, name, price
+            qty: 1
+        }));
+
+        renderCart();
+        openCart(); // show cart for UI preview
+    } catch (error) {
+        console.error('Failed to fetch menu items:', error);
+    }
+
+    // =====================
+    // OPEN / CLOSE CART
+    // =====================
+    const openCart = () => {
+        cartContainer.classList.add('active');
+        cartOverlay.classList.remove('hidden');
+    };
+
+    const closeCart = () => {
+        cartContainer.classList.remove('active');
+        cartOverlay.classList.add('hidden');
+    };
+
+    cartBtn.addEventListener('click', openCart);
+    cartClose.addEventListener('click', closeCart);
+    cartOverlay.addEventListener('click', closeCart);
+
+    // =====================
+    // RENDER CART
+    // =====================
+    const renderCart = () => {
+        cartItemsContainer.innerHTML = '';
+
+        if (cart.length === 0) {
+            cartItemsContainer.innerHTML = `<p>Your cart is empty</p>`;
+            cartTotalEl.textContent = '₱0.00';
+            return;
+        }
+
+        let total = 0;
+
+        cart.forEach((item, index) => {
+            total += item.price * item.qty;
+
+            const cartItem = document.createElement('div');
+            cartItem.className = 'cart-item';
+
+            // ONLY show name, image, price
+            cartItem.innerHTML = `
+                <div class="cart-item-image">
+                    <img src="${item.image}" alt="${item.name}">
+                </div>
+
+                <div class="cart-item-details">
+                    <h4 class="item-name">${item.name}</h4>
+                    <p class="item-price">₱${item.price.toFixed(2)}</p>
+
+                    <div class="quantity-controls">
+                        <button class="qty-btn minus" data-index="${index}">−</button>
+                        <span class="item-qty">${item.qty}</span>
+                        <button class="qty-btn plus" data-index="${index}">+</button>
+                    </div>
+                </div>
+
+                <button class="remove-item" data-index="${index}">🗑</button>
+            `;
+
+            cartItemsContainer.appendChild(cartItem);
+        });
+
+        cartTotalEl.textContent = `₱${total.toFixed(2)}`;
+    };
+
+    // =====================
+    // CART ACTIONS
+    // =====================
+    cartItemsContainer.addEventListener('click', (e) => {
+        const index = e.target.dataset.index;
+
+        if (e.target.classList.contains('plus')) cart[index].qty++;
+        if (e.target.classList.contains('minus')) {
+            cart[index].qty--;
+            if (cart[index].qty <= 0) cart.splice(index, 1);
+        }
+        if (e.target.classList.contains('remove-item')) cart.splice(index, 1);
+
+        renderCart();
+    });
+
+    // =====================
+    // ADD TO CART (GLOBAL)
+    // =====================
+    window.addToCart = (item) => {
+        const existingItem = cart.find(cartItem => cartItem.id === item.id);
+        if (existingItem) existingItem.qty++;
+        else cart.push({ 
+            id: item.id, 
+            name: item.name, 
+            price: parseFloat(item.price), 
+            image: item.image, 
+            qty: 1 
+        });
+
+        renderCart();
+        openCart();
+    };
+});
+>>>>>>> 714685bdaa2333ec89285d922f0c048b644d9ce6
