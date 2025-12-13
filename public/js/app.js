@@ -1,4 +1,4 @@
-// ===============================
+   // ===============================
 // ✅ MENU TOGGLE (CATEGORY MENU)
 // ===============================
 document.addEventListener('DOMContentLoaded', function () {
@@ -6,33 +6,39 @@ document.addEventListener('DOMContentLoaded', function () {
     const categoryContainer = document.querySelector('.category-container');
     const closeBtn = document.querySelector('.category-close');
 
-    if (menuBtn) menuBtn.addEventListener('click', () => {
-        categoryContainer.classList.toggle('displayed');
-    });
+    if (menuBtn) {
+        menuBtn.addEventListener('click', () => {
+            categoryContainer.classList.toggle('displayed');
+        });
+    }
 
-    if (closeBtn) closeBtn.addEventListener('click', () => {
-        categoryContainer.classList.remove('displayed');
-    });
+    if (closeBtn) {
+        closeBtn.addEventListener('click', () => {
+            categoryContainer.classList.remove('displayed');
+        });
+    }
 });
 
 // ===============================
-// ✅ LOAD MENU (products.js OR API)
+// ✅ LOAD MENU FROM LARAVEL API
 // ===============================
 let menuItems = [];
 
 document.addEventListener('DOMContentLoaded', () => {
-    // If using API
-    // fetch("http://127.0.0.1:8000/api/menu")
-    //     .then(res => res.json())
-    //     .then(data => {
-    //         menuItems = data;
-    //         renderAllCategories();
-    //     })
-    //     .catch(err => console.error("Failed to load menu:", err));
-
-    // If using local products.js
-    menuItems = products; // products imported from products.js
-    renderAllCategories();
+    fetch('http://127.0.0.1:8000/api/menu')
+        .then(response => {
+            if (!response.ok) {
+                throw new Error('Failed to fetch menu');
+            }
+            return response.json();
+        })
+        .then(data => {
+            menuItems = data;
+            renderAllCategories();
+        })
+        .catch(error => {
+            console.error('Error loading menu:', error);
+        });
 });
 
 // ===============================
@@ -42,28 +48,25 @@ function displayProducts(category, containerSelector) {
     const productContainer = document.querySelector(containerSelector);
     if (!productContainer) return;
 
-    let html = '';
     const filtered = menuItems.filter(item => item.category === category);
+    let html = '';
 
     filtered.forEach(product => {
-        let desc = '';
-        if (Array.isArray(product.description)) {
-            desc = product.description.join('');
-        } else {
-            desc = product.description || '';
-        }
-
         html += `
             <div class="menu-item">
                 <div class="menu-item-image">
-                    <img src="/images/products/${product.image}" alt="${product.name}">
+                    <img src="${product.image}" alt="${product.name}">  <!-- Fixed: No extra /images/products/ -->
                 </div>
                 <div class="menu-item-details">
                     <h3 class="menu-item-name">${product.name}</h3>
-                    <p class="menu-item-description">${desc}</p>
+                    <p class="menu-item-description">${product.description}</p>
                     <div class="menu-item-button">
-                        <span class="menu-item-price">₱ ${product.price.toFixed(2)}</span>
-                        <button class="add-to-cart-btn" data-id="${product.id}" data-name="${product.name}" data-price="${product.price}">+ Add</button>
+                        <span class="menu-item-price">₱ ${Number(product.price).toFixed(2)}</span>
+                        <button 
+                            class="add-to-cart-btn" 
+                            data-id="${product.menu_id}">
+                            + Add
+                        </button>
                     </div>
                 </div>
             </div>
@@ -72,12 +75,14 @@ function displayProducts(category, containerSelector) {
 
     productContainer.innerHTML = html;
 
-    // ✅ Attach Add to Cart events
+    // ✅ Add-to-cart events
     productContainer.querySelectorAll('.add-to-cart-btn').forEach(button => {
         button.addEventListener('click', () => {
             const productId = button.dataset.id;
-            const productToAdd = menuItems.find(p => p.id == productId);
-            if (productToAdd) addToCart(productToAdd);
+            const productToAdd = menuItems.find(p => p.menu_id === productId);
+            if (productToAdd) {
+                addToCart(productToAdd);
+            }
         });
     });
 }
@@ -107,17 +112,25 @@ function renderAllCategories() {
 }
 
 // ===============================
-// ✅ ADD TO CART FUNCTION (EXAMPLE)
+// ✅ SIMPLE CART LOGIC
 // ===============================
 let cart = [];
 
 function addToCart(product) {
-    const existing = cart.find(item => item.id === product.id);
+    const existing = cart.find(item => item.menu_id === product.menu_id);
+
     if (existing) {
         existing.qty += 1;
     } else {
-        cart.push({...product, qty: 1});
+        cart.push({
+            menu_id: product.menu_id,
+            name: product.name,
+            price: Number(product.price),
+            qty: 1
+        });
     }
+
     console.log('Cart:', cart);
     alert(`${product.name} added to cart!`);
 }
+   
