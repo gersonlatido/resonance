@@ -7,6 +7,7 @@
     <title>Order Summary</title>
     <link rel="stylesheet" href="{{ asset('css/app.css') }}">
     <script src="{{ asset('js/app.js') }}" defer></script>
+    <meta name="csrf-token" content="{{ csrf_token() }}">
     <style>
         body {
             font-family: 'Figtree', sans-serif;
@@ -115,13 +116,14 @@
 
             <!-- Action Buttons -->
             <div class="summary-actions">
-                <button id="confirmPayment" class="confirm-payment-btn">Confirm Payment</button>
+                <!-- initial text; will be updated by JS to show computed total -->
+                <button id="confirmPayment" class="confirm-payment-btn">Pay ₱0.00</button>
             </div>
         </main>
     </div>
 
     <script>
-        // Keep your existing JavaScript logic here as-is
+      
 
         document.addEventListener('DOMContentLoaded', () => {
             const summaryItems = document.querySelector('.summary-items');
@@ -152,10 +154,59 @@
             });
             summaryTotal.textContent = `₱${total.toFixed(2)}`;
 
-            confirmBtn.addEventListener('click', () => {
-                alert('Order placed successfully!');
-                localStorage.removeItem('cart');
-                window.location.href = '/';
+            // Update confirm button label to include the computed total
+            if (confirmBtn) {
+                confirmBtn.textContent = `Pay ₱${total.toFixed(2)}`;
+            }
+
+            // When user confirms on the order-summary page, send the cart to
+            // the backend to create a PayMongo source/checkout URL. The
+            // backend will return a `redirect` URL (PayMongo hosted page)
+            // which we navigate the browser to.
+            confirmBtn.addEventListener('click', async () => {
+                try {
+                    const token = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+                    const res = await fetch('/payment/initiate', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Accept': 'application/json',
+                            'X-CSRF-TOKEN': token
+                        },
+                        body: JSON.stringify({ cart })
+                    });
+
+                    // Safely handle JSON and non-JSON responses to avoid
+                    // "Unexpected token '<'" when the server returns HTML.
+                    const contentType = res.headers.get('content-type') || '';
+                    let data;
+                    if (contentType.includes('application/json')) {
+                        data = await res.json();
+                    } else {
+                        // server returned HTML (likely an error page) — read as text
+                        const text = await res.text();
+                        throw new Error('Server returned non-JSON response: ' + text);
+                    }
+
+                    if (!res.ok) throw new Error(data.error || 'Payment initiation failed');
+                    if (data.redirect) {
+                        window.location.href = data.redirect;
+                    } else {
+                        throw new Error('No redirect URL returned');
+                    }
+                } catch (err) {
+                    // If server returned structured JSON with debug info, show it.
+                    try {
+                        const json = await err?.response?.json?.();
+                        if (json && json.paymongo_body) {
+                            alert('Payment error: ' + JSON.stringify(json.paymongo_body));
+                            return;
+                        }
+                    } catch (e) {
+                        // ignore
+                    }
+                    alert(err.message || 'Unable to initiate payment');
+                }
             });
         });
     </script>

@@ -36,3 +36,13 @@ Route::get('/menu', function () {
 
 // Order summary page (separate page instead of modal)
 Route::view('/order-summary', 'order-summary')->name('order.summary');
+
+// Payment routes
+use App\Http\Controllers\PaymentController;
+
+Route::get('/payment', [PaymentController::class, 'show'])->name('payment.show');
+Route::post('/payment/initiate', [PaymentController::class, 'initiate']);
+
+
+Route::view('/payment-success', 'payment-success');
+Route::view('/payment-failed', 'payment-failed');
