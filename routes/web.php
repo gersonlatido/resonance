@@ -3,36 +3,33 @@
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\MenuController;
 use App\Models\MenuItem;
+use App\Http\Controllers\AuthController;
+use App\Http\Controllers\AdminController;
 
-
+// General menu routes (customer side)
 Route::get('/', function () {
     return view('home');
 });
- 
-Route::get('/all-day-breakfast-menu', [MenuController::class, 'breakfast'])
-    ->name('menu.breakfast');
 
-Route::get('/main-courses-menu', [MenuController::class, 'mainCourses'])
-    ->name('menu.main_courses');
-
-Route::get('/pasta-menu', [MenuController::class, 'pasta'])
-    ->name('menu.pasta');
-
-Route::get('/chicken-menu', [MenuController::class, 'chicken'])
-    ->name('menu.chicken'); 
-
-Route::get('/drinks-menu', [MenuController::class, 'drinks'])
-    ->name('menu.drinks'); 
-
-Route::get('/pizza-menu', [MenuController::class, 'pizza'])
-->name('menu.pizza'); 
-
-Route::get('/snacks-menu', [MenuController::class, 'snacks'])
-->name('menu.snacks');
+Route::get('/all-day-breakfast-menu', [MenuController::class, 'breakfast'])->name('menu.breakfast');
+Route::get('/main-courses-menu', [MenuController::class, 'mainCourses'])->name('menu.main_courses');
+Route::get('/pasta-menu', [MenuController::class, 'pasta'])->name('menu.pasta');
+Route::get('/chicken-menu', [MenuController::class, 'chicken'])->name('menu.chicken'); 
+Route::get('/drinks-menu', [MenuController::class, 'drinks'])->name('menu.drinks'); 
+Route::get('/pizza-menu', [MenuController::class, 'pizza'])->name('menu.pizza');
+Route::get('/snacks-menu', [MenuController::class, 'snacks'])->name('menu.snacks');
 
 Route::get('/menu', function () {
     return response()->json(MenuItem::all());
 });
 
-// Order summary page (separate page instead of modal)
+// Order summary page
 Route::view('/order-summary', 'order-summary')->name('order.summary');
+
+// Admin routes (login, dashboard, and logout)
+Route::get('admin/login', [AuthController::class, 'showAdminLoginForm'])->name('admin.login');
+Route::post('admin/login', [AuthController::class, 'adminLogin']);
+Route::post('admin/logout', [AuthController::class, 'logout'])->name('admin.logout');
+
+// Admin dashboard route (protected by 'auth' and 'admin' middleware)
+Route::middleware(['auth', 'admin'])->get('admin/dashboard', [AdminController::class, 'index'])->name('admin.dashboard');
