@@ -9,40 +9,33 @@ use Illuminate\Notifications\Notifiable;
 
 class User extends Authenticatable
 {
-    /** @use HasFactory<\Database\Factories\UserFactory> */
     use HasFactory, Notifiable;
 
-    /**
-     * The attributes that are mass assignable.
-     *
-     * @var list<string>
-     */
+    protected $primaryKey = 'employee_id';  // Set employee_id as the primary key
+
     protected $fillable = [
+        'employee_id',
         'name',
+        'username',
         'email',
         'password',
+        'position',
     ];
 
-    /**
-     * The attributes that should be hidden for serialization.
-     *
-     * @var list<string>
-     */
     protected $hidden = [
         'password',
         'remember_token',
     ];
 
-    /**
-     * Get the attributes that should be cast.
-     *
-     * @return array<string, string>
-     */
-    protected function casts(): array
+    public static function boot()
     {
-        return [
-            'email_verified_at' => 'datetime',
-            'password' => 'hashed',
-        ];
+        parent::boot();
+
+        // Automatically generate employee_id on creating a new user
+        static::creating(function ($user) {
+            if (empty($user->employee_id)) {
+                $user->employee_id = 'EMP' . str_pad(User::max('id') + 1, 2, '0', STR_PAD_LEFT);
+            }
+        });
     }
 }
