@@ -101,7 +101,6 @@
     background: #f7b413;
 }
 
-
     /* PRINT MODE */
     @media print {
         body {
@@ -141,9 +140,10 @@
 
     <div class="actions">
         <button onclick="printReceipt()">Download / Print Receipt</button>
-           <button class="track-btn" onclick="trackOrder()">
-        Track Order
-    </button>
+         <button onclick="window.location.href='{{ route('track.order') }}'" class="track-btn">
+    Track Order
+</button>
+
     </div>
   
 </div>
