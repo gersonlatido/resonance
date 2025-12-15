@@ -14,7 +14,7 @@
         <h1>Payment Successful</h1>
         <p>Thank you! Your payment has been processed successfully.</p>
 
-        <a href="/" class="home-btn">View Receipt</a>
+        <a href="/payment-receit" class="home-btn">View Receipt</a>
     </div>
 </body>
 </html>

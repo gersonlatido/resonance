@@ -10,7 +10,9 @@ use App\Http\Controllers\AdminController;
 Route::get('/', function () {
     return view('home');
 });
-
+Route::get('/payment-receit', function () {
+    return view('payment-receit');
+});
 Route::get('/all-day-breakfast-menu', [MenuController::class, 'breakfast'])->name('menu.breakfast');
 Route::get('/main-courses-menu', [MenuController::class, 'mainCourses'])->name('menu.main_courses');
 Route::get('/pasta-menu', [MenuController::class, 'pasta'])->name('menu.pasta');
