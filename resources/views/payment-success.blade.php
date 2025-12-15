@@ -7,10 +7,14 @@
     <link rel="stylesheet" href="{{ asset('css/app.css') }}">
 </head>
 <body>
-    <div style="max-width:600px;margin:2rem auto;padding:2rem;background:#fff;border-radius:8px;text-align:center;">
+    
+      <div class="success-card">
+        <div class="check-icon">✓</div>
+
         <h1>Payment Successful</h1>
-        <p>Thank you — your payment was received.</p>
-        <a href="/">Return to home</a>
+        <p>Thank you! Your payment has been processed successfully.</p>
+
+        <a href="/" class="home-btn">View Receipt</a>
     </div>
 </body>
 </html>

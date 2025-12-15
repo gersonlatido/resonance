@@ -26,7 +26,6 @@ Route::get('/menu', function () {
 // Order summary page
 Route::view('/order-summary', 'order-summary')->name('order.summary');
 
-<<<<<<< HEAD
 // Payment routes
 use App\Http\Controllers\PaymentController;
 
@@ -36,12 +35,23 @@ Route::post('/payment/initiate', [PaymentController::class, 'initiate']);
 
 Route::view('/payment-success', 'payment-success');
 Route::view('/payment-failed', 'payment-failed');
-=======
-// Admin routes (login, dashboard, and logout)
-Route::get('admin/login', [AuthController::class, 'showAdminLoginForm'])->name('admin.login');
-Route::post('admin/login', [AuthController::class, 'adminLogin']);
-Route::post('admin/logout', [AuthController::class, 'logout'])->name('admin.logout');
 
-// Admin dashboard route (protected by 'auth' and 'admin' middleware)
-Route::middleware(['auth', 'admin'])->get('admin/dashboard', [AdminController::class, 'index'])->name('admin.dashboard');
->>>>>>> f0c680b514ee955833d74883ae1af970b4f3aa6f
+// // Payment routes
+// use App\Http\Controllers\PaymentController;
+
+// Route::get('/payment', [PaymentController::class, 'show'])->name('payment.show');
+// Route::post('/payment/initiate', [PaymentController::class, 'initiate']);
+
+
+// Route::view('/payment-success', 'payment-success');
+// Route::view('/payment-failed', 'payment-failed');
+// =======
+
+// // Admin routes (login, dashboard, and logout)
+// Route::get('admin/login', [AuthController::class, 'showAdminLoginForm'])->name('admin.login');
+// Route::post('admin/login', [AuthController::class, 'adminLogin']);
+// Route::post('admin/logout', [AuthController::class, 'logout'])->name('admin.logout');
+
+// // Admin dashboard route (protected by 'auth' and 'admin' middleware)
+// Route::middleware(['auth', 'admin'])->get('admin/dashboard', [AdminController::class, 'index'])->name('admin.dashboard');
+
