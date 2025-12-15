@@ -1,7 +1,7 @@
 <?php
+
 namespace App\Http\Controllers;
 
-use App\Models\Order;  // Assuming you have an Order model to fetch orders
 use Illuminate\Http\Request;
 
 class AdminController extends Controller
@@ -9,12 +9,28 @@ class AdminController extends Controller
     // Admin dashboard page
     public function index()
     {
-        // Fetch active orders, pending orders, and served orders from the database
-        $activeOrders = Order::where('status', 'active')->get();
-        $pendingOrders = Order::where('status', 'pending')->get();
-        $servedOrders = Order::where('status', 'served')->get();
+        // Return the view with no orders data passed from the server
+        return view('admin.dashboard');
+    }
 
-        // Return the view with the order data
-        return view('admin.dashboard', compact('activeOrders', 'pendingOrders', 'servedOrders'));
+    // Handle receiving orders data from localStorage (AJAX POST request)
+    public function storeOrdersData(Request $request)
+    {
+        // Validate incoming data (order data from the frontend)
+        $validated = $request->validate([
+            'orders' => 'required|array',
+            'orders.*.id' => 'required|integer',
+            'orders.*.customer_name' => 'required|string',
+            'orders.*.items' => 'required|array',
+            'orders.*.total' => 'required|numeric',
+        ]);
+
+        // Process the data or store it in the database if needed
+        // In this example, we'll just log it for demonstration purposes
+        // You can modify this part to actually store the data in a database or perform other actions
+        \Log::info('Received orders data:', $validated['orders']);
+
+        // Respond with success message
+        return response()->json(['message' => 'Orders data received successfully', 'status' => true]);
     }
 }

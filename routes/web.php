@@ -47,11 +47,13 @@ Route::view('/payment-failed', 'payment-failed');
 // Route::view('/payment-failed', 'payment-failed');
 // =======
 
-// // Admin routes (login, dashboard, and logout)
-// Route::get('admin/login', [AuthController::class, 'showAdminLoginForm'])->name('admin.login');
-// Route::post('admin/login', [AuthController::class, 'adminLogin']);
-// Route::post('admin/logout', [AuthController::class, 'logout'])->name('admin.logout');
+// Admin routes (login, dashboard, and logout)
+Route::get('admin/login', [AuthController::class, 'showAdminLoginForm'])->name('admin.login');
+Route::post('admin/login', [AuthController::class, 'adminLogin']);
+Route::post('admin/logout', [AuthController::class, 'logout'])->name('admin.logout');
 
-// // Admin dashboard route (protected by 'auth' and 'admin' middleware)
-// Route::middleware(['auth', 'admin'])->get('admin/dashboard', [AdminController::class, 'index'])->name('admin.dashboard');
+// Admin dashboard route (protected by 'auth' and 'admin' middleware)
+Route::middleware(['auth', 'admin'])->get('admin/dashboard', [AdminController::class, 'index'])->name('admin.dashboard');
 
+// Route for handling the orders data from localStorage (POST request)
+Route::post('admin/storeOrdersData', [AdminController::class, 'storeOrdersData'])->name('admin.storeOrdersData');
