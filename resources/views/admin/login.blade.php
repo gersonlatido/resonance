@@ -80,13 +80,34 @@
         <h2>Login</h2>
 
         <!-- Login Form -->
-        <form action="{{ route('admin.login') }}" method="POST">
+        <form id="login-form" action="{{ route('admin.login') }}" method="POST">
             @csrf
             <input type="text" id="username" name="username" placeholder="Enter your username" value="{{ old('username') }}" required>
             <input type="password" id="password" name="password" placeholder="Enter your password" required>
             <button type="submit">Login</button>
         </form>
     </div>
+
+    <script>
+        // Handle form submission and store the login state in localStorage
+        const loginForm = document.getElementById('login-form');
+
+        loginForm.addEventListener('submit', function (e) {
+            e.preventDefault(); // Prevent default form submission
+
+            const username = document.getElementById('username').value;
+            const password = document.getElementById('password').value;
+
+            // Store the login state in localStorage
+            localStorage.setItem('isLoggedIn', true);
+            localStorage.setItem('username', username);
+
+            // Simulate form submission (for demonstration)
+            // You can submit the form normally here if required
+            // loginForm.submit();
+            window.location.href = "/admin/dashboard"; // Redirect to the dashboard page
+        });
+    </script>
 
 </body>
 </html>

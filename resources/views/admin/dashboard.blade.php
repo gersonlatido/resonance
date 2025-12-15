@@ -71,7 +71,7 @@
 
     <div class="header">
         <h1>Admin Dashboard</h1>
-        <form action="{{ route('admin.logout') }}" method="POST">
+        <form id="logout-form" method="POST" action="{{ route('admin.logout') }}">
             @csrf
             <button type="submit">Log Out</button>
         </form>
@@ -79,7 +79,7 @@
 
     <div class="order-card">
         <h2>Active Orders</h2>
-        <table>
+        <table id="orders-table">
             <thead>
                 <tr>
                     <th>Order ID</th>
@@ -89,17 +89,77 @@
                 </tr>
             </thead>
             <tbody>
-                @foreach ($activeOrders as $order)
-                    <tr>
-                        <td>{{ $order->id }}</td>
-                        <td>{{ $order->customer_name }}</td>
-                        <td>{{ implode(', ', $order->items->pluck('name')->toArray()) }}</td>
-                        <td>{{ $order->total }}</td>
-                    </tr>
-                @endforeach
+                <!-- Data will be inserted here by JavaScript -->
             </tbody>
         </table>
     </div>
+
+    <script>
+        // Function to calculate the total price of each item and the grand total
+        function calculateTotalPrice(cart) {
+            let totalPrice = 0;
+            cart.forEach(item => {
+                const price = parseFloat(item.price) || 0;  // Ensure price is a number
+                const quantity = parseInt(item.qty) || 1;  // Default to 1 if qty is missing
+                totalPrice += price * quantity;
+            });
+            return totalPrice.toFixed(2); // Returns the total price with 2 decimal places
+        }
+
+        // Fetch cart data from localStorage
+        const cart = JSON.parse(localStorage.getItem('cart')) || []; // Default to empty array if no cart in localStorage
+
+        // Default values for order ID and customer
+        const orderId = "ORD001";
+        const customer = "TABLE 1";
+
+        // Populate the orders table
+        const ordersTableBody = document.querySelector("#orders-table tbody");
+
+        // Loop through the cart items and create rows for the table
+        cart.forEach(item => {
+            const row = document.createElement('tr');
+
+            // Order ID cell
+            const orderIdCell = document.createElement('td');
+            orderIdCell.textContent = orderId;  // Default Order ID
+            row.appendChild(orderIdCell);
+
+            // Customer cell
+            const customerCell = document.createElement('td');
+            customerCell.textContent = customer;  // Default customer
+            row.appendChild(customerCell);
+
+            // Items cell
+            const itemsCell = document.createElement('td');
+            itemsCell.textContent = item.name;  // Assuming the cart items have a 'name' property
+            row.appendChild(itemsCell);
+
+            // Total Price cell (calculated for each item)
+            const totalCell = document.createElement('td');
+            const itemTotal = (parseFloat(item.price) * parseInt(item.qty)).toFixed(2);
+            totalCell.textContent = itemTotal;  // Calculated price for each item
+            row.appendChild(totalCell);
+
+            // Append the row to the table body
+            ordersTableBody.appendChild(row);
+        });
+
+        // Calculate and display the grand total
+        const grandTotal = calculateTotalPrice(cart);
+        const grandTotalRow = document.createElement('tr');
+        const grandTotalLabelCell = document.createElement('td');
+        grandTotalLabelCell.textContent = "Grand Total";
+        grandTotalLabelCell.colSpan = 3;
+        grandTotalRow.appendChild(grandTotalLabelCell);
+        
+        const grandTotalCell = document.createElement('td');
+        grandTotalCell.textContent = grandTotal;
+        grandTotalRow.appendChild(grandTotalCell);
+
+        // Append the grand total row to the table
+        ordersTableBody.appendChild(grandTotalRow);
+    </script>
 
 </body>
 </html>
