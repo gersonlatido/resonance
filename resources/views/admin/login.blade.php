@@ -93,19 +93,15 @@
         const loginForm = document.getElementById('login-form');
 
         loginForm.addEventListener('submit', function (e) {
-            e.preventDefault(); // Prevent default form submission
-
             const username = document.getElementById('username').value;
             const password = document.getElementById('password').value;
 
-            // Store the login state in localStorage
+            // Store the login state in localStorage before submitting the form
             localStorage.setItem('isLoggedIn', true);
             localStorage.setItem('username', username);
 
-            // Simulate form submission (for demonstration)
-            // You can submit the form normally here if required
-            // loginForm.submit();
-            window.location.href = "/admin/dashboard"; // Redirect to the dashboard page
+            // Let the form submit naturally so the backend can handle validation
+            // No need to call e.preventDefault(), this will now submit the form to the server
         });
     </script>
 
