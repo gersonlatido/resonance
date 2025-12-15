@@ -59,3 +59,8 @@ Route::middleware(['auth', 'admin'])->get('admin/dashboard', [AdminController::c
 
 // Route for handling the orders data from localStorage (POST request)
 Route::post('admin/storeOrdersData', [AdminController::class, 'storeOrdersData'])->name('admin.storeOrdersData');
+
+// TRACK ORDER ROUTE 
+Route::get('/track-order', function () {
+    return view('track-order');
+})->name('track.order');
