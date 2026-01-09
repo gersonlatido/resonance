@@ -72,8 +72,8 @@
     <div class="header">
         <h1>Admin Dashboard</h1>
         <form id="logout-form" method="POST" action="{{ route('admin.logout') }}">
-            @csrf
-            <button type="submit">Log Out</button>
+    @csrf
+    <button type="submit">Log Out</button>
         </form>
     </div>
 

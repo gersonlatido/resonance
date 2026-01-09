@@ -533,7 +533,7 @@
 .check-icon {
     width: 90px;
     height: 90px;
-    background: #22c55e;
+    background: #f7b413;
     color: #fff;
     border-radius: 50%;
     display: flex;
@@ -544,7 +544,7 @@
 }
 
 .success-card h1 {
-    color: #16a34a;
+    color: #f7b413;
     margin-bottom: 0.5rem;
 }
 
@@ -556,7 +556,7 @@
 .home-btn {
     display: inline-block;
     padding: 0.75rem 1.5rem;
-    background: #16a34a;
+    background: #f7b413;
     color: #fff;
     border-radius: 8px;
     text-decoration: none;
@@ -565,5 +565,5 @@
 }
 
 .home-btn:hover {
-    background: #15803d;
+    background: #c7900e;
 }
