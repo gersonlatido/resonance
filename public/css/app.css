@@ -311,7 +311,14 @@
     border-radius: 7px;
     padding: 2px 5px;
     box-shadow: 0px 4px 4px rgba(0, 0, 0, 0.25) ;
+    transition: all 0.3s ease;
 }
+.add-to-cart-btn.added {
+    background-color:  #eda705;
+    color: #000000;
+    cursor: not-allowed;
+}
+
 .menu-item-button{
     padding-top: 10px;
 }
@@ -530,7 +537,7 @@
 .check-icon {
     width: 90px;
     height: 90px;
-    background: #f7b413;
+    background: #22c55e;
     color: #fff;
     border-radius: 50%;
     display: flex;
@@ -541,7 +548,7 @@
 }
 
 .success-card h1 {
-    color: #f7b413;
+    color: #16a34a;
     margin-bottom: 0.5rem;
 }
 
@@ -553,7 +560,7 @@
 .home-btn {
     display: inline-block;
     padding: 0.75rem 1.5rem;
-    background: #f7b413;
+    background: #16a34a;
     color: #fff;
     border-radius: 8px;
     text-decoration: none;
@@ -562,7 +569,6 @@
 }
 
 .home-btn:hover {
-<<<<<<< HEAD
     background: #15803d;
 }
 
@@ -733,6 +739,7 @@ textarea {
     font-size: 40px;
     color: #f7b413;
     margin-bottom: 10px;
+    
 }
 
 .modal-box h3 {
@@ -771,7 +778,3 @@ textarea {
 }   
 
 
-=======
-    background: #c7900e;
-}
->>>>>>> b70919d70b7520e46b10a84d611093ba10d7cf30

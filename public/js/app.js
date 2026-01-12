@@ -156,6 +156,33 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (productToAdd) addToCart(productToAdd);
             });
         });
+
+
+        // Button  for "Added" state
+  document.querySelectorAll('.add-to-cart-btn').forEach(button => {
+    button.addEventListener('click', function () {
+
+        // Prevent double trigger
+        if (this.classList.contains('added')) return;
+
+        const originalText = this.textContent;
+
+        // Added state
+        this.textContent = 'Added';
+        this.classList.add('added');
+        this.disabled = true;
+
+        setTimeout(() => {
+            // FULL reset
+            this.textContent = originalText;
+            this.classList.remove('added');
+            this.disabled = false;
+        }, 3500);
+    });
+});
+
+
+
     }
 
     function renderAllCategories() {

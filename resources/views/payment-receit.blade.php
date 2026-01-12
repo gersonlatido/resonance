@@ -123,6 +123,7 @@
     </style>
 </head>
 <body>
+      
 
 <div class="receipt-card" id="receipt">
     <div class="receipt-header">

@@ -91,14 +91,14 @@
         });
     });
 
-    // 📩 Show modal with selected stars
+    // Show modal with selected stars
     submitBtn.addEventListener('click', (e) => {
         e.preventDefault(); // stop form submit (optional)
 
         modalStars.innerHTML = '⭐'.repeat(selectedRating || 1);
         modal.style.display = 'flex';
 
-        // OPTIONAL: submit after delay
+        // Submit after delay
         // setTimeout(() => document.getElementById('feedbackForm').submit(), 1500);
     });
 
