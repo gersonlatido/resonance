@@ -51,6 +51,11 @@
 </head>
 <body>
 
+   <button class="back-icon" onclick="window.location.href='{{ url('/payment-receit') }}'">
+    ← Back
+</button>
+
+
 <div class="track-card">
     <h2>Tracking Order</h2>
     <p>Your order will be at your table in <strong style=" color:#f7b413">30:00</strong></p>

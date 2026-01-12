@@ -19,8 +19,8 @@ class AuthController extends Controller
     {
         // Validate the login form
         $request->validate([
-            'username' => 'required',
-            'password' => 'required',
+            'username' => 'required|string',
+            'password' => 'required|string',
         ]);
 
         // Find the user by username

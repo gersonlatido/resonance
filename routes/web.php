@@ -34,6 +34,8 @@ use App\Http\Controllers\PaymentController;
 Route::get('/payment', [PaymentController::class, 'show'])->name('payment.show');
 Route::post('/payment/initiate', [PaymentController::class, 'initiate']);
 
+Route::get('/feedback', [PaymentController::class, 'showFeedback'])->name('feedback.show');
+
 
 Route::view('/payment-success', 'payment-success');
 Route::view('/payment-failed', 'payment-failed');
@@ -53,6 +55,7 @@ Route::view('/payment-failed', 'payment-failed');
 Route::get('admin/login', [AuthController::class, 'showAdminLoginForm'])->name('admin.login');
 Route::post('admin/login', [AuthController::class, 'adminLogin']);
 Route::post('admin/logout', [AuthController::class, 'logout'])->name('admin.logout');
+
 
 // Admin dashboard route (protected by 'auth' and 'admin' middleware)
 Route::middleware(['auth', 'admin'])->get('admin/dashboard', [AdminController::class, 'index'])->name('admin.dashboard');

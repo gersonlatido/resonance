@@ -86,7 +86,7 @@
     gap: 10px;
 }
 
-.track-btn {
+.track-btn, .feedback-btn {
     background: #fff;
     color: #000;
     border: 2px solid #f7b413;
@@ -143,6 +143,9 @@
          <button onclick="window.location.href='{{ route('track.order') }}'" class="track-btn">
     Track Order
 </button>
+ <button onclick="window.location.href='{{ route('feedback.show') }}'" class="feedback-btn">
+   Send Feedback
+</button>
 
     </div>
   
@@ -176,10 +179,11 @@
 
     totalEl.textContent = `₱${total.toFixed(2)}`;
 
-    function printReceipt() {
-        window.print();
-        localStorage.removeItem('cart');
-    }
+ function printReceipt() {
+    window.print();
+   
+}
+
 </script>
 
 </body>

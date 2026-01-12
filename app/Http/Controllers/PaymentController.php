@@ -15,6 +15,10 @@ class PaymentController extends Controller
     {
         return view('payment');
     }
+       public function showFeedback()
+    {
+        return view('feedback');
+    }
 
     /**
      * Initiate PayMongo payment (GCash)
