@@ -177,10 +177,9 @@ document.addEventListener('DOMContentLoaded', () => {
             this.textContent = originalText;
             this.classList.remove('added');
             this.disabled = false;
-        }, 3500);
+        }, 2500);
     });
 });
-
 
 
     }
@@ -285,7 +284,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (existing) existing.qty++;
         else cart.push({id: item.menu_id, name: item.name, price: parseFloat(item.price), image: item.image, qty: 1});
         renderCart();
-        openCart();
+        // openCart(); // remove auto open cart on add
     };
 
     renderCart(); // render saved cart on load
