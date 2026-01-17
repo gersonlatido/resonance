@@ -24,7 +24,7 @@
     /* ✅ Outer background removed */
     body{
       margin:0;
-      font-family: Arial, sans-serif;
+      font-family: 'Figtree', sans-serif;
       background: #ffffff;
       color: var(--text);
     }
@@ -43,7 +43,7 @@
 
     /* ====== Sidebar ====== */
     .sidebar{
-      background: var(--sidebar);
+      background: #e4e3e3;
       padding: 18px 14px;
       position: relative;
     }
@@ -51,6 +51,7 @@
     .sidebar .brand{
       display:flex;
       align-items:center;
+      justify-content:center;
       gap:10px;
       padding: 6px 6px 14px 6px;
     }
@@ -88,6 +89,7 @@
       margin: 14px 6px 8px;
       text-transform: uppercase;
       opacity: .85;
+
     }
 
     .nav{
@@ -108,7 +110,7 @@
       gap: 8px;
       transition: .15s ease;
     }
-    .nav a:hover{ background: rgba(255,255,255,.25); }
+    .nav a:hover{ background: rgba(255, 184, 30, 0.25); }
 
     .nav a.active{
       background: var(--orange);
@@ -124,6 +126,7 @@
       background: rgba(0,0,0,.18);
       display:inline-block;
       position: relative;
+      display: none;
     }
     .dot-icon::after{
       content:"";
@@ -177,7 +180,7 @@
 
     .stat{
       background: var(--card);
-      border: 1px solid var(--border);
+      border: 1px solid #f59e0b;
       border-radius: 10px;
       padding: 10px 12px;
       box-shadow: var(--shadow-soft);
@@ -185,6 +188,7 @@
       align-items:center;
       justify-content:space-between;
       min-height: 54px;
+      
     }
 
     .stat .label{
@@ -287,6 +291,10 @@
       padding: 0;
       font-size: 12.5px;
     }
+       .order-item ul li{
+      margin-top: 5px
+    
+    }
 
     .order-item .total{
       margin-top: 8px;
@@ -294,6 +302,7 @@
       justify-content:space-between;
       font-weight: 800;
       font-size: 13px;
+      color: #ffb300
     }
 
     /* Responsive */
@@ -316,8 +325,8 @@
       <div class="brand">
         <div class="logo-box">
           <!-- Replace with real logo if you have it -->
-          <!-- <img src="/images/silog-cafe-logo.png" alt="Silog Cafe Logo" /> -->
-          <div class="logo-fallback">99<br/>Silog Cafe</div>
+           <img src="{{ asset('images/logo-image.png') }}" alt="Silog Cafe Logo" />
+          {{-- <div class="logo-fallback">99<br/>Silog Cafe</div> --}}
         </div>
       </div>
 
@@ -355,7 +364,13 @@
             <div class="label">Active Orders</div>
             <div class="value" id="activeCount">0</div>
           </div>
-          <div class="icon active" title="Active">👥</div>
+          <div class="icon active" title="Active"><svg xmlns="http://www.w3.org/2000/svg" width="26" height="26" viewBox="0 0 24 24" fill="none"
+     stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+  <path d="M16 11a4 4 0 1 0-8 0"/>
+  <path d="M4 20a6 6 0 0 1 16 0"/>
+  <path d="M20 20v0"/>
+</svg>
+</div>
         </div>
 
         <div class="stat">
@@ -363,7 +378,12 @@
             <div class="label">Pending Orders</div>
             <div class="value" id="pendingCount">0</div>
           </div>
-          <div class="icon pending" title="Pending">🕒</div>
+          <div class="icon pending" title="Pending"><svg xmlns="http://www.w3.org/2000/svg" width="26" height="26" viewBox="0 0 24 24" fill="none"
+     stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+  <circle cx="12" cy="12" r="9"/>
+  <path d="M12 7v6l4 2"/>
+</svg>
+</div>
         </div>
 
         <div class="stat">
@@ -371,7 +391,13 @@
             <div class="label">Cancelled Orders</div>
             <div class="value" id="cancelledCount">0</div>
           </div>
-          <div class="icon cancelled" title="Cancelled">✖</div>
+          <div class="icon cancelled" title="Cancelled"><svg xmlns="http://www.w3.org/2000/svg" width="26" height="26" viewBox="0 0 24 24" fill="none"
+     stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+  <circle cx="12" cy="12" r="9"/>
+  <path d="M9 9l6 6"/>
+  <path d="M15 9l-6 6"/>
+</svg>
+</div>
         </div>
 
         <div class="stat">
@@ -379,7 +405,16 @@
             <div class="label">Order Served</div>
             <div class="value" id="servedCount">0</div>
           </div>
-          <div class="icon served" title="Served">≡</div>
+          <div class="icon served" title="Served"><svg xmlns="http://www.w3.org/2000/svg" width="26" height="26" viewBox="0 0 24 24" fill="none"
+     stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+  <path d="M6 7h14"/>
+  <path d="M6 12h14"/>
+  <path d="M6 17h14"/>
+  <path d="M4 7h.01"/>
+  <path d="M4 12h.01"/>
+  <path d="M4 17h.01"/>
+</svg>
+</div>
         </div>
       </section>
 

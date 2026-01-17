@@ -12,6 +12,7 @@ class AddDefaultAdminUser extends Migration
             'employee_id' => 'EMP001',  // or any format you use for employee ID
             'name' => 'Admin-DEMO',
             'username' => 'admin',
+            'email' => 'admin@demo.com',  
             'password' => Hash::make('admin1234'), // Hash the password
             'position' => 'Admin',
             'created_at' => now(),
