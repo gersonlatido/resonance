@@ -1,6 +1,3 @@
-// payment.js
-// Handles rendering cart on the /payment page and initiating the payment
-
 document.addEventListener('DOMContentLoaded', () => {
     const itemsContainer = document.querySelector('.payment-items');
     const totalEl = document.getElementById('paymentTotal');
@@ -82,7 +79,6 @@ if (!res.ok) {
 
 window.location.href = data.redirect;
 
-
             if (data.redirect) {
                 // OPTIONAL: clear cart only after successful redirect
                 // localStorage.removeItem('cart');
@@ -99,3 +95,11 @@ window.location.href = data.redirect;
         }
     });
 });
+
+
+
+
+
+
+
+

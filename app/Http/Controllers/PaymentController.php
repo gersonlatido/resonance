@@ -15,117 +15,94 @@ class PaymentController extends Controller
     {
         return view('payment');
     }
-       public function showFeedback()
+
+    public function showFeedback()
     {
         return view('feedback');
     }
 
     /**
-     * Initiate PayMongo payment (GCash)
+     * Initiate PayMongo payment (GCash / Maya)
+     * Expects JSON: { cart: [...], method: "gcash"|"maya" }
      */
   public function initiate(Request $request)
-{
-    $data = $request->validate([
-        'cart' => 'required|array',
-    ]);
-
-    $paymongoKey = env('PAYMONGO_SECRET_KEY');
-
-    if (!$paymongoKey) {
-        return response()->json([
-            'error' => 'PayMongo secret key not found'
-        ], 500);
-    }
-
-    // Calculate total
-    $total = 0;
-    foreach ($data['cart'] as $item) {
-        $price = (float) ($item['price'] ?? 0);
-        $qty   = (int) ($item['qty'] ?? 1);
-        $total += $price * $qty;
-    }
-
-    $amount = max(100, (int) round($total * 100)); // centavos
-
-    try {
-        // Create Payment Intent
-        $response = Http::withBasicAuth($paymongoKey, '')
-            ->acceptJson()
-            ->withOptions(['verify' => false]) // local only
-            ->post('https://api.paymongo.com/v1/payment_intents', [
-                'data' => [
-                    'attributes' => [
-                        'amount' => $amount,
-                        'currency' => 'PHP',
-                        'payment_method_allowed' => ['gcash'],
-                        'description' => 'Order Payment',
-                    ],
-                ],
-            ]);
-
-        Log::debug('PayMongo PaymentIntent', [
-            'status' => $response->status(),
-            'body' => $response->json(),
+    {
+        $data = $request->validate([
+            'cart' => 'required|array|min:1',
         ]);
 
-        if (!$response->ok()) {
-            return response()->json([
-                'error' => 'PayMongo API error',
-                'details' => $response->json()
-            ], 400);
+        $paymongoKey = env('PAYMONGO_SECRET_KEY');
+        if (!$paymongoKey) {
+            return response()->json(['error' => 'PayMongo secret key not found'], 500);
         }
 
-        $intentId = $response['data']['id'];
-
-        // Create Payment Method (GCash)
-        $method = Http::withBasicAuth($paymongoKey, '')
-            ->acceptJson()
-            ->withOptions(['verify' => false])
-            ->post('https://api.paymongo.com/v1/payment_methods', [
-                'data' => [
-                    'attributes' => [
-                        'type' => 'gcash',
-                    ],
-                ],
-            ]);
-
-        $methodId = $method['data']['id'];
-
-        // Attach Payment Method
-        $attach = Http::withBasicAuth($paymongoKey, '')
-            ->acceptJson()
-            ->withOptions(['verify' => false])
-            ->post("https://api.paymongo.com/v1/payment_intents/{$intentId}/attach", [
-                'data' => [
-                    'attributes' => [
-                        'payment_method' => $methodId,
-                        'return_url' => url('/payment-success'),
-                    ],
-                ],
-            ]);
-
-        $checkoutUrl =
-            $attach['data']['attributes']['next_action']['redirect']['url'] ?? null;
-
-        if (!$checkoutUrl) {
-            return response()->json([
-                'error' => 'Checkout URL not generated'
-            ], 500);
+        // Compute total (PHP)
+        $total = 0;
+        foreach ($data['cart'] as $item) {
+            $price = (float) ($item['price'] ?? 0);
+            $qty   = (int) ($item['qty'] ?? 1);
+            $total += $price * $qty;
         }
 
-        return response()->json([
-            'redirect' => $checkoutUrl
-        ]);
+        $amount = max(2000, (int) round($total * 100)); // centavos
 
-    } catch (\Throwable $e) {
-        Log::error('PayMongo Exception', [
-            'message' => $e->getMessage()
-        ]);
+        // Build line items (nice for PayMongo UI)
+        $lineItems = [];
+        foreach ($data['cart'] as $item) {
+            $name = (string) ($item['name'] ?? 'Item');
+            $price = (int) round(((float)($item['price'] ?? 0)) * 100);
+            $qty = (int) ($item['qty'] ?? 1);
 
-        return response()->json([
-            'error' => $e->getMessage()
-        ], 500);
+            if ($price <= 0 || $qty <= 0) continue;
+
+            $lineItems[] = [
+                'name' => $name,
+                'amount' => $price,
+                'currency' => 'PHP',
+                'quantity' => $qty,
+            ];
+        }
+
+        try {
+            $res = Http::withBasicAuth($paymongoKey, '')
+                ->acceptJson()
+                ->withOptions(['verify' => app()->environment('local') ? false : true])
+                ->post('https://api.paymongo.com/v1/checkout_sessions', [
+                    'data' => [
+                        'attributes' => [
+                            'line_items' => $lineItems,
+                            'payment_method_types' => ['gcash', 'paymaya',], // h
+                            'success_url' => url('/payment-success'),
+                            'cancel_url'  => url('/payment-cancelled'),
+                            'description' => 'Order Payment',
+                        ],
+                    ],
+                ]);
+
+            Log::debug('PayMongo CheckoutSession', [
+                'status' => $res->status(),
+                'body' => $res->json(),
+            ]);
+
+            if (!$res->ok()) {
+                return response()->json([
+                    'error' => 'PayMongo API error (checkout_sessions)',
+                    'details' => $res->json(),
+                ], 400);
+            }
+
+            $checkoutUrl = data_get($res->json(), 'data.attributes.checkout_url');
+            if (!$checkoutUrl) {
+                return response()->json(['error' => 'Checkout URL not generated'], 500);
+            }
+
+            return response()->json([
+                'redirect' => $checkoutUrl,
+            ]);
+
+        } catch (\Throwable $e) {
+            Log::error('PayMongo Exception', ['message' => $e->getMessage()]);
+            return response()->json(['error' => $e->getMessage()], 500);
+        }
     }
-}
-
 }
