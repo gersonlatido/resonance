@@ -269,41 +269,6 @@
       margin-top: 28px;
     }
 
-    .order-item{
-      background:#fff;
-      border: 1px solid var(--border);
-      border-radius: 10px;
-      padding: 10px 10px;
-      margin-bottom: 10px;
-      box-shadow: 0 2px 8px rgba(0,0,0,.06);
-    }
-    .order-item .row{
-      display:flex;
-      justify-content:space-between;
-      gap: 10px;
-      font-size: 12.5px;
-    }
-    .order-item .row strong{ font-weight: 800; }
-    .order-item .muted{ color: var(--muted); }
-
-    .order-item ul{
-      margin: 8px 0 0 16px;
-      padding: 0;
-      font-size: 12.5px;
-    }
-       .order-item ul li{
-      margin-top: 5px
-    
-    }
-
-    .order-item .total{
-      margin-top: 8px;
-      display:flex;
-      justify-content:space-between;
-      font-weight: 800;
-      font-size: 13px;
-      color: #ffb300
-    }
 
     /* Responsive */
     @media (max-width: 980px){
@@ -315,6 +280,105 @@
       .sidebar{ display:none; }
       .stats{ grid-template-columns: 1fr; }
     }
+
+    /* ===== Table Management Room Layout ===== */
+.tables-panel{
+  border-radius: 12px;
+  border: 2px solid rgba(245,158,11,.35);
+  box-shadow: var(--shadow-soft);
+  background: #fff;
+  padding: 14px 14px 12px;
+  margin-top: 6px;
+}
+
+.tables-title{
+  font-size: 18px;
+  font-weight: 800;
+  margin: 4px 0 10px;
+  color:#111;
+}
+
+/* gray room */
+.room{
+  background: #f1f1f1;
+  border-radius: 12px;
+  border: 1px solid rgba(0,0,0,.06);
+  padding: 18px;
+  position: relative;
+  min-height: 330px;
+  overflow: hidden;
+}
+
+/* yellow dividers (walls) */
+.divider{
+  position:absolute;
+  width: 6px;
+  background: var(--orange);
+  border-radius: 6px;
+  opacity: .95;
+}
+.divider.top-mid{ left: 36%; top: 54px; height: 80px; }
+.divider.bottom-mid{ left: 36%; top: 210px; height: 140px; }
+
+/* table cards */
+.tcard{
+  position:absolute;
+  background: #fff;
+  border: 2px solid var(--orange);
+  border-radius: 12px;
+  box-shadow: 0 4px 10px rgba(0,0,0,.12);
+  padding: 10px 10px 8px;
+  min-width: 92px;
+  min-height: 62px;
+  display:flex;
+  flex-direction:column;
+  justify-content:center;
+  align-items:center;
+  gap: 6px;
+  cursor: pointer;
+  user-select:none;
+}
+
+.tcard .tno{
+  position:absolute;
+  top: 6px;
+  left: 8px;
+  font-size: 12px;
+  color:#111;
+  opacity: .75;
+  font-weight: 800;
+}
+
+.tcard .tstatus{
+  font-size: 15px;
+  font-weight: 500;
+  color:#111;
+}
+
+.tcard.unavailable{
+  border-color: #ef4444;
+}
+
+/* shapes */
+.shape-rect{ border-radius: 12px; }
+.shape-wide{ border-radius: 12px; min-width: 140px; }
+.shape-round{
+  width: 86px; height: 86px; min-width: 86px; min-height: 86px;
+  border-radius: 999px;
+  padding-top: 18px;
+}
+.shape-oval{
+  width: 96px; height: 132px; min-width: 96px; min-height: 132px;
+  border-radius: 999px;
+  padding-top: 18px;
+}
+
+/* responsive room: scroll if screen is small */
+@media (max-width: 980px){
+  .room{ overflow:auto; }
+  .room-inner{ position: relative; width: 900px; height: 360px; }
+}
+
   </style>
 </head>
 
@@ -331,7 +395,7 @@
       </div>
 
       <div class="side-section-title">Cashier Transaction</div>
-      <nav class="nav">
+     <nav class="nav">
   <a href="{{ route('admin.dashboard') }}"
      class="{{ request()->routeIs('admin.dashboard') ? 'active' : '' }}">
     <span class="dot-icon"></span>Order Management
@@ -360,7 +424,7 @@
     <!-- ===== Main content ===== -->
     <main class="content">
       <div class="topbar">
-        <div class="title">Order Management</div>
+        <div class="title">Table Management</div>
 
         <!-- Laravel logout form -->
         <form id="logout-form" method="POST" action="{{ route('admin.logout') }}">
@@ -382,6 +446,7 @@
   <path d="M4 20a6 6 0 0 1 16 0"/>
   <path d="M20 20v0"/>
 </svg>
+
 </div>
         </div>
 
@@ -430,120 +495,97 @@
         </div>
       </section>
 
-      <!-- Panels -->
-      <section class="board" aria-label="Orders board">
-        <div class="order-panel">
-          <span class="chip" id="leftChip">Table 1</span>
-          <div class="panel-body" id="activePanel"></div>
-        </div>
+      <!-- ===== Table Management Layout ===== -->
+<section class="tables-panel" aria-label="Table management">
+  <div class="tables-title">Tables</div>
 
-        <div class="order-panel">
-          <span class="chip" id="rightChip">Table 1</span>
-          <div class="panel-body" id="pendingPanel"></div>
-        </div>
-      </section>
+  <div class="room">
+    <!-- Dividers -->
+    <div class="divider top-mid"></div>
+    <div class="divider bottom-mid"></div>
+
+    <div class="room-inner" style="position:relative; width:100%; height:330px;">
+
+      <!-- Left column: 9,8,7 -->
+      <div class="tcard shape-rect" data-table="9" style="left: 18px; top: 22px;">
+        <div class="tno">9</div>
+        <div class="tstatus">Available</div>
+      </div>
+
+      <div class="tcard shape-rect" data-table="8" style="left: 18px; top: 110px;">
+        <div class="tno">8</div>
+        <div class="tstatus">Available</div>
+      </div>
+
+      <div class="tcard shape-rect" data-table="7" style="left: 18px; top: 198px;">
+        <div class="tno">7</div>
+        <div class="tstatus">Available</div>
+      </div>
+
+      <!-- Top left: 10 -->
+      <div class="tcard shape-rect" data-table="10" style="left: 165px; top: 22px;">
+        <div class="tno">10</div>
+        <div class="tstatus">Available</div>
+      </div>
+
+      <!-- Center top: 4 and 3 -->
+      <div class="tcard shape-rect" data-table="4" style="left: 380px; top: 22px;">
+        <div class="tno">4</div>
+        <div class="tstatus">Available</div>
+      </div>
+
+      <div class="tcard shape-rect" data-table="3" style="left: 495px; top: 22px;">
+        <div class="tno">3</div>
+        <div class="tstatus">Available</div>
+      </div>
+
+      <!-- Bottom left: 6 (round) -->
+      <div class="tcard shape-round" data-table="6" style="left: 200px; top: 240px;">
+        <div class="tno">6</div>
+        <div class="tstatus">Available</div>
+      </div>
+
+      <!-- Bottom center: 5 (oval) -->
+      <div class="tcard shape-oval" data-table="5" style="left: 420px; top: 196px;">
+        <div class="tno">5</div>
+        <div class="tstatus">Available</div>
+      </div>
+
+      <!-- Right: 2 (wide) -->
+      <div class="tcard shape-wide" data-table="2" style="right: 18px; top: 70px;">
+        <div class="tno">2</div>
+        <div class="tstatus">Available</div>
+      </div>
+
+      <!-- Right: 1 (wide unavailable) -->
+      <div class="tcard shape-wide unavailable" data-table="1" style="right: 18px; top: 210px;">
+        <div class="tno">1</div>
+        <div class="tstatus">Unavailable</div>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+
+     
     </main>
   </div>
 
   <script>
-    function money(n) {
-      const num = Number(n || 0);
-      return num.toFixed(2);
-    }
+ 
+// Toggle table status on click (front-end only for now)
+document.querySelectorAll('.tcard').forEach(card => {
+  card.addEventListener('click', () => {
+    const statusEl = card.querySelector('.tstatus');
+    const isUnavailable = card.classList.toggle('unavailable');
+    statusEl.textContent = isUnavailable ? 'Unavailable' : 'Available';
 
-    function calculateTotalPrice(items) {
-      return items.reduce((sum, it) => {
-        const price = Number(it.price || 0);
-        const qty = Number(it.qty || 1);
-        return sum + price * qty;
-      }, 0);
-    }
+    // Later: send to backend using fetch() to save in DB
+    // console.log('Table', card.dataset.table, 'status:', statusEl.textContent);
+  });
+});
 
-    function groupCartIntoOneOrder(cart) {
-      const table = "Table 1";
-      const orderId = "ORD001";
-      const total = calculateTotalPrice(cart);
-
-      return {
-        id: orderId,
-        table,
-        items: cart.map(it => ({
-          name: it.name || "Item",
-          qty: Number(it.qty || 1),
-          price: Number(it.price || 0)
-        })),
-        total
-      };
-    }
-
-    function renderOrderCard(order) {
-      const div = document.createElement("div");
-      div.className = "order-item";
-
-      const header = document.createElement("div");
-      header.className = "row";
-      header.innerHTML = `
-        <div><strong>${order.id}</strong> <span class="muted">(${order.table})</span></div>
-        <div class="muted">${order.items.length} item(s)</div>
-      `;
-      div.appendChild(header);
-
-      const ul = document.createElement("ul");
-      order.items.forEach(it => {
-        const li = document.createElement("li");
-        li.textContent = `${it.name} × ${it.qty} — ${money(it.price * it.qty)}`;
-        ul.appendChild(li);
-      });
-      div.appendChild(ul);
-
-      const totalRow = document.createElement("div");
-      totalRow.className = "total";
-      totalRow.innerHTML = `<span>Total</span><span>${money(order.total)}</span>`;
-      div.appendChild(totalRow);
-
-      return div;
-    }
-
-    function setEmpty(panelEl, message) {
-      panelEl.innerHTML = "";
-      const p = document.createElement("div");
-      p.className = "empty";
-      p.textContent = message;
-      panelEl.appendChild(p);
-    }
-
-    // Fetch cart from localStorage (same as your old code)
-    const cart = JSON.parse(localStorage.getItem("cart")) || [];
-
-    // Active order from cart
-    const activeOrder = groupCartIntoOneOrder(cart);
-
-    // Pending orders (replace with real backend data later)
-    const pendingOrders = [];
-
-    // Counts
-    document.getElementById("activeCount").textContent = cart.length ? 1 : 0;
-    document.getElementById("pendingCount").textContent = pendingOrders.length;
-    document.getElementById("cancelledCount").textContent = 0;
-    document.getElementById("servedCount").textContent = 0;
-
-    // Render panels
-    const activePanel = document.getElementById("activePanel");
-    const pendingPanel = document.getElementById("pendingPanel");
-
-    if (!cart.length) {
-      setEmpty(activePanel, "No active orders.");
-    } else {
-      activePanel.innerHTML = "";
-      activePanel.appendChild(renderOrderCard(activeOrder));
-    }
-
-    if (!pendingOrders.length) {
-      setEmpty(pendingPanel, "No pending orders.");
-    } else {
-      pendingPanel.innerHTML = "";
-      pendingOrders.forEach(o => pendingPanel.appendChild(renderOrderCard(o)));
-    }
-  </script>
+   </script>
 </body>
 </html>

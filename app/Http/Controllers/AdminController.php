@@ -12,6 +12,11 @@ class AdminController extends Controller
         // Return the view with no orders data passed from the server
         return view('admin.dashboard');
     }
+    public function tableManagement()
+    {
+        // Return the view for table management
+        return view('admin.table-management');
+    }
 
     // Handle receiving orders data from localStorage (AJAX POST request)
     public function storeOrdersData(Request $request)

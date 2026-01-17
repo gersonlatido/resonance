@@ -67,3 +67,6 @@ Route::post('admin/storeOrdersData', [AdminController::class, 'storeOrdersData']
 Route::get('/track-order', function () {
     return view('track-order');
 })->name('track.order');
+
+// =======
+Route::middleware(['auth', 'admin'])->get('admin/table-management', [AdminController::class, 'tableManagement'])->name('admin.table-management');
