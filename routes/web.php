@@ -70,3 +70,4 @@ Route::get('/track-order', function () {
 
 // =======
 Route::middleware(['auth', 'admin'])->get('admin/table-management', [AdminController::class, 'tableManagement'])->name('admin.table-management');
+Route::get('/admin/menu-management', fn() => view('admin.menu-management'))->name('admin.menu-management');
