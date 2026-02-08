@@ -122,93 +122,98 @@
         </main>
     </div>
 
-    <script>
-      
+ <script>
+document.addEventListener('DOMContentLoaded', () => {
+    const summaryItems = document.querySelector('.summary-items');
+    const summaryTotal = document.querySelector('.summary-total-amount');
+    const confirmBtn   = document.getElementById('confirmPayment');
 
-        document.addEventListener('DOMContentLoaded', () => {
-            const summaryItems = document.querySelector('.summary-items');
-            const summaryTotal = document.querySelector('.summary-total-amount');
-            const confirmBtn = document.getElementById('confirmPayment');
+    let cart = JSON.parse(localStorage.getItem('cart')) || [];
 
-            let cart = JSON.parse(localStorage.getItem('cart')) || [];
-            if (cart.length === 0) {
-                summaryItems.innerHTML = '<p>Your cart is empty</p>';
-                summaryTotal.textContent = '₱0.00';
-                return;
+    if (!summaryItems || !summaryTotal || !confirmBtn) return;
+
+    if (cart.length === 0) {
+        summaryItems.innerHTML = '<p>Your cart is empty</p>';
+        summaryTotal.textContent = '₱0.00';
+        confirmBtn.disabled = true;
+        return;
+    }
+
+    // Render items + compute total
+    let total = 0;
+    summaryItems.innerHTML = '';
+
+    cart.forEach(item => {
+        const price = Number(item.price) || 0;
+        const qty   = Number(item.qty) || 1;
+        const sub   = price * qty;
+
+        total += sub;
+
+        const el = document.createElement('div');
+        el.className = 'summary-item';
+        el.innerHTML = `
+            <div>
+                <p>${item.name}</p>
+                <small>${qty} × ₱${price.toFixed(2)}</small>
+            </div>
+            <strong>₱${sub.toFixed(2)}</strong>
+        `;
+        summaryItems.appendChild(el);
+    });
+
+    summaryTotal.textContent = `₱${total.toFixed(2)}`;
+    confirmBtn.textContent = `Pay ₱${total.toFixed(2)}`;
+
+    confirmBtn.addEventListener('click', async () => {
+        confirmBtn.disabled = true;
+        confirmBtn.textContent = 'Processing...';
+
+        try {
+            const token = document.querySelector('meta[name="csrf-token"]')?.content;
+            if (!token) throw new Error('CSRF token missing');
+
+            const res = await fetch('/payment/initiate', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json',
+                    'X-CSRF-TOKEN': token
+                },
+                body: JSON.stringify({ cart })
+            });
+
+            const contentType = res.headers.get('content-type') || '';
+            const text = await res.text();
+
+            let data = {};
+            if (contentType.includes('application/json')) {
+                data = JSON.parse(text);
+            } else {
+                // Laravel returned HTML (error page)
+                throw new Error('Server returned non-JSON: ' + text);
             }
 
-            let total = 0;
-            summaryItems.innerHTML = '';
-            cart.forEach(item => {
-                total += item.price * item.qty;
-                const el = document.createElement('div');
-                el.className = 'summary-item';
-                el.innerHTML = `
-                    <div>
-                        <p>${item.name}</p>
-                        <small>${item.qty} × ₱${item.price.toFixed(2)}</small>
-                    </div>
-                    <strong>₱${(item.price * item.qty).toFixed(2)}</strong>
-                `;
-                summaryItems.appendChild(el);
-            });
-            summaryTotal.textContent = `₱${total.toFixed(2)}`;
-
-            // Update confirm button label to include the computed total
-            if (confirmBtn) {
-                confirmBtn.textContent = `Pay ₱${total.toFixed(2)}`;
+            if (!res.ok) {
+                // Show Xendit error details so you can debug
+                throw new Error(data.error + "\n\n" + JSON.stringify(data.details || data, null, 2));
             }
 
-            // When user confirms on the order-summary page, send the cart to
-            // the backend to create a PayMongo source/checkout URL. The
-            // backend will return a `redirect` URL (PayMongo hosted page)
-            // which we navigate the browser to.
-            confirmBtn.addEventListener('click', async () => {
-                try {
-                    const token = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
-                    const res = await fetch('/payment/initiate', {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json',
-                            'Accept': 'application/json',
-                            'X-CSRF-TOKEN': token
-                        },
-                        body: JSON.stringify({ cart })
-                    });
+            if (!data.redirect) throw new Error('No redirect URL returned');
 
-                    // Safely handle JSON and non-JSON responses to avoid
-                    // "Unexpected token '<'" when the server returns HTML.
-                    const contentType = res.headers.get('content-type') || '';
-                    let data;
-                    if (contentType.includes('application/json')) {
-                        data = await res.json();
-                    } else {
-                        // server returned HTML (likely an error page) — read as text
-                        const text = await res.text();
-                        throw new Error('Server returned non-JSON response: ' + text);
-                    }
+            // OPTIONAL: clear cart when redirecting
+            // localStorage.removeItem('cart');
 
-                    if (!res.ok) throw new Error(data.error || 'Payment initiation failed');
-                    if (data.redirect) {
-                        window.location.href = data.redirect;
-                    } else {
-                        throw new Error('No redirect URL returned');
-                    }
-                } catch (err) {
-                    // If server returned structured JSON with debug info, show it.
-                    try {
-                        const json = await err?.response?.json?.();
-                        if (json && json.paymongo_body) {
-                            alert('Payment error: ' + JSON.stringify(json.paymongo_body));
-                            return;
-                        }
-                    } catch (e) {
-                        // ignore
-                    }
-                    alert(err.message || 'Unable to initiate payment');
-                }
-            });
-        });
-    </script>
+            window.location.href = data.redirect;
+
+        } catch (err) {
+            alert(err.message || 'Unable to initiate payment');
+            confirmBtn.disabled = false;
+            confirmBtn.textContent = `Pay ₱${total.toFixed(2)}`;
+        }
+    });
+});
+</script>
+
 </body>
 </html>

@@ -33,12 +33,17 @@ use App\Http\Controllers\PaymentController;
 
 Route::get('/payment', [PaymentController::class, 'show'])->name('payment.show');
 Route::post('/payment/initiate', [PaymentController::class, 'initiate']);
+Route::get('/payment-success', fn () => view('payment-success'));
+Route::get('/payment-cancelled', fn () => view('payment-cancelled'));
 
 Route::get('/feedback', [PaymentController::class, 'showFeedback'])->name('feedback.show');
 
 
-Route::view('/payment-success', 'payment-success');
-Route::view('/payment-failed', 'payment-failed');
+
+
+
+
+
 
 // // Payment routes
 // use App\Http\Controllers\PaymentController;
