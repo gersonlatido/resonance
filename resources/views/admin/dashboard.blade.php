@@ -284,6 +284,19 @@
   </a>
 </nav>
 
+
+      <div class="side-section-title" style="margin-top:18px;">Admin Management</div>
+      <nav class="nav">
+        
+          <a href="{{ route('admin.menu-management') }}"
+               class="{{ request()->routeIs('admin.menu-management') ? 'active' : '' }}">
+              <span class="dot-icon"></span>Menu Management
+     </a>
+
+
+        <a href="#"><span class="dot-icon"></span>Inventory Management</a>
+        <a href="#"><span class="dot-icon"></span>Sales and Stock Reports</a>
+      </nav>
     </aside>
 
     <main class="content">

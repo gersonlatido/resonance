@@ -35,12 +35,17 @@ use App\Http\Controllers\PaymentController;
 
 Route::get('/payment', [PaymentController::class, 'show'])->name('payment.show');
 Route::post('/payment/initiate', [PaymentController::class, 'initiate']);
+Route::get('/payment-success', fn () => view('payment-success'));
+Route::get('/payment-cancelled', fn () => view('payment-cancelled'));
 
 Route::get('/feedback', [PaymentController::class, 'showFeedback'])->name('feedback.show');
 
 
-Route::view('/payment-success', 'payment-success');
-Route::view('/payment-failed', 'payment-failed');
+
+
+
+
+
 
 // // Payment routes
 // use App\Http\Controllers\PaymentController;
@@ -72,6 +77,7 @@ Route::get('/track-order', function () {
 
 // =======
 Route::middleware(['auth', 'admin'])->get('admin/table-management', [AdminController::class, 'tableManagement'])->name('admin.table-management');
+<<<<<<< HEAD
 
 
 // Order 
@@ -99,3 +105,10 @@ Route::get('/payment/success', [PaymentSuccessController::class, 'show'])->name(
 Route::post('/admin/orders/status', [OrderController::class, 'updateStatus'])->name('admin.orders.status');
 
 Route::post('/orders/mark-paid', [OrderController::class, 'markPaid'])->name('orders.mark_paid');
+=======
+Route::get('/admin/menu-management', fn() => view('admin.menu-management'))->name('admin.menu-management');
+
+
+
+
+>>>>>>> 3a73bd3268e5c820a826b2daf2cfa85acf1d5894
