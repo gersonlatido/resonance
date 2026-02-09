@@ -19,13 +19,13 @@
         .order-summary-page {
             width: 100%;
             max-width: 400px;
-            margin: 0 auto; /* Removed the top margin */
+            margin: 0 auto;
             background-color: #fff;
             border-radius: 10px;
             box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
             padding: 20px;
             box-sizing: border-box;
-            margin-top: 0; /* Ensures no extra space at the top */
+            margin-top: 0;
         }
 
         header {
@@ -38,7 +38,6 @@
             color: #333;
         }
 
-        /* Back button style */
         .back-btn {
             font-size: 1.2rem;
             background-color: transparent;
@@ -97,7 +96,6 @@
 
 <body>
     <div class="order-summary-page">
-        <!-- Back Button -->
         <button class="back-btn" onclick="window.history.back();">← Back</button>
 
         <header>
@@ -105,30 +103,26 @@
         </header>
 
         <main>
-            <!-- Dynamically filled summary items -->
             <div class="summary-items"></div>
 
-            <!-- Total Section -->
             <div class="summary-total">
                 <span>Total</span>
                 <span class="summary-total-amount">₱0.00</span>
             </div>
 
-            <!-- Action Buttons -->
             <div class="summary-actions">
-                <!-- initial text; will be updated by JS to show computed total -->
                 <button id="confirmPayment" class="confirm-payment-btn">Pay ₱0.00</button>
             </div>
         </main>
     </div>
 
     <script>
-      
-
         document.addEventListener('DOMContentLoaded', () => {
             const summaryItems = document.querySelector('.summary-items');
             const summaryTotal = document.querySelector('.summary-total-amount');
             const confirmBtn = document.getElementById('confirmPayment');
+
+            const token = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
 
             let cart = JSON.parse(localStorage.getItem('cart')) || [];
             if (cart.length === 0) {
@@ -154,18 +148,46 @@
             });
             summaryTotal.textContent = `₱${total.toFixed(2)}`;
 
-            // Update confirm button label to include the computed total
             if (confirmBtn) {
                 confirmBtn.textContent = `Pay ₱${total.toFixed(2)}`;
             }
 
-            // When user confirms on the order-summary page, send the cart to
-            // the backend to create a PayMongo source/checkout URL. The
-            // backend will return a `redirect` URL (PayMongo hosted page)
-            // which we navigate the browser to.
+            // ✅ MAIN FIX:
+            // 1) Save cart as PENDING ORDER in DB
+            // 2) Then call /payment/initiate to get PayMongo redirect
             confirmBtn.addEventListener('click', async () => {
                 try {
-                    const token = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+                    confirmBtn.disabled = true;
+                    confirmBtn.textContent = 'Processing...';
+
+                    // --- 1) Save order to DB as pending ---
+                    const saveRes = await fetch('/orders/from-cart', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Accept': 'application/json',
+                            'X-CSRF-TOKEN': token
+                        },
+                        body: JSON.stringify({ cart })
+                    });
+
+                    const saveType = saveRes.headers.get('content-type') || '';
+                    let saveData;
+                    if (saveType.includes('application/json')) {
+                        saveData = await saveRes.json();
+                    } else {
+                        throw new Error('Server returned non-JSON while saving order.');
+                    }
+
+                    if (!saveRes.ok) {
+                        throw new Error(saveData.message || 'Failed to save order.');
+                    }
+
+                    // Save pending order id so payment success can update it later
+                    localStorage.setItem('pending_order_id', String(saveData.order_id));
+                    localStorage.setItem('pending_order_code', String(saveData.order_code));
+
+                    // --- 2) Initiate PayMongo payment ---
                     const res = await fetch('/payment/initiate', {
                         method: 'POST',
                         headers: {
@@ -176,14 +198,11 @@
                         body: JSON.stringify({ cart })
                     });
 
-                    // Safely handle JSON and non-JSON responses to avoid
-                    // "Unexpected token '<'" when the server returns HTML.
                     const contentType = res.headers.get('content-type') || '';
                     let data;
                     if (contentType.includes('application/json')) {
                         data = await res.json();
                     } else {
-                        // server returned HTML (likely an error page) — read as text
                         const text = await res.text();
                         throw new Error('Server returned non-JSON response: ' + text);
                     }
@@ -195,17 +214,10 @@
                         throw new Error('No redirect URL returned');
                     }
                 } catch (err) {
-                    // If server returned structured JSON with debug info, show it.
-                    try {
-                        const json = await err?.response?.json?.();
-                        if (json && json.paymongo_body) {
-                            alert('Payment error: ' + JSON.stringify(json.paymongo_body));
-                            return;
-                        }
-                    } catch (e) {
-                        // ignore
-                    }
+                    console.error(err);
                     alert(err.message || 'Unable to initiate payment');
+                    confirmBtn.disabled = false;
+                    confirmBtn.textContent = `Pay ₱${total.toFixed(2)}`;
                 }
             });
         });

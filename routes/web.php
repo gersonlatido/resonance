@@ -5,6 +5,8 @@ use App\Http\Controllers\MenuController;
 use App\Models\MenuItem;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\AdminController;
+use App\Http\Controllers\OrderController;
+use App\Http\Controllers\PaymentSuccessController;
 
 // General menu routes (customer side)
 Route::get('/', function () {
@@ -70,3 +72,30 @@ Route::get('/track-order', function () {
 
 // =======
 Route::middleware(['auth', 'admin'])->get('admin/table-management', [AdminController::class, 'tableManagement'])->name('admin.table-management');
+
+
+// Order 
+Route::get('/order-summary', function () {
+    return view('order-summary');
+})->name('order.summary');
+
+Route::post('/orders/from-cart', [OrderController::class, 'storeFromCart'])->name('orders.from_cart');
+Route::post('/orders/mark-paid', [OrderController::class, 'markPaid'])->name('orders.mark_paid');
+
+
+// ADMIN / CASHIER
+Route::get('/admin/orders', [OrderController::class, 'adminIndex'])->name('admin.orders');
+Route::get('/admin/orders/json', [OrderController::class, 'adminOrdersJson'])->name('admin.orders.json');
+
+// Customer saves pending order
+Route::post('/orders/from-cart', [OrderController::class, 'storeFromCart'])->name('orders.from_cart');
+
+// Admin dashboard fetch orders
+Route::get('/admin/orders/json', [OrderController::class, 'adminOrdersJson'])->name('admin.orders.json');
+
+// PAYMENT SUCCESS PAGE (you already have something like this)
+Route::get('/payment/success', [PaymentSuccessController::class, 'show'])->name('payment.success');
+
+Route::post('/admin/orders/status', [OrderController::class, 'updateStatus'])->name('admin.orders.status');
+
+Route::post('/orders/mark-paid', [OrderController::class, 'markPaid'])->name('orders.mark_paid');

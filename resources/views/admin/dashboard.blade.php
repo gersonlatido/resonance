@@ -3,25 +3,23 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="csrf-token" content="{{ csrf_token() }}">
   <title>Admin Order Management</title>
 
   <style>
     :root{
-      --panel: #ffffff;         /* main white panel */
-      --sidebar: #a9a9a9;       /* left gray sidebar */
+      --panel: #ffffff;
       --text: #222;
       --muted: #6b7280;
-      --orange: #f59e0b;        /* main accent */
-      --orange-2: #ffb300;      /* chip */
+      --orange: #f59e0b;
+      --orange-2: #ffb300;
       --card: #fff;
       --border: #e5e7eb;
       --shadow-soft: 0 6px 14px rgba(0,0,0,.10);
-      --radius: 14px;
     }
 
     * { box-sizing: border-box; }
 
-    /* ✅ Outer background removed */
     body{
       margin:0;
       font-family: 'Figtree', sans-serif;
@@ -29,31 +27,23 @@
       color: var(--text);
     }
 
-    /* ✅ Fullscreen layout (no outer margin/shadow) */
     .shell{
       width: 100%;
       min-height: 100vh;
-      margin: 0;
-      background: var(--panel);
-      box-shadow: none;
-      overflow: hidden;
       display: grid;
       grid-template-columns: 230px 1fr;
     }
 
-    /* ====== Sidebar ====== */
     .sidebar{
       background: #e4e3e3;
       padding: 18px 14px;
-      position: relative;
     }
 
-    .sidebar .brand{
+    .brand{
       display:flex;
       align-items:center;
       justify-content:center;
-      gap:10px;
-      padding: 6px 6px 14px 6px;
+      padding-bottom: 14px;
     }
 
     .logo-box{
@@ -74,14 +64,6 @@
       padding: 6px;
     }
 
-    .logo-fallback{
-      font-weight: 800;
-      color:#111;
-      font-size: 14px;
-      line-height: 1.1;
-      text-align:center;
-    }
-
     .side-section-title{
       font-size: 11px;
       font-weight: 700;
@@ -89,7 +71,6 @@
       margin: 14px 6px 8px;
       text-transform: uppercase;
       opacity: .85;
-
     }
 
     .nav{
@@ -105,13 +86,9 @@
       padding: 9px 10px;
       border-radius: 18px;
       color:#111;
-      display:flex;
-      align-items:center;
-      gap: 8px;
       transition: .15s ease;
     }
     .nav a:hover{ background: rgba(255, 184, 30, 0.25); }
-
     .nav a.active{
       background: var(--orange);
       color:#111;
@@ -119,28 +96,6 @@
       box-shadow: 0 2px 8px rgba(0,0,0,.08);
     }
 
-    .dot-icon{
-      width: 16px;
-      height: 16px;
-      border-radius: 50%;
-      background: rgba(0,0,0,.18);
-      display:inline-block;
-      position: relative;
-      display: none;
-    }
-    .dot-icon::after{
-      content:"";
-      width: 6px;
-      height: 6px;
-      border-radius: 50%;
-      background: rgba(255,255,255,.75);
-      position:absolute;
-      top:50%;
-      left:50%;
-      transform: translate(-50%, -50%);
-    }
-
-    /* ====== Content area ====== */
     .content{
       padding: 22px 24px;
     }
@@ -156,7 +111,6 @@
       font-size: 26px;
       font-weight: 800;
       color: var(--orange);
-      letter-spacing: .2px;
     }
 
     .logout-btn{
@@ -168,9 +122,7 @@
       font-weight: 700;
       box-shadow: 0 4px 10px rgba(0,0,0,.12);
     }
-    .logout-btn:hover{ filter: brightness(.97); }
 
-    /* ====== Stat cards row ====== */
     .stats{
       display:grid;
       grid-template-columns: repeat(4, minmax(0, 1fr));
@@ -188,42 +140,20 @@
       align-items:center;
       justify-content:space-between;
       min-height: 54px;
-      
     }
 
     .stat .label{
       font-size: 11px;
       color: var(--muted);
       font-weight: 700;
-      text-transform: capitalize;
-      margin-bottom: 2px;
     }
     .stat .value{
       font-size: 18px;
       font-weight: 800;
       color:#111;
-      line-height: 1.1;
     }
 
-    .stat .icon{
-      width: 24px;
-      height: 24px;
-      border-radius: 8px;
-      display:flex;
-      align-items:center;
-      justify-content:center;
-      font-weight: 900;
-      border: 1px solid var(--border);
-      background: #fff;
-      user-select:none;
-    }
-
-    .icon.active { color: var(--orange); }
-    .icon.pending { color: #f59e0b; }
-    .icon.cancelled { color: #ef4444; border-color: rgba(239,68,68,.4); }
-    .icon.served { color: #f59e0b; }
-
-    /* ====== Orders board ====== */
+    /* ✅ 4 panels */
     .board{
       display:grid;
       grid-template-columns: 1fr 1fr;
@@ -238,7 +168,6 @@
       background: #fff;
       padding: 14px 14px 12px;
       min-height: 360px;
-      position: relative;
     }
 
     .chip{
@@ -291,10 +220,7 @@
       padding: 0;
       font-size: 12.5px;
     }
-       .order-item ul li{
-      margin-top: 5px
-    
-    }
+    .order-item ul li{ margin-top: 5px }
 
     .order-item .total{
       margin-top: 8px;
@@ -305,7 +231,6 @@
       color: #ffb300
     }
 
-    /* Responsive */
     @media (max-width: 980px){
       .stats{ grid-template-columns: repeat(2, minmax(0, 1fr)); }
       .board{ grid-template-columns: 1fr; }
@@ -320,126 +245,83 @@
 
 <body>
   <div class="shell">
-    <!-- ===== Sidebar ===== -->
     <aside class="sidebar">
       <div class="brand">
         <div class="logo-box">
-          <!-- Replace with real logo if you have it -->
-           <img src="{{ asset('images/logo-image.png') }}" alt="Silog Cafe Logo" />
-          {{-- <div class="logo-fallback">99<br/>Silog Cafe</div> --}}
+          <img src="{{ asset('images/logo-image.png') }}" alt="Silog Cafe Logo" />
         </div>
       </div>
 
       <div class="side-section-title">Cashier Transaction</div>
       <nav class="nav">
-  <a href="{{ route('admin.dashboard') }}"
-     class="{{ request()->routeIs('admin.dashboard') ? 'active' : '' }}">
-    <span class="dot-icon"></span>Order Management
+        <a href="{{ route('admin.dashboard') }}"
+           class="{{ request()->routeIs('admin.dashboard') ? 'active' : '' }}">
+          Order Management
+        </a>
+
+        <a href="{{ route('admin.table-management') }}"
+           class="{{ request()->routeIs('admin.table-management') ? 'active' : '' }}">
+          Table Management
+        </a>
+
+        <a href="#">Daily Sales Report</a>
+      </nav>
+        <div class="side-section-title" style="margin-top:18px;">
+  Admin Management
+</div>
+
+<nav class="nav">
+  <a href="javascript:void(0)" onclick="return false;">
+    Menu Management
   </a>
 
-  <a href="{{ route('admin.table-management') }}"
-     class="{{ request()->routeIs('admin.table-management') ? 'active' : '' }}">
-    <span class="dot-icon"></span>Table Management
+  <a href="javascript:void(0)" onclick="return false;">
+    Inventory Management
   </a>
 
-  <a href="#"
-     {{-- class="{{ request()->routeIs('admin.daily-sales') ? 'active' : '' }}" --}}>
-    <span class="dot-icon"></span>Daily Sales Report
+  <a href="javascript:void(0)" onclick="return false;">
+    Sales and Stock Reports
   </a>
 </nav>
 
-
-      <div class="side-section-title" style="margin-top:18px;">Admin Management</div>
-      <nav class="nav">
-        <a href="#"><span class="dot-icon"></span>Menu Management</a>
-        <a href="#"><span class="dot-icon"></span>Inventory Management</a>
-        <a href="#"><span class="dot-icon"></span>Sales and Stock Reports</a>
-      </nav>
     </aside>
 
-    <!-- ===== Main content ===== -->
     <main class="content">
       <div class="topbar">
         <div class="title">Order Management</div>
-
-        <!-- Laravel logout form -->
-        <form id="logout-form" method="POST" action="{{ route('admin.logout') }}">
+        <form method="POST" action="{{ route('admin.logout') }}">
           @csrf
           <button class="logout-btn" type="submit">Log Out</button>
         </form>
       </div>
 
-      <!-- Stats -->
-      <section class="stats" aria-label="Order stats">
-        <div class="stat">
-          <div>
-            <div class="label">Active Orders</div>
-            <div class="value" id="activeCount">0</div>
-          </div>
-          <div class="icon active" title="Active"><svg xmlns="http://www.w3.org/2000/svg" width="26" height="26" viewBox="0 0 24 24" fill="none"
-     stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-  <path d="M16 11a4 4 0 1 0-8 0"/>
-  <path d="M4 20a6 6 0 0 1 16 0"/>
-  <path d="M20 20v0"/>
-</svg>
-</div>
-        </div>
-
-        <div class="stat">
-          <div>
-            <div class="label">Pending Orders</div>
-            <div class="value" id="pendingCount">0</div>
-          </div>
-          <div class="icon pending" title="Pending"><svg xmlns="http://www.w3.org/2000/svg" width="26" height="26" viewBox="0 0 24 24" fill="none"
-     stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-  <circle cx="12" cy="12" r="9"/>
-  <path d="M12 7v6l4 2"/>
-</svg>
-</div>
-        </div>
-
-        <div class="stat">
-          <div>
-            <div class="label">Cancelled Orders</div>
-            <div class="value" id="cancelledCount">0</div>
-          </div>
-          <div class="icon cancelled" title="Cancelled"><svg xmlns="http://www.w3.org/2000/svg" width="26" height="26" viewBox="0 0 24 24" fill="none"
-     stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-  <circle cx="12" cy="12" r="9"/>
-  <path d="M9 9l6 6"/>
-  <path d="M15 9l-6 6"/>
-</svg>
-</div>
-        </div>
-
-        <div class="stat">
-          <div>
-            <div class="label">Order Served</div>
-            <div class="value" id="servedCount">0</div>
-          </div>
-          <div class="icon served" title="Served"><svg xmlns="http://www.w3.org/2000/svg" width="26" height="26" viewBox="0 0 24 24" fill="none"
-     stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-  <path d="M6 7h14"/>
-  <path d="M6 12h14"/>
-  <path d="M6 17h14"/>
-  <path d="M4 7h.01"/>
-  <path d="M4 12h.01"/>
-  <path d="M4 17h.01"/>
-</svg>
-</div>
-        </div>
+      <section class="stats">
+        <div class="stat"><div><div class="label">Active Orders</div><div class="value" id="activeCount">0</div></div></div>
+        <div class="stat"><div><div class="label">Pending Orders</div><div class="value" id="pendingCount">0</div></div></div>
+        <div class="stat"><div><div class="label">Cancelled Orders</div><div class="value" id="cancelledCount">0</div></div></div>
+        <div class="stat"><div><div class="label">Order Served</div><div class="value" id="servedCount">0</div></div></div>
       </section>
 
-      <!-- Panels -->
-      <section class="board" aria-label="Orders board">
+      <!-- ✅ 4 Panels -->
+      <section class="board">
         <div class="order-panel">
-          <span class="chip" id="leftChip">Table 1</span>
+          <span class="chip">ACTIVE (PAID)</span>
           <div class="panel-body" id="activePanel"></div>
         </div>
 
         <div class="order-panel">
-          <span class="chip" id="rightChip">Table 1</span>
+          <span class="chip">PENDING</span>
           <div class="panel-body" id="pendingPanel"></div>
+        </div>
+
+        <div class="order-panel">
+          <span class="chip">CANCELLED</span>
+          <div class="panel-body" id="cancelledPanel"></div>
+        </div>
+
+        <div class="order-panel">
+          <span class="chip">SERVED</span>
+          <div class="panel-body" id="servedPanel"></div>
         </div>
       </section>
     </main>
@@ -451,29 +333,11 @@
       return num.toFixed(2);
     }
 
-    function calculateTotalPrice(items) {
-      return items.reduce((sum, it) => {
-        const price = Number(it.price || 0);
-        const qty = Number(it.qty || 1);
-        return sum + price * qty;
-      }, 0);
-    }
-
-    function groupCartIntoOneOrder(cart) {
-      const table = "Table 1";
-      const orderId = "ORD001";
-      const total = calculateTotalPrice(cart);
-
-      return {
-        id: orderId,
-        table,
-        items: cart.map(it => ({
-          name: it.name || "Item",
-          qty: Number(it.qty || 1),
-          price: Number(it.price || 0)
-        })),
-        total
-      };
+    function normalizeItem(it) {
+      const quantity  = Number(it.quantity ?? it.qty ?? 1);
+      const unitPrice = Number(it.unit_price ?? it.price ?? 0);
+      const subtotal  = Number(it.subtotal ?? it.line_total ?? (unitPrice * quantity));
+      return { quantity, unitPrice, subtotal };
     }
 
     function renderOrderCard(order) {
@@ -483,22 +347,28 @@
       const header = document.createElement("div");
       header.className = "row";
       header.innerHTML = `
-        <div><strong>${order.id}</strong> <span class="muted">(${order.table})</span></div>
-        <div class="muted">${order.items.length} item(s)</div>
+        <div><strong>${order.order_code}</strong> <span class="muted">(${order.status})</span></div>
+        <div class="muted">${(order.items || []).length} item(s)</div>
       `;
       div.appendChild(header);
 
       const ul = document.createElement("ul");
-      order.items.forEach(it => {
+      (order.items || []).forEach(it => {
+        const { quantity, unitPrice, subtotal } = normalizeItem(it);
         const li = document.createElement("li");
-        li.textContent = `${it.name} × ${it.qty} — ${money(it.price * it.qty)}`;
+        li.textContent = `${it.name} × ${quantity} — ${money(unitPrice)} each — ${money(subtotal)}`;
         ul.appendChild(li);
       });
       div.appendChild(ul);
 
+      const computedTotal = (order.items || []).reduce((sum, it) => {
+        const { subtotal } = normalizeItem(it);
+        return sum + Number(subtotal || 0);
+      }, 0);
+
       const totalRow = document.createElement("div");
       totalRow.className = "total";
-      totalRow.innerHTML = `<span>Total</span><span>${money(order.total)}</span>`;
+      totalRow.innerHTML = `<span>Total</span><span>${money(order.total ?? computedTotal)}</span>`;
       div.appendChild(totalRow);
 
       return div;
@@ -512,38 +382,52 @@
       panelEl.appendChild(p);
     }
 
-    // Fetch cart from localStorage (same as your old code)
-    const cart = JSON.parse(localStorage.getItem("cart")) || [];
+    async function loadOrders() {
+      const res = await fetch('/admin/orders/json', { headers: { 'Accept': 'application/json' } });
+      const orders = await res.json();
+      if (!res.ok) return;
 
-    // Active order from cart
-    const activeOrder = groupCartIntoOneOrder(cart);
+      const activeOrders    = orders.filter(o => o.status === 'paid');
+      const pendingOrders   = orders.filter(o => o.status === 'pending');
+      const cancelledOrders = orders.filter(o => o.status === 'cancelled');
+      const servedOrders    = orders.filter(o => o.status === 'served');
 
-    // Pending orders (replace with real backend data later)
-    const pendingOrders = [];
+      document.getElementById("activeCount").textContent = activeOrders.length;
+      document.getElementById("pendingCount").textContent = pendingOrders.length;
+      document.getElementById("cancelledCount").textContent = cancelledOrders.length;
+      document.getElementById("servedCount").textContent = servedOrders.length;
 
-    // Counts
-    document.getElementById("activeCount").textContent = cart.length ? 1 : 0;
-    document.getElementById("pendingCount").textContent = pendingOrders.length;
-    document.getElementById("cancelledCount").textContent = 0;
-    document.getElementById("servedCount").textContent = 0;
+      const activePanel = document.getElementById("activePanel");
+      const pendingPanel = document.getElementById("pendingPanel");
+      const cancelledPanel = document.getElementById("cancelledPanel");
+      const servedPanel = document.getElementById("servedPanel");
 
-    // Render panels
-    const activePanel = document.getElementById("activePanel");
-    const pendingPanel = document.getElementById("pendingPanel");
-
-    if (!cart.length) {
-      setEmpty(activePanel, "No active orders.");
-    } else {
       activePanel.innerHTML = "";
-      activePanel.appendChild(renderOrderCard(activeOrder));
+      pendingPanel.innerHTML = "";
+      cancelledPanel.innerHTML = "";
+      servedPanel.innerHTML = "";
+
+      if (!activeOrders.length) setEmpty(activePanel, "No active orders.");
+      else activeOrders.forEach(o => activePanel.appendChild(renderOrderCard(o)));
+
+      if (!pendingOrders.length) setEmpty(pendingPanel, "No pending orders.");
+      else pendingOrders.forEach(o => pendingPanel.appendChild(renderOrderCard(o)));
+
+      if (!cancelledOrders.length) setEmpty(cancelledPanel, "No cancelled orders.");
+      else cancelledOrders.forEach(o => cancelledPanel.appendChild(renderOrderCard(o)));
+
+      if (!servedOrders.length) setEmpty(servedPanel, "No served orders.");
+      else servedOrders.forEach(o => servedPanel.appendChild(renderOrderCard(o)));
     }
 
-    if (!pendingOrders.length) {
-      setEmpty(pendingPanel, "No pending orders.");
-    } else {
-      pendingPanel.innerHTML = "";
-      pendingOrders.forEach(o => pendingPanel.appendChild(renderOrderCard(o)));
+    // ✅ avoid duplicate timers if page reloads
+    let ordersTimer = null;
+    function startPolling() {
+      if (ordersTimer) clearInterval(ordersTimer);
+      loadOrders();
+      ordersTimer = setInterval(loadOrders, 3000);
     }
+    startPolling();
   </script>
 </body>
 </html>
