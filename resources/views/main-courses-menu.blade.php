@@ -12,6 +12,12 @@
     <script src="{{ asset('js/app.js') }}" defer></script>
 </head>
 <body>
+  <span
+    id="serverTableNumber"
+    data-table="{{ session('table_number') ?? '' }}"
+    style="display:none;">
+  </span>
+
     <!-- Navbar -->
     <div class="navbar">
         <div class="navbar-left">

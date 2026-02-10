@@ -105,6 +105,13 @@
         </header>
 
         <main>
+<div style="display:flex; justify-content:space-between; margin-bottom:10px;">
+    <strong>Table #:</strong>
+    <span id="summaryTableNo">—</span>
+</div>
+
+
+
             <!-- Dynamically filled summary items -->
             <div class="summary-items"></div>
 
@@ -122,15 +129,27 @@
         </main>
     </div>
 
- <script>
+
+    <script>
 document.addEventListener('DOMContentLoaded', () => {
     const summaryItems = document.querySelector('.summary-items');
     const summaryTotal = document.querySelector('.summary-total-amount');
     const confirmBtn   = document.getElementById('confirmPayment');
+    const tableNoEl    = document.getElementById('summaryTableNo');
 
     let cart = JSON.parse(localStorage.getItem('cart')) || [];
+    const tableNumber = localStorage.getItem('table_number'); // ✅ from QR
+
+    // show table number in UI
+    if (tableNoEl) tableNoEl.textContent = tableNumber || '—';
 
     if (!summaryItems || !summaryTotal || !confirmBtn) return;
+
+    if (!tableNumber) {
+        summaryItems.innerHTML = '<p style="color:red;">No table detected. Please scan the QR code again.</p>';
+        confirmBtn.disabled = true;
+        return;
+    }
 
     if (cart.length === 0) {
         summaryItems.innerHTML = '<p>Your cart is empty</p>';
@@ -180,7 +199,10 @@ document.addEventListener('DOMContentLoaded', () => {
                     'Accept': 'application/json',
                     'X-CSRF-TOKEN': token
                 },
-                body: JSON.stringify({ cart })
+                body: JSON.stringify({
+                    cart,
+                    table_number: tableNumber // ✅ SEND TABLE TO BACKEND
+                })
             });
 
             const contentType = res.headers.get('content-type') || '';
@@ -190,19 +212,14 @@ document.addEventListener('DOMContentLoaded', () => {
             if (contentType.includes('application/json')) {
                 data = JSON.parse(text);
             } else {
-                // Laravel returned HTML (error page)
                 throw new Error('Server returned non-JSON: ' + text);
             }
 
             if (!res.ok) {
-                // Show Xendit error details so you can debug
-                throw new Error(data.error + "\n\n" + JSON.stringify(data.details || data, null, 2));
+                throw new Error((data.error || 'Payment failed') + "\n\n" + JSON.stringify(data.details || data, null, 2));
             }
 
             if (!data.redirect) throw new Error('No redirect URL returned');
-
-            // OPTIONAL: clear cart when redirecting
-            // localStorage.removeItem('cart');
 
             window.location.href = data.redirect;
 
@@ -214,6 +231,7 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 });
 </script>
+
 
 </body>
 </html>

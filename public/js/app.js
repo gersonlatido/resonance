@@ -2,6 +2,7 @@
 // ✅ MENU TOGGLE (CATEGORY MENU)
 // ===============================
 document.addEventListener('DOMContentLoaded', function () {
+  
     const menuBtn = document.querySelector('.menu-btn');
     const categoryContainer = document.querySelector('.category-container');
     const closeBtn = document.querySelector('.category-close');
@@ -18,6 +19,7 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     }
 });
+
 
 // ===============================
 // ✅ LOAD MENU FROM LARAVEL API
@@ -111,9 +113,33 @@ document.addEventListener('DOMContentLoaded', function () {
 // }
 
 // ===============================
+// ✅ TABLE NUMBER (QR -> session -> localStorage)
+// ===============================
+function syncTableNumber() {
+  const serverTableEl = document.getElementById('serverTableNumber');
+  const tableFromServer = serverTableEl?.dataset?.table;
+
+  // If session has table_number, store to localStorage
+  if (tableFromServer) {
+    localStorage.setItem('table_number', tableFromServer);
+  }
+
+  // Always display from localStorage if available
+  const savedTable = localStorage.getItem('table_number');
+  const tableNumberSpan = document.getElementById('tableNumber');
+  if (tableNumberSpan) {
+    tableNumberSpan.textContent = savedTable ? savedTable : '';
+  }
+}
+
+
+
+// ===============================
 // 🛒 CART SYSTEM (LOCALSTORAGE)
 // ===============================
 document.addEventListener('DOMContentLoaded', () => {
+
+   syncTableNumber();
 
     // ===============================
     // MENU DATA

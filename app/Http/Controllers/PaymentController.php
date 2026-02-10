@@ -27,6 +27,7 @@ class PaymentController extends Controller
     {
         $data = $request->validate([
             'cart' => 'required|array|min:1',
+             'table_number' => 'required|integer|min:1|max:10',
         ]);
 
         $xenditKey = env('XENDIT_SECRET_KEY');

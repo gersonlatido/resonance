@@ -12,7 +12,13 @@
     <script src="{{ asset('js/app.js') }}" defer></script>
     
 </head>
-<body  data-category="all-day-breakfast">
+<body   data-category="all-day-breakfast"   >
+
+     <span
+    id="serverTableNumber"
+    data-table="{{ session('table_number') ?? '' }}"
+    style="display:none;">
+  </span>
     
     <!-- Navbar -->
     <div class="navbar">
@@ -27,7 +33,8 @@
             </div>
         </div>
         <button type="button" class="cart-btn" aria-label="View cart">Cart</button>
-                
+        
+        
         <!-- Cart Overlay -->
         <div class="cart-overlay hidden"></div>
 

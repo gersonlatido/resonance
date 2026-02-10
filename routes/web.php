@@ -6,6 +6,19 @@ use App\Models\MenuItem;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\AdminController;
 
+use App\Http\Controllers\TableController;
+
+// Customer enters via QR
+// Route::get('/t/{table}', [TableController::class, 'enter'])->name('table.enter');
+Route::get('/t/{table}', function ($table) {
+    if ($table < 1 || $table > 10) abort(404); // adjust max tables
+    session(['table_number' => (int) $table]);
+    return redirect('/');
+})->whereNumber('table');
+
+
+
+
 // General menu routes (customer side)
 Route::get('/', function () {
     return view('home');
