@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
+  use App\Models\Order;
 
 class AdminController extends Controller
 {
@@ -10,7 +11,12 @@ class AdminController extends Controller
     public function index()
     {
         // Return the view with no orders data passed from the server
-        return view('admin.dashboard');
+        $orders = Order::with('items')
+        ->where('payment_status', 'paid')
+        ->orderByDesc('created_at')
+        ->get();
+
+    return view('admin.dashboard', compact('orders'));
     }
     public function tableManagement()
     {
@@ -38,4 +44,8 @@ class AdminController extends Controller
         // Respond with success message
         return response()->json(['message' => 'Orders data received successfully', 'status' => true]);
     }
+
+  
+
+
 }

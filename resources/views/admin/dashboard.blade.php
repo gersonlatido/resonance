@@ -3,7 +3,10 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="csrf-token" content="{{ csrf_token() }}">
+
   <title>Admin Order Management</title>
+  
 
   <style>
     :root{
@@ -437,119 +440,284 @@
       </section>
 
       <!-- Panels -->
-      <section class="board" aria-label="Orders board">
+  @php
+    $grouped = $orders->groupBy('table_number');
+@endphp
+
+@foreach($grouped as $tableNumber => $tableOrders)
+    <section class="board">
         <div class="order-panel">
-          <span class="chip" id="leftChip">Table 1</span>
-          <div class="panel-body" id="activePanel"></div>
+            <span class="chip">
+                Table {{ $tableNumber }} (Preparing/Serving)
+            </span>
+
+            <div class="panel-body">
+              <span class="save-msg" style="margin-left:10px; font-size:12px; color:#6b7280;"></span>
+
+                @foreach($tableOrders->whereIn('status', ['preparing','serving']) as $order)
+                    <div class="order-item">
+                        <strong>{{ $order->order_code }}</strong>
+
+                    <select onchange="updateStatus('{{ $order->order_code }}', this.value, this)">
+
+                            <option value="preparing" {{ $order->status == 'preparing' ? 'selected' : '' }}>Preparing</option>
+                            <option value="serving" {{ $order->status == 'serving' ? 'selected' : '' }}>Serving</option>
+                            <option value="served">Served</option>
+                            <option value="cancelled">Cancelled</option>
+                        </select>
+
+                       <select onchange="updateEta('{{ $order->order_code }}', this.value, this)">
+
+
+                            <option value="">ETA --</option>
+                            <option value="5">5 min</option>
+                            <option value="10">10 min</option>
+                            <option value="15">15 min</option>
+                        </select>
+
+                        <ul>
+                            @foreach($order->items as $item)
+                                <li>{{ $item->name }} × {{ $item->qty }}</li>
+                            @endforeach
+                        </ul>
+
+                        <div class="total">
+                            Total ₱{{ number_format($order->total,2) }}
+                        </div>
+                    </div>
+                @endforeach
+            </div>
         </div>
 
         <div class="order-panel">
-          <span class="chip" id="rightChip">Table 1</span>
-          <div class="panel-body" id="pendingPanel"></div>
+            <span class="chip">
+                Table {{ $tableNumber }} (Served/Cancelled)
+            </span>
+
+            <div class="panel-body">
+                @foreach($tableOrders->whereIn('status', ['served','cancelled']) as $order)
+                    <div class="order-item">
+                        {{ $order->order_code }} - {{ ucfirst($order->status) }}
+                    </div>
+                @endforeach
+            </div>
         </div>
-      </section>
+    </section>
+@endforeach
+
     </main>
   </div>
 
-  <script>
-    function money(n) {
-      const num = Number(n || 0);
-      return num.toFixed(2);
+<script>
+ function saveOrderUpdate(orderCode, payload, msgEl) {
+  return fetch('/admin/api/orders/' + encodeURIComponent(orderCode), {
+    method: 'PUT',
+    headers: {
+      'Content-Type': 'application/json',
+      'Accept': 'application/json',
+      'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
+    },
+    body: JSON.stringify(payload)
+  })
+  .then(async (res) => {
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) throw new Error(data.message || 'Update failed');
+    return data;
+  })
+  .then(() => {
+    if (msgEl) {
+      msgEl.textContent = 'Saved ✅';
+      setTimeout(() => msgEl.textContent = '', 1200);
     }
+  })
+  .catch(err => {
+    if (msgEl) msgEl.textContent = 'Error ❌';
+    alert(err.message);
+  });
+}
 
-    function calculateTotalPrice(items) {
-      return items.reduce((sum, it) => {
-        const price = Number(it.price || 0);
-        const qty = Number(it.qty || 1);
-        return sum + price * qty;
-      }, 0);
-    }
+function updateStatus(orderCode, status, el) {
+  // el is the select element (optional)
+  const card = el?.closest('.order-item');
+  const msgEl = card ? card.querySelector('.save-msg') : null;
 
-    function groupCartIntoOneOrder(cart) {
-      const table = "Table 1";
-      const orderId = "ORD001";
-      const total = calculateTotalPrice(cart);
+  return saveOrderUpdate(orderCode, { status }, msgEl);
+}
 
-      return {
-        id: orderId,
-        table,
-        items: cart.map(it => ({
-          name: it.name || "Item",
-          qty: Number(it.qty || 1),
-          price: Number(it.price || 0)
-        })),
-        total
-      };
-    }
+function updateEta(orderCode, eta, el) {
+  const card = el?.closest('.order-item');
+  const msgEl = card ? card.querySelector('.save-msg') : null;
 
-    function renderOrderCard(order) {
-      const div = document.createElement("div");
-      div.className = "order-item";
+  const etaVal = (eta === '' ? null : Number(eta));
+  return saveOrderUpdate(orderCode, { eta_minutes: etaVal }, msgEl);
+}
+  function money(n) {
+    return Number(n || 0).toFixed(2);
+  }
 
-      const header = document.createElement("div");
-      header.className = "row";
-      header.innerHTML = `
-        <div><strong>${order.id}</strong> <span class="muted">(${order.table})</span></div>
-        <div class="muted">${order.items.length} item(s)</div>
-      `;
-      div.appendChild(header);
+  function buildEtaOptions(selected) {
+    const options = [null, 5,10,15,20,25,30,35,40,45,50,55,60];
+    return options.map(v => {
+      const label = v === null ? 'ETA: --' : `ETA: ${v} min`;
+      const sel = String(v) === String(selected) ? 'selected' : '';
+      return `<option value="${v === null ? '' : v}" ${sel}>${label}</option>`;
+    }).join('');
+  }
 
-      const ul = document.createElement("ul");
-      order.items.forEach(it => {
-        const li = document.createElement("li");
-        li.textContent = `${it.name} × ${it.qty} — ${money(it.price * it.qty)}`;
-        ul.appendChild(li);
-      });
-      div.appendChild(ul);
+  function buildStatusOptions(selected) {
+    const statuses = [
+      {v:'preparing', label:'Preparing'},
+      {v:'serving',   label:'Serving'},
+      {v:'served',    label:'Served'},
+      {v:'cancelled', label:'Cancelled'},
+    ];
+    return statuses.map(s => {
+      const sel = s.v === selected ? 'selected' : '';
+      return `<option value="${s.v}" ${sel}>${s.label}</option>`;
+    }).join('');
+  }
 
-      const totalRow = document.createElement("div");
-      totalRow.className = "total";
-      totalRow.innerHTML = `<span>Total</span><span>${money(order.total)}</span>`;
-      div.appendChild(totalRow);
+  function renderOrderCard(order) {
+    const div = document.createElement("div");
+    div.className = "order-item";
 
-      return div;
-    }
+    const itemsCount = Array.isArray(order.items) ? order.items.length : 0;
 
-    function setEmpty(panelEl, message) {
-      panelEl.innerHTML = "";
-      const p = document.createElement("div");
-      p.className = "empty";
-      p.textContent = message;
-      panelEl.appendChild(p);
-    }
+    div.innerHTML = `
+      <div class="row">
+        <div>
+          <strong>${order.order_code}</strong>
+          <span class="muted">(Table ${order.table_number})</span>
+        </div>
+        <div class="muted">${itemsCount} item(s)</div>
+      </div>
 
-    // Fetch cart from localStorage (same as your old code)
-    const cart = JSON.parse(localStorage.getItem("cart")) || [];
+      <div style="display:flex; gap:8px; margin-top:8px; align-items:center;">
+        <select class="statusSelect" data-code="${order.order_code}" style="padding:6px 8px; border-radius:8px; border:1px solid #e5e7eb;">
+          ${buildStatusOptions(order.status)}
+        </select>
 
-    // Active order from cart
-    const activeOrder = groupCartIntoOneOrder(cart);
+        <select class="etaSelect" data-code="${order.order_code}" style="padding:6px 8px; border-radius:8px; border:1px solid #e5e7eb;">
+          ${buildEtaOptions(order.eta_minutes)}
+        </select>
 
-    // Pending orders (replace with real backend data later)
-    const pendingOrders = [];
+        <span class="muted" style="margin-left:auto;" id="saveMsg-${order.order_code}"></span>
+      </div>
 
-    // Counts
-    document.getElementById("activeCount").textContent = cart.length ? 1 : 0;
-    document.getElementById("pendingCount").textContent = pendingOrders.length;
-    document.getElementById("cancelledCount").textContent = 0;
-    document.getElementById("servedCount").textContent = 0;
+      <ul>
+        ${(order.items || []).map(it => `
+          <li>${it.name} × ${it.qty} — ${money(Number(it.price)*Number(it.qty))}</li>
+        `).join('')}
+      </ul>
 
-    // Render panels
+      <div class="total">
+        <span>Total</span>
+        <span>₱${money(order.total)}</span>
+      </div>
+    `;
+
+    return div;
+  }
+
+  function setEmpty(panelEl, message) {
+    panelEl.innerHTML = "";
+    const p = document.createElement("div");
+    p.className = "empty";
+    p.textContent = message;
+    panelEl.appendChild(p);
+  }
+
+  // ✅ CSRF for PUT (web.php)
+  const CSRF = document.querySelector('meta[name="csrf-token"]')?.content || '';
+
+  async function updateOrder(orderCode, payload) {
+    const res = await fetch(`/admin/api/orders/${encodeURIComponent(orderCode)}`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+        'Accept': 'application/json',
+        'X-CSRF-TOKEN': CSRF,
+      },
+      body: JSON.stringify(payload)
+    });
+
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) throw new Error(data?.message || 'Update failed');
+    return data.order;
+  }
+
+  async function loadOrders(tableNumber) {
     const activePanel = document.getElementById("activePanel");
     const pendingPanel = document.getElementById("pendingPanel");
 
-    if (!cart.length) {
-      setEmpty(activePanel, "No active orders.");
-    } else {
+    // You can keep these chips or update them
+    document.getElementById("leftChip").textContent = `Table ${tableNumber} (Preparing/Serving)`;
+    document.getElementById("rightChip").textContent = `Table ${tableNumber} (Served/Cancelled)`;
+
+    const res = await fetch(`/admin/api/orders?table=${tableNumber}`, { headers: { 'Accept':'application/json' }});
+    const orders = await res.json();
+
+    // Split panels
+    const left = orders.filter(o => o.status === 'preparing' || o.status === 'serving');
+    const right = orders.filter(o => o.status === 'served' || o.status === 'cancelled');
+
+    // Stats
+    const activeCount = left.length;
+    const pendingCount = orders.filter(o => o.status === 'preparing').length;
+    const cancelledCount = orders.filter(o => o.status === 'cancelled').length;
+    const servedCount = orders.filter(o => o.status === 'served').length;
+
+    document.getElementById("activeCount").textContent = activeCount;
+    document.getElementById("pendingCount").textContent = pendingCount;
+    document.getElementById("cancelledCount").textContent = cancelledCount;
+    document.getElementById("servedCount").textContent = servedCount;
+
+    // Render left
+    if (!left.length) setEmpty(activePanel, "No preparing/serving orders.");
+    else {
       activePanel.innerHTML = "";
-      activePanel.appendChild(renderOrderCard(activeOrder));
+      left.forEach(o => activePanel.appendChild(renderOrderCard(o)));
     }
 
-    if (!pendingOrders.length) {
-      setEmpty(pendingPanel, "No pending orders.");
-    } else {
+    // Render right
+    if (!right.length) setEmpty(pendingPanel, "No served/cancelled orders.");
+    else {
       pendingPanel.innerHTML = "";
-      pendingOrders.forEach(o => pendingPanel.appendChild(renderOrderCard(o)));
+      right.forEach(o => pendingPanel.appendChild(renderOrderCard(o)));
     }
-  </script>
+
+    // Attach dropdown events
+    document.querySelectorAll('.statusSelect, .etaSelect').forEach(el => {
+      el.addEventListener('change', async () => {
+        const code = el.dataset.code;
+        const card = el.closest('.order-item');
+        const status = card.querySelector('.statusSelect').value;
+        const etaRaw = card.querySelector('.etaSelect').value;
+        const eta = etaRaw === '' ? null : Number(etaRaw);
+
+        const msg = document.getElementById(`saveMsg-${code}`);
+        msg.textContent = 'Saving...';
+
+        try {
+          await updateOrder(code, { status, eta_minutes: eta });
+          msg.textContent = 'Saved ✅';
+          setTimeout(() => msg.textContent = '', 1200);
+
+          // reload to move between panels if status changed
+          await loadOrders(tableNumber);
+
+        } catch (e) {
+          msg.textContent = 'Error ❌';
+          alert(e.message);
+        }
+      });
+    });
+  }
+
+  // ✅ For now: choose which table to view
+  // You can later add a dropdown "Select Table"
+  loadOrders(1);
+</script>
+
 </body>
 </html>

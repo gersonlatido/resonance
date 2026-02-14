@@ -5,8 +5,12 @@ use App\Http\Controllers\MenuController;
 use App\Models\MenuItem;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\AdminController;
+use App\Http\Controllers\AdminOrderApiController;
 
+use App\Http\Controllers\OrderController;
 use App\Http\Controllers\TableController;
+
+
 
 // Customer enters via QR
 // Route::get('/t/{table}', [TableController::class, 'enter'])->name('table.enter');
@@ -16,6 +20,9 @@ Route::get('/t/{table}', function ($table) {
     return redirect('/');
 })->whereNumber('table');
 
+Route::get('/track/{order_code}', function ($order_code) {
+    return view('track-order', compact('order_code'));
+});
 
 
 
@@ -50,6 +57,13 @@ Route::get('/payment-success', fn () => view('payment-success'));
 Route::get('/payment-cancelled', fn () => view('payment-cancelled'));
 
 Route::get('/feedback', [PaymentController::class, 'showFeedback'])->name('feedback.show');
+
+
+
+Route::get('/admin/api/orders', [AdminOrderApiController::class, 'index']);
+// Route::put('/admin/orders/{order_code}', [OrderController::class, 'updateStatus']);
+Route::put('/admin/api/orders/{order_code}', [OrderController::class, 'updateStatus']);
+
 
 
 
@@ -93,3 +107,10 @@ Route::get('/admin/menu-management', fn() => view('admin.menu-management'))->nam
 
 
 
+
+Route::post('/orders/mark-paid', [OrderController::class, 'markPaid']);
+
+// Route::get('/track-order', function () {
+//     return view('track-order');
+// });
+Route::get('/api/track/{order_code}', [OrderController::class, 'track']);

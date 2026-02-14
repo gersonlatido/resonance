@@ -4,6 +4,8 @@ use Illuminate\Support\Facades\Route;
 use App\Models\MenuItem;
 use App\Http\Controllers\CartController;
 use App\Http\Controllers\MenuController;
+use App\Http\Controllers\OrderController;
+
 
 
 
@@ -11,6 +13,13 @@ Route::get('/menu', function () {
     return response()->json(MenuItem::all());
 });
 
+
+// Route::get('/api/orders/{order_code}', [OrderController::class, 'track']);
+
+Route::get('/orders/{order_code}', [OrderController::class, 'track']);
+
+
+Route::put('/orders/{order_code}', [OrderController::class, 'updateStatus']);
 
 
 // Route::any('/cart/add', function () {

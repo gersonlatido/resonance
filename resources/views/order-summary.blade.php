@@ -139,6 +139,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     let cart = JSON.parse(localStorage.getItem('cart')) || [];
     const tableNumber = localStorage.getItem('table_number'); // ✅ from QR
+    const table_number = Number(localStorage.getItem('table_number') || 0);
 
     // show table number in UI
     if (tableNoEl) tableNoEl.textContent = tableNumber || '—';
@@ -199,10 +200,11 @@ document.addEventListener('DOMContentLoaded', () => {
                     'Accept': 'application/json',
                     'X-CSRF-TOKEN': token
                 },
-                body: JSON.stringify({
-                    cart,
-                    table_number: tableNumber // ✅ SEND TABLE TO BACKEND
-                })
+                
+              body: JSON.stringify({ 
+    cart,
+    table_number: Number(tableNumber)
+})
             });
 
             const contentType = res.headers.get('content-type') || '';
