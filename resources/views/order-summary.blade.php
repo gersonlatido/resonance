@@ -129,11 +129,13 @@
         </main>
     </div>
 
- <script>
+
+    <script>
 document.addEventListener('DOMContentLoaded', () => {
     const summaryItems = document.querySelector('.summary-items');
     const summaryTotal = document.querySelector('.summary-total-amount');
     const confirmBtn   = document.getElementById('confirmPayment');
+    const tableNoEl    = document.getElementById('summaryTableNo');
 
     let cart = JSON.parse(localStorage.getItem('cart')) || [];
     const tableNumber = localStorage.getItem('table_number'); // ✅ from QR
@@ -157,27 +159,31 @@ document.addEventListener('DOMContentLoaded', () => {
         return;
     }
 
-            let total = 0;
-            summaryItems.innerHTML = '';
-            cart.forEach(item => {
-                total += item.price * item.qty;
-                const el = document.createElement('div');
-                el.className = 'summary-item';
-                el.innerHTML = `
-                    <div>
-                        <p>${item.name}</p>
-                        <small>${item.qty} × ₱${item.price.toFixed(2)}</small>
-                    </div>
-                    <strong>₱${(item.price * item.qty).toFixed(2)}</strong>
-                `;
-                summaryItems.appendChild(el);
-            });
-            summaryTotal.textContent = `₱${total.toFixed(2)}`;
+    // Render items + compute total
+    let total = 0;
+    summaryItems.innerHTML = '';
 
-            // Update confirm button label to include the computed total
-            if (confirmBtn) {
-                confirmBtn.textContent = `Pay ₱${total.toFixed(2)}`;
-            }
+    cart.forEach(item => {
+        const price = Number(item.price) || 0;
+        const qty   = Number(item.qty) || 1;
+        const sub   = price * qty;
+
+        total += sub;
+
+        const el = document.createElement('div');
+        el.className = 'summary-item';
+        el.innerHTML = `
+            <div>
+                <p>${item.name}</p>
+                <small>${qty} × ₱${price.toFixed(2)}</small>
+            </div>
+            <strong>₱${sub.toFixed(2)}</strong>
+        `;
+        summaryItems.appendChild(el);
+    });
+
+    summaryTotal.textContent = `₱${total.toFixed(2)}`;
+    confirmBtn.textContent = `Pay ₱${total.toFixed(2)}`;
 
     confirmBtn.addEventListener('click', async () => {
         confirmBtn.disabled = true;
@@ -194,7 +200,11 @@ document.addEventListener('DOMContentLoaded', () => {
                     'Accept': 'application/json',
                     'X-CSRF-TOKEN': token
                 },
-                body: JSON.stringify({ cart })
+                
+              body: JSON.stringify({ 
+    cart,
+    table_number: Number(tableNumber)
+})
             });
 
             const contentType = res.headers.get('content-type') || '';
@@ -204,19 +214,14 @@ document.addEventListener('DOMContentLoaded', () => {
             if (contentType.includes('application/json')) {
                 data = JSON.parse(text);
             } else {
-                // Laravel returned HTML (error page)
                 throw new Error('Server returned non-JSON: ' + text);
             }
 
             if (!res.ok) {
-                // Show Xendit error details so you can debug
-                throw new Error(data.error + "\n\n" + JSON.stringify(data.details || data, null, 2));
+                throw new Error((data.error || 'Payment failed') + "\n\n" + JSON.stringify(data.details || data, null, 2));
             }
 
             if (!data.redirect) throw new Error('No redirect URL returned');
-
-            // OPTIONAL: clear cart when redirecting
-            // localStorage.removeItem('cart');
 
             window.location.href = data.redirect;
 
@@ -228,6 +233,7 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 });
 </script>
+
 
 </body>
 </html>

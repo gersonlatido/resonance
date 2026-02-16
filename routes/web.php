@@ -102,7 +102,6 @@ Route::get('/track-order', function () {
 
 // =======
 Route::middleware(['auth', 'admin'])->get('admin/table-management', [AdminController::class, 'tableManagement'])->name('admin.table-management');
-<<<<<<< HEAD
 Route::get('/admin/menu-management', fn() => view('admin.menu-management'))->name('admin.menu-management');
 
 
@@ -115,5 +114,3 @@ Route::post('/orders/mark-paid', [OrderController::class, 'markPaid']);
 //     return view('track-order');
 // });
 Route::get('/api/track/{order_code}', [OrderController::class, 'track']);
-=======
->>>>>>> a1d1db51cbbdebdf37f3c642fda2939469fbf595
