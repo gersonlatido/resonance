@@ -19,13 +19,13 @@
         .order-summary-page {
             width: 100%;
             max-width: 400px;
-            margin: 0 auto;
+            margin: 0 auto; /* Removed the top margin */
             background-color: #fff;
             border-radius: 10px;
             box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
             padding: 20px;
             box-sizing: border-box;
-            margin-top: 0;
+            margin-top: 0; /* Ensures no extra space at the top */
         }
 
         header {
@@ -38,6 +38,7 @@
             color: #333;
         }
 
+        /* Back button style */
         .back-btn {
             font-size: 1.2rem;
             background-color: transparent;
@@ -96,6 +97,7 @@
 
 <body>
     <div class="order-summary-page">
+        <!-- Back Button -->
         <button class="back-btn" onclick="window.history.back();">← Back</button>
 
         <header>
@@ -103,24 +105,30 @@
         </header>
 
         <main>
+            <!-- Dynamically filled summary items -->
             <div class="summary-items"></div>
 
+            <!-- Total Section -->
             <div class="summary-total">
                 <span>Total</span>
                 <span class="summary-total-amount">₱0.00</span>
             </div>
 
+            <!-- Action Buttons -->
             <div class="summary-actions">
+                <!-- initial text; will be updated by JS to show computed total -->
                 <button id="confirmPayment" class="confirm-payment-btn">Pay ₱0.00</button>
             </div>
         </main>
     </div>
 
- <script>
-document.addEventListener('DOMContentLoaded', () => {
-    const summaryItems = document.querySelector('.summary-items');
-    const summaryTotal = document.querySelector('.summary-total-amount');
-    const confirmBtn   = document.getElementById('confirmPayment');
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const summaryItems = document.querySelector('.summary-items');
+            const summaryTotal = document.querySelector('.summary-total-amount');
+            const confirmBtn = document.getElementById('confirmPayment');
+
+            const token = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
 
     let cart = JSON.parse(localStorage.getItem('cart')) || [];
 
