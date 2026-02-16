@@ -10,10 +10,8 @@
 
     <!-- JS -->
     <script src="{{ asset('js/app.js') }}" defer></script>
-    
 </head>
 <body  data-category="all-day-breakfast">
-    
     <!-- Navbar -->
     <div class="navbar">
         <div class="navbar-left">
@@ -183,15 +181,6 @@
 
     <!-- All Day Breakfast Section -->
     <div class="all-day-breakfast-container">
-          @forelse($items as $item)
-        <div class="menu-item">
-            <div class="menu-item-name">{{ $item->name }}</div>
-            <div class="menu-item-description">{{ $item->description }}</div>
-            <div class="menu-item-price">₱{{ number_format($item->price, 2) }}</div>
-        </div>
-    @empty
-        <p>No items found.</p>
-    @endforelse
     </div>
 </body>
 </html>

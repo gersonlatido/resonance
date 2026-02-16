@@ -3,7 +3,6 @@
 use Illuminate\Support\Facades\Route;
 use App\Models\MenuItem;
 use App\Http\Controllers\CartController;
-use App\Http\Controllers\MenuController;
 
 
 
@@ -27,10 +26,6 @@ Route::get('/menu', function () {
 
 
 
-Route::get('/menu', [MenuController::class, 'index']);
-Route::post('/menu', [MenuController::class, 'store']);           // ✅ ADD
-Route::put('/menu/{menu_id}', [MenuController::class, 'update']); // ✅ ADD
-Route::delete('/menu/{menu_id}', [MenuController::class, 'destroy']); // ✅ ADD
 
 
 

@@ -118,113 +118,89 @@ document.addEventListener('DOMContentLoaded', () => {
     // ===============================
     // MENU DATA
     // ===============================
-    // ===============================
-// ✅ MENU DATA (FROM API) - FIXED
-// ===============================
-let menuItems = [];
+    let menuItems = [];
 
-// normalize so "main-courses", "Main Courses", "Main-Courses" match
-function normalizeCategory(str) {
-  return String(str || '')
-    .toLowerCase()
-    .replace(/&/g, 'and')
-    .replace(/[^a-z0-9]+/g, '-')   // spaces -> -
-    .replace(/^-+|-+$/g, '');      // trim -
-}
+    fetch('/api/menu')
+        .then(res => res.ok ? res.json() : Promise.reject('Failed to fetch menu'))
+        .then(data => {
+            menuItems = data;
+            renderAllCategories();
+        })
+        .catch(err => console.error(err));
 
-// Make image path safer (works if DB stores full URL, /path, or filename)
-function resolveImagePath(img) {
-  const s = String(img || '').trim();
-  if (!s) return '';                 // no image
-  if (s.startsWith('http')) return s; // full URL
-  if (s.startsWith('/')) return s;    // absolute path
-  // if you store images in /images/...
-  return `/images/${s}`;
-  // If you store in /storage/ instead, use this instead:
-  // return `/storage/${s}`;
-}
+    function displayProducts(category, containerSelector) {
+        const container = document.querySelector(containerSelector);
+        if (!container) return;
 
-function displayProducts(categoryKey, containerSelector) {
-  const container = document.querySelector(containerSelector);
-  if (!container) return;
+        const filtered = menuItems.filter(item => item.category === category);
+        container.innerHTML = filtered.map(product => `
+            <div class="menu-item">
+                <div class="menu-item-image">
+                    <img src="${product.image}" alt="${product.name}">
+                </div>
+                <div class="menu-item-details">
+                    <h3 class="menu-item-name">${product.name}</h3>
+                    <p class="menu-item-description">${product.description}</p>
+                    <div class="menu-item-button">
+                        <span class="menu-item-price">₱ ${Number(product.price).toFixed(2)}</span>
+                        <button class="add-to-cart-btn" data-id="${product.menu_id}">+ Add</button>
+                    </div>
+                </div>
+            </div>
+        `).join('');
 
-  const key = normalizeCategory(categoryKey);
+        container.querySelectorAll('.add-to-cart-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const productId = btn.dataset.id;
+                const productToAdd = menuItems.find(p => p.menu_id == productId);
+                if (productToAdd) addToCart(productToAdd);
+            });
+        });
 
-  // ✅ match by normalized category
-  const filtered = menuItems.filter(item => normalizeCategory(item.category) === key);
 
-  container.innerHTML = filtered.map(product => `
-    <div class="menu-item">
-      <div class="menu-item-image">
-        <img src="${resolveImagePath(product.image)}" alt="${product.name || ''}">
-      </div>
-      <div class="menu-item-details">
-        <h3 class="menu-item-name">${product.name || ''}</h3>
-        <p class="menu-item-description">${product.description || ''}</p>
-        <div class="menu-item-button">
-          <span class="menu-item-price">₱ ${Number(product.price || 0).toFixed(2)}</span>
-          <button class="add-to-cart-btn" data-id="${product.menu_id}">+ Add</button>
-        </div>
-      </div>
-    </div>
-  `).join('');
+        // Button  for "Added" state
+  document.querySelectorAll('.add-to-cart-btn').forEach(button => {
+    button.addEventListener('click', function () {
 
-  // ✅ attach click once (no double listeners)
-  container.querySelectorAll('.add-to-cart-btn').forEach(btn => {
-    btn.addEventListener('click', function () {
-      const productId = this.dataset.id;
-      const productToAdd = menuItems.find(p => String(p.menu_id) === String(productId));
-      if (!productToAdd) return;
+        // Prevent double trigger
+        if (this.classList.contains('added')) return;
 
-      addToCart(productToAdd);
+        const originalText = this.textContent;
 
-      // "Added" state
-      if (this.classList.contains('added')) return;
-      const originalText = this.textContent;
+        // Added state
+        this.textContent = 'Added';
+        this.classList.add('added');
+        this.disabled = true;
 
-      this.textContent = 'Added';
-      this.classList.add('added');
-      this.disabled = true;
-
-      setTimeout(() => {
-        this.textContent = originalText;
-        this.classList.remove('added');
-        this.disabled = false;
-      }, 2500);
+        setTimeout(() => {
+            // FULL reset
+            this.textContent = originalText;
+            this.classList.remove('added');
+            this.disabled = false;
+        }, 2500);
     });
-  });
-}
+});
 
-function renderAllCategories() {
-  const categories = {
-    // ✅ Use any “label” you want — it will match DB via normalizeCategory()
-    "all-day-breakfast": ".all-day-breakfast-container",
-    "main-courses": ".main-courses-container",
-    "pasta": ".pasta-container",
-    "unlimited-premium": ".unlimited-premium-container",
-    "chicken-wings": ".chicken-wings-container",
-    "chicken-chops": ".chicken-chops-container",
-    "overload-premium": ".overload-container",
-    "solo-mini": ".solo-mini-container",
-    "frappuccino": ".frappuccino-container",
-    "coffee-based": ".coffee-based-container",
-    "milk-based": ".milk-based-container",
-    "snacks": ".snacks-container"
-  };
 
-  for (const [cat, selector] of Object.entries(categories)) {
-    displayProducts(cat, selector);
-  }
-}
+    }
 
-// ✅ Fetch from API (no cache so DB updates show instantly)
-fetch('/api/menu', { cache: 'no-store' })
-  .then(res => res.ok ? res.json() : Promise.reject('Failed to fetch menu'))
-  .then(data => {
-    menuItems = Array.isArray(data) ? data : [];
-    renderAllCategories();
-  })
-  .catch(err => console.error('Menu API error:', err));
+    function renderAllCategories() {
+        const categories = {
+            "All Day Breakfast": ".all-day-breakfast-container",
+            "main-courses": ".main-courses-container",
+            "pasta": ".pasta-container",
+            "unlimited-premium": ".unlimited-premium-container",
+            "chicken-wings": ".chicken-wings-container",
+            "chicken-chops": ".chicken-chops-container",
+            "overload-premium": ".overload-container",
+            "solo-mini": ".solo-mini-container",
+            "frappuccino": ".frappuccino-container",
+            "coffee-based": ".coffee-based-container",
+            "milk-based": ".milk-based-container",
+            "snacks": ".snacks-container"
+        };
+        for (const [cat, selector] of Object.entries(categories)) displayProducts(cat, selector);
+    }
 
     // ===============================
     // CART SYSTEM
