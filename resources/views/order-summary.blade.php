@@ -127,20 +127,19 @@
             const summaryItems = document.querySelector('.summary-items');
             const summaryTotal = document.querySelector('.summary-total-amount');
             const confirmBtn = document.getElementById('confirmPayment');
-<<<<<<< HEAD
-
-            const token = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
-=======
->>>>>>> parent of 5bad5b6 (Merge branch 'main' of https://github.com/gersonlatido/resonance)
 
             const token = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
 
-            let cart = JSON.parse(localStorage.getItem('cart')) || [];
-            if (cart.length === 0) {
-                summaryItems.innerHTML = '<p>Your cart is empty</p>';
-                summaryTotal.textContent = '₱0.00';
-                return;
-            }
+    let cart = JSON.parse(localStorage.getItem('cart')) || [];
+
+    if (!summaryItems || !summaryTotal || !confirmBtn) return;
+
+    if (cart.length === 0) {
+        summaryItems.innerHTML = '<p>Your cart is empty</p>';
+        summaryTotal.textContent = '₱0.00';
+        confirmBtn.disabled = true;
+        return;
+    }
 
             let total = 0;
             summaryItems.innerHTML = '';
@@ -159,46 +158,18 @@
             });
             summaryTotal.textContent = `₱${total.toFixed(2)}`;
 
+            // Update confirm button label to include the computed total
             if (confirmBtn) {
                 confirmBtn.textContent = `Pay ₱${total.toFixed(2)}`;
             }
 
-            // ✅ MAIN FIX:
-            // 1) Save cart as PENDING ORDER in DB
-            // 2) Then call /payment/initiate to get PayMongo redirect
+            // When user confirms on the order-summary page, send the cart to
+            // the backend to create a PayMongo source/checkout URL. The
+            // backend will return a `redirect` URL (PayMongo hosted page)
+            // which we navigate the browser to.
             confirmBtn.addEventListener('click', async () => {
                 try {
-                    confirmBtn.disabled = true;
-                    confirmBtn.textContent = 'Processing...';
-
-                    // --- 1) Save order to DB as pending ---
-                    const saveRes = await fetch('/orders/from-cart', {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json',
-                            'Accept': 'application/json',
-                            'X-CSRF-TOKEN': token
-                        },
-                        body: JSON.stringify({ cart })
-                    });
-
-                    const saveType = saveRes.headers.get('content-type') || '';
-                    let saveData;
-                    if (saveType.includes('application/json')) {
-                        saveData = await saveRes.json();
-                    } else {
-                        throw new Error('Server returned non-JSON while saving order.');
-                    }
-
-                    if (!saveRes.ok) {
-                        throw new Error(saveData.message || 'Failed to save order.');
-                    }
-
-                    // Save pending order id so payment success can update it later
-                    localStorage.setItem('pending_order_id', String(saveData.order_id));
-                    localStorage.setItem('pending_order_code', String(saveData.order_code));
-
-                    // --- 2) Initiate PayMongo payment ---
+                    const token = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
                     const res = await fetch('/payment/initiate', {
                         method: 'POST',
                         headers: {
@@ -209,11 +180,14 @@
                         body: JSON.stringify({ cart })
                     });
 
+                    // Safely handle JSON and non-JSON responses to avoid
+                    // "Unexpected token '<'" when the server returns HTML.
                     const contentType = res.headers.get('content-type') || '';
                     let data;
                     if (contentType.includes('application/json')) {
                         data = await res.json();
                     } else {
+                        // server returned HTML (likely an error page) — read as text
                         const text = await res.text();
                         throw new Error('Server returned non-JSON response: ' + text);
                     }
@@ -225,10 +199,17 @@
                         throw new Error('No redirect URL returned');
                     }
                 } catch (err) {
-                    console.error(err);
+                    // If server returned structured JSON with debug info, show it.
+                    try {
+                        const json = await err?.response?.json?.();
+                        if (json && json.paymongo_body) {
+                            alert('Payment error: ' + JSON.stringify(json.paymongo_body));
+                            return;
+                        }
+                    } catch (e) {
+                        // ignore
+                    }
                     alert(err.message || 'Unable to initiate payment');
-                    confirmBtn.disabled = false;
-                    confirmBtn.textContent = `Pay ₱${total.toFixed(2)}`;
                 }
             });
         });

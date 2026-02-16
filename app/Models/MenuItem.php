@@ -15,7 +15,9 @@ class MenuItem extends Model
     public $incrementing = false;     // ✅ STRING KEY, NOT AUTO INT
     protected $keyType = 'string';
 
+    
     protected $fillable = [
+        'menu_id',
         'name',
         'image',
         'description',
