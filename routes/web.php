@@ -10,6 +10,10 @@ use App\Http\Controllers\AdminOrderApiController;
 use App\Http\Controllers\OrderController;
 use App\Http\Controllers\TableController;
 
+use App\Http\Controllers\FeedbackController;
+use App\Http\Controllers\AdminFeedbackController;
+
+
 
 
 // Customer enters via QR
@@ -105,6 +109,16 @@ Route::middleware(['auth', 'admin'])->get('admin/table-management', [AdminContro
 Route::get('/admin/menu-management', fn() => view('admin.menu-management'))->name('admin.menu-management');
 
 
+
+Route::get('/t/{table}/feedback', [FeedbackController::class, 'create'])->name('feedback.form');
+Route::post('/feedback', [FeedbackController::class, 'store'])->name('feedback.store');
+
+Route::middleware(['auth'])->prefix('admin')->group(function () {
+    Route::get('/feedbacks', [AdminFeedbackController::class, 'index'])->name('admin.feedbacks');
+
+    Route::get('/api/feedbacks', [AdminFeedbackController::class, 'list']);
+    Route::put('/api/feedbacks/{id}/reviewed', [AdminFeedbackController::class, 'markReviewed']);
+});
 
 
 

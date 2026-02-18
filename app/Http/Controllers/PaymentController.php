@@ -35,30 +35,32 @@ class PaymentController extends Controller
 
         // Compute total + items
         $total = 0;
-        $items = [];       // Xendit items
-        $dbItems = [];     // DB items
+        $items = [];   // Xendit items
+        $dbItems = []; // DB items
 
         foreach ($data['cart'] as $item) {
-            $name  = (string) ($item['name'] ?? 'Item');
-            $price = (float) ($item['price'] ?? 0);
-            $qty   = (int) ($item['qty'] ?? 1);
+            $name   = (string) ($item['name'] ?? 'Item');
+            $price  = (float) ($item['price'] ?? 0);
+            $qty    = (int) ($item['qty'] ?? 1);
             $menuId = (string) ($item['id'] ?? $item['menu_id'] ?? '');
 
             if ($price <= 0 || $qty <= 0) continue;
 
-            $total += $price * $qty;
+            $lineTotal = $price * $qty;
+            $total += $lineTotal;
 
             $items[] = [
-                'name' => $name,
+                'name'     => $name,
                 'quantity' => $qty,
-                'price' => (int) round($price), // Xendit expects integer PHP
+                'price'    => (int) round($price), // Xendit expects integer PHP
             ];
 
             $dbItems[] = [
-                'menu_id' => $menuId ?: null,
-                'name' => $name,
-                'price' => $price,
-                'qty' => $qty,
+                'menu_id'  => $menuId ?: null,
+                'name'     => $name,
+                'price'    => $price,
+                'qty'      => $qty,
+                'subtotal' => $lineTotal, // ✅ ADD THIS
             ];
         }
 
@@ -77,22 +79,24 @@ class PaymentController extends Controller
 
         // ✅ Save order to DB BEFORE redirect (unpaid first)
         $order = Order::create([
-            'order_code' => $orderCode,
-            'external_id' => $externalId,
-            'table_number' => (int) $data['table_number'],
-            'status' => 'preparing',
-            'eta_minutes' => null,
-            'payment_status' => 'unpaid',
-            'total' => $total,
+            'order_code'      => $orderCode,
+            'external_id'     => $externalId,
+            'table_number'    => (int) $data['table_number'],
+            'status'          => 'preparing',
+            'eta_minutes'     => null,
+            'payment_status'  => 'unpaid',
+            'total'           => $total,
         ]);
 
+        // ✅ Save items WITH subtotal
         foreach ($dbItems as $it) {
             OrderItem::create([
-                'order_id' => $order->id,
-                'menu_id' => $it['menu_id'],
-                'name' => $it['name'],
-                'price' => $it['price'],
-                'qty' => $it['qty'],
+                'order_id'  => $order->id,
+                'menu_id'   => $it['menu_id'],
+                'name'      => $it['name'],
+                'price'     => $it['price'],
+                'qty'       => $it['qty'],
+                'subtotal'  => $it['subtotal'], // ✅ FIX
             ]);
         }
 
@@ -105,30 +109,29 @@ class PaymentController extends Controller
                 ->acceptJson()
                 ->withOptions(['verify' => false]) // DEV ONLY
                 ->post('https://api.xendit.co/v2/invoices', [
-                    'external_id' => $externalId,
-                    'amount' => $amount,
-                    'currency' => 'PHP',
-                    'description' => 'Order Payment',
-                    'success_redirect_url' => $successUrl,
-                    'failure_redirect_url' => $failedUrl,
-                    'items' => $items,
+                    'external_id'           => $externalId,
+                    'amount'                => $amount,
+                    'currency'              => 'PHP',
+                    'description'           => 'Order Payment',
+                    'success_redirect_url'  => $successUrl,
+                    'failure_redirect_url'  => $failedUrl,
+                    'items'                 => $items,
                 ]);
 
             Log::debug('Xendit Invoice', [
                 'status' => $res->status(),
-                'body' => $res->json(),
-                'raw' => $res->body(),
+                'body'   => $res->json(),
+                'raw'    => $res->body(),
             ]);
 
             if (!$res->ok()) {
-                // if Xendit failed, mark order as failed so admin sees it
                 $order->update(['payment_status' => 'failed']);
 
                 return response()->json([
-                    'error' => 'Xendit API error (invoices)',
-                    'status' => $res->status(),
+                    'error'   => 'Xendit API error (invoices)',
+                    'status'  => $res->status(),
                     'details' => $res->json(),
-                    'raw' => $res->body(),
+                    'raw'     => $res->body(),
                 ], 400);
             }
 
@@ -137,20 +140,20 @@ class PaymentController extends Controller
                 $order->update(['payment_status' => 'failed']);
 
                 return response()->json([
-                    'error' => 'Invoice URL not generated',
+                    'error'   => 'Invoice URL not generated',
                     'details' => $res->json(),
                 ], 500);
             }
 
             return response()->json([
-                'redirect' => $invoiceUrl,
-                'external_id' => $externalId,
-                'order_code' => $orderCode,
+                'redirect'     => $invoiceUrl,
+                'external_id'  => $externalId,
+                'order_code'   => $orderCode,
             ]);
-
         } catch (\Throwable $e) {
             $order->update(['payment_status' => 'failed']);
             Log::error('Xendit Exception', ['message' => $e->getMessage()]);
+
             return response()->json(['error' => $e->getMessage()], 500);
         }
     }
