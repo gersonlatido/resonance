@@ -51,6 +51,9 @@
 </head>
 <body>
 
+
+
+
    <button class="back-icon" onclick="window.location.href='{{ url('/payment-receit') }}'">
     ← Back
 </button>
@@ -68,8 +71,8 @@ document.addEventListener('DOMContentLoaded', () => {
   const etaEl = document.getElementById('etaText');
   const statusEl = document.getElementById('statusText');
 
-  const params = new URLSearchParams(window.location.search);
-  const orderCode = params.get('order_code'); // /track-order?order_code=ORD-...
+const orderCode = @json($order->order_code ?? session('order_code'));
+
 
   if (!orderCode) {
     statusEl.textContent = 'Order not found';

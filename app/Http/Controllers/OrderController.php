@@ -58,6 +58,24 @@ public function markPaid(Request $request)
 }
 
 
+public function publicTrack(string $order_code)
+{
+    $order = \App\Models\Order::where('order_code', $order_code)->first();
+
+    if (!$order) {
+        return response()->json(['message' => 'Order not found'], 404);
+    }
+
+    return response()->json([
+        'order_code'   => $order->order_code,
+        'status'       => $order->status,
+        'eta_minutes'  => $order->eta_minutes,
+        'table_number' => $order->table_number,
+    ]);
+}
+
+
+
     
 }
 

@@ -435,6 +435,11 @@
            class="{{ request()->routeIs('admin.menu-management') ? 'active' : '' }}">
           <span class="dot-icon"></span>Menu Management
         </a>
+    <a href="{{ route('admin.feedbacks') }}"
+           class="{{ request()->routeIs('admin.feedbacks') ? 'active' : '' }}">
+          Feedback Management
+        </a>
+
         <a href="#"><span class="dot-icon"></span>Inventory Management</a>
         <a href="#"><span class="dot-icon"></span>Sales and Stock Reports</a>
       </nav>

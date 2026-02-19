@@ -9,6 +9,10 @@ use App\Http\Controllers\OrderController;
 
 
 
+Route::get('/orders/{order_code}', [OrderController::class, 'publicTrack']);
+
+
+
 Route::get('/menu', function () {
     return response()->json(MenuItem::all());
 });

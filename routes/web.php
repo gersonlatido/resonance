@@ -12,6 +12,8 @@ use App\Http\Controllers\TableController;
 
 use App\Http\Controllers\FeedbackController;
 use App\Http\Controllers\AdminFeedbackController;
+use App\Http\Controllers\PaymentSuccessController;
+use App\Http\Controllers\PaymentReceiptController;
 
 
 
@@ -24,9 +26,9 @@ Route::get('/t/{table}', function ($table) {
     return redirect('/');
 })->whereNumber('table');
 
-Route::get('/track/{order_code}', function ($order_code) {
-    return view('track-order', compact('order_code'));
-});
+// Route::get('/track/{order_code}', function ($order_code) {
+//     return view('track-order', compact('order_code'));
+// });
 
 
 
@@ -34,9 +36,11 @@ Route::get('/track/{order_code}', function ($order_code) {
 Route::get('/', function () {
     return view('home');
 });
-Route::get('/payment-receit', function () {
-    return view('payment-receit');
-});
+// Route::get('/payment-receit', function () {
+//     return view('payment-receit');
+// });
+
+
 Route::get('/all-day-breakfast-menu', [MenuController::class, 'breakfast'])->name('menu.breakfast');
 Route::get('/main-courses-menu', [MenuController::class, 'mainCourses'])->name('menu.main_courses');
 Route::get('/pasta-menu', [MenuController::class, 'pasta'])->name('menu.pasta');
@@ -57,10 +61,27 @@ use App\Http\Controllers\PaymentController;
 
 Route::get('/payment', [PaymentController::class, 'show'])->name('payment.show');
 Route::post('/payment/initiate', [PaymentController::class, 'initiate']);
-Route::get('/payment-success', fn () => view('payment-success'));
+// Route::get('/payment-success', fn () => view('payment-success'));
+
+// after Xendit redirect
+Route::get('/payment-success', [PaymentSuccessController::class, 'show'])
+    ->name('payment.success');
+
+// receipt page
+Route::get('/payment-receit', [PaymentReceiptController::class, 'show'])
+    ->name('payment.receit');
 Route::get('/payment-cancelled', fn () => view('payment-cancelled'));
 
-Route::get('/feedback', [PaymentController::class, 'showFeedback'])->name('feedback.show');
+Route::get('/feedback', function () {
+    $table = session('table_number');
+
+    if (!$table) {
+        return redirect('/')->with('error', 'No table found for feedback.');
+    }
+
+    return view('feedback', ['table' => (int) $table]);
+})->name('feedback.form');
+
 
 
 
@@ -101,7 +122,31 @@ Route::post('admin/storeOrdersData', [AdminController::class, 'storeOrdersData']
 
 // TRACK ORDER ROUTE 
 Route::get('/track-order', function () {
-    return view('track-order');
+
+    $orderCode = session('order_code');
+
+    if (!$orderCode) {
+        return view('track-order', [
+            'order' => null,
+            'status' => 'Order not found'
+        ]);
+    }
+
+    $order = \App\Models\Order::where('order_code', $orderCode)->first();
+
+    if (!$order) {
+        return view('track-order', [
+            'order' => null,
+            'status' => 'Order not found'
+        ]);
+    }
+
+    return view('track-order', [
+        'order' => $order,
+        'status' => $order->status,
+        'eta' => $order->eta_minutes,
+    ]);
+
 })->name('track.order');
 
 // =======
@@ -110,15 +155,39 @@ Route::get('/admin/menu-management', fn() => view('admin.menu-management'))->nam
 
 
 
-Route::get('/t/{table}/feedback', [FeedbackController::class, 'create'])->name('feedback.form');
-Route::post('/feedback', [FeedbackController::class, 'store'])->name('feedback.store');
 
-Route::middleware(['auth'])->prefix('admin')->group(function () {
-    Route::get('/feedbacks', [AdminFeedbackController::class, 'index'])->name('admin.feedbacks');
+Route::prefix('admin')->name('admin.')->group(function () {
 
-    Route::get('/api/feedbacks', [AdminFeedbackController::class, 'list']);
-    Route::put('/api/feedbacks/{id}/reviewed', [AdminFeedbackController::class, 'markReviewed']);
+    // Feedback page
+    Route::get('/feedbacks', [AdminFeedbackController::class, 'index'])
+        ->name('feedbacks');
+
+    // Mark reviewed button
+    Route::patch('/feedbacks/{id}/review', [AdminFeedbackController::class, 'markReviewed'])
+        ->name('feedback.review');
+
 });
+
+
+
+
+// Route::get('/feedback', function () {
+//     $table = session('table_number');
+
+//     if (!$table) {
+//         abort(403, 'No table assigned.');
+//     }
+
+//     return view('feedback', ['table' => (int) $table]);
+// })->name('feedback.form');
+
+
+
+Route::post('/feedback', [FeedbackController::class, 'store'])
+    ->name('feedback.store');
+
+
+
 
 
 
@@ -127,4 +196,4 @@ Route::post('/orders/mark-paid', [OrderController::class, 'markPaid']);
 // Route::get('/track-order', function () {
 //     return view('track-order');
 // });
-Route::get('/api/track/{order_code}', [OrderController::class, 'track']);
+// Route::get('/api/track/{order_code}', [OrderController::class, 'track']);

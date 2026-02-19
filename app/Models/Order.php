@@ -15,9 +15,9 @@ class Order extends Model
         'payment_status',
         'total',
     ];
+public function items()
+{
+    return $this->hasMany(\App\Models\OrderItem::class);
+}
 
-    public function items()
-    {
-        return $this->hasMany(\App\Models\OrderItem::class);
-    }
 }
