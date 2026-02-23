@@ -18,6 +18,16 @@ use App\Http\Controllers\PaymentReceiptController;
 
 
 
+
+// ✅ Table Management page
+
+Route::get('/admin/table-management', [AdminController::class, 'tableManagement'])
+    ->name('admin.table-management');
+
+Route::post('/admin/tables/{number}/toggle', [AdminController::class, 'toggleTable'])
+    ->name('admin.tables.toggle');
+
+
 // Customer enters via QR
 // Route::get('/t/{table}', [TableController::class, 'enter'])->name('table.enter');
 Route::get('/t/{table}', function ($table) {

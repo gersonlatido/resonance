@@ -1,3 +1,9 @@
+
+@php
+  $tables = $tables ?? collect(); // ✅ prevent undefined variable crash
+@endphp
+
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -188,7 +194,7 @@
       align-items:center;
       justify-content:space-between;
       min-height: 54px;
-      
+
     }
 
     .stat .label{
@@ -268,7 +274,6 @@
       text-align:center;
       margin-top: 28px;
     }
-
 
     /* Responsive */
     @media (max-width: 980px){
@@ -378,19 +383,22 @@
   .room{ overflow:auto; }
   .room-inner{ position: relative; width: 900px; height: 360px; }
 }
-
   </style>
 </head>
 
 <body>
+  @php
+    $tableIsAvailable = function(int $n) use ($tables) {
+        return isset($tables[$n]) ? (bool) $tables[$n]->is_available : true;
+    };
+  @endphp
+
   <div class="shell">
     <!-- ===== Sidebar ===== -->
     <aside class="sidebar">
       <div class="brand">
         <div class="logo-box">
-          <!-- Replace with real logo if you have it -->
            <img src="{{ asset('images/logo-image.png') }}" alt="Silog Cafe Logo" />
-          {{-- <div class="logo-fallback">99<br/>Silog Cafe</div> --}}
         </div>
       </div>
 
@@ -411,7 +419,6 @@
     <span class="dot-icon"></span>Daily Sales Report
   </a>
 </nav>
-
 
       <div class="side-section-title" style="margin-top:18px;">Admin Management</div>
       <nav class="nav">
@@ -516,85 +523,108 @@
     <div class="room-inner" style="position:relative; width:100%; height:330px;">
 
       <!-- Left column: 9,8,7 -->
-      <div class="tcard shape-rect" data-table="9" style="left: 18px; top: 22px;">
+      <div class="tcard shape-rect {{ $tableIsAvailable(9) ? '' : 'unavailable' }}" data-table="9" style="left: 18px; top: 22px;">
         <div class="tno">9</div>
-        <div class="tstatus">Available</div>
+        <div class="tstatus">{{ $tableIsAvailable(9) ? 'Available' : 'Unavailable' }}</div>
       </div>
 
-      <div class="tcard shape-rect" data-table="8" style="left: 18px; top: 110px;">
+      <div class="tcard shape-rect {{ $tableIsAvailable(8) ? '' : 'unavailable' }}" data-table="8" style="left: 18px; top: 110px;">
         <div class="tno">8</div>
-        <div class="tstatus">Available</div>
+        <div class="tstatus">{{ $tableIsAvailable(8) ? 'Available' : 'Unavailable' }}</div>
       </div>
 
-      <div class="tcard shape-rect" data-table="7" style="left: 18px; top: 198px;">
+      <div class="tcard shape-rect {{ $tableIsAvailable(7) ? '' : 'unavailable' }}" data-table="7" style="left: 18px; top: 198px;">
         <div class="tno">7</div>
-        <div class="tstatus">Available</div>
+        <div class="tstatus">{{ $tableIsAvailable(7) ? 'Available' : 'Unavailable' }}</div>
       </div>
 
       <!-- Top left: 10 -->
-      <div class="tcard shape-rect" data-table="10" style="left: 165px; top: 22px;">
+      <div class="tcard shape-rect {{ $tableIsAvailable(10) ? '' : 'unavailable' }}" data-table="10" style="left: 165px; top: 22px;">
         <div class="tno">10</div>
-        <div class="tstatus">Available</div>
+        <div class="tstatus">{{ $tableIsAvailable(10) ? 'Available' : 'Unavailable' }}</div>
       </div>
 
       <!-- Center top: 4 and 3 -->
-      <div class="tcard shape-rect" data-table="4" style="left: 380px; top: 22px;">
+      <div class="tcard shape-rect {{ $tableIsAvailable(4) ? '' : 'unavailable' }}" data-table="4" style="left: 380px; top: 22px;">
         <div class="tno">4</div>
-        <div class="tstatus">Available</div>
+        <div class="tstatus">{{ $tableIsAvailable(4) ? 'Available' : 'Unavailable' }}</div>
       </div>
 
-      <div class="tcard shape-rect" data-table="3" style="left: 495px; top: 22px;">
+      <div class="tcard shape-rect {{ $tableIsAvailable(3) ? '' : 'unavailable' }}" data-table="3" style="left: 495px; top: 22px;">
         <div class="tno">3</div>
-        <div class="tstatus">Available</div>
+        <div class="tstatus">{{ $tableIsAvailable(3) ? 'Available' : 'Unavailable' }}</div>
       </div>
 
       <!-- Bottom left: 6 (round) -->
-      <div class="tcard shape-round" data-table="6" style="left: 200px; top: 240px;">
+      <div class="tcard shape-round {{ $tableIsAvailable(6) ? '' : 'unavailable' }}" data-table="6" style="left: 200px; top: 240px;">
         <div class="tno">6</div>
-        <div class="tstatus">Available</div>
+        <div class="tstatus">{{ $tableIsAvailable(6) ? 'Available' : 'Unavailable' }}</div>
       </div>
 
       <!-- Bottom center: 5 (oval) -->
-      <div class="tcard shape-oval" data-table="5" style="left: 420px; top: 196px;">
+      <div class="tcard shape-oval {{ $tableIsAvailable(5) ? '' : 'unavailable' }}" data-table="5" style="left: 420px; top: 196px;">
         <div class="tno">5</div>
-        <div class="tstatus">Available</div>
+        <div class="tstatus">{{ $tableIsAvailable(5) ? 'Available' : 'Unavailable' }}</div>
       </div>
 
       <!-- Right: 2 (wide) -->
-      <div class="tcard shape-wide" data-table="2" style="right: 18px; top: 70px;">
+      <div class="tcard shape-wide {{ $tableIsAvailable(2) ? '' : 'unavailable' }}" data-table="2" style="right: 18px; top: 70px;">
         <div class="tno">2</div>
-        <div class="tstatus">Available</div>
+        <div class="tstatus">{{ $tableIsAvailable(2) ? 'Available' : 'Unavailable' }}</div>
       </div>
 
-      <!-- Right: 1 (wide unavailable) -->
-      <div class="tcard shape-wide unavailable" data-table="1" style="right: 18px; top: 210px;">
+      <!-- Right: 1 (wide) -->
+      <div class="tcard shape-wide {{ $tableIsAvailable(1) ? '' : 'unavailable' }}" data-table="1" style="right: 18px; top: 210px;">
         <div class="tno">1</div>
-        <div class="tstatus">Unavailable</div>
+        <div class="tstatus">{{ $tableIsAvailable(1) ? 'Available' : 'Unavailable' }}</div>
       </div>
 
     </div>
   </div>
 </section>
 
-
-     
     </main>
   </div>
 
   <script>
- 
-// Toggle table status on click (front-end only for now)
-document.querySelectorAll('.tcard').forEach(card => {
-  card.addEventListener('click', () => {
-    const statusEl = card.querySelector('.tstatus');
-    const isUnavailable = card.classList.toggle('unavailable');
-    statusEl.textContent = isUnavailable ? 'Unavailable' : 'Available';
+  const csrf = '{{ csrf_token() }}';
 
-    // Later: send to backend using fetch() to save in DB
-    // console.log('Table', card.dataset.table, 'status:', statusEl.textContent);
+  document.querySelectorAll('.tcard').forEach(card => {
+    card.addEventListener('click', async () => {
+      const tableNo = card.dataset.table;
+
+      try {
+        const res = await fetch(`/admin/tables/${tableNo}/toggle`, {
+          method: 'POST',
+          headers: {
+            'X-CSRF-TOKEN': csrf,
+            'Accept': 'application/json'
+          }
+        });
+
+        const data = await res.json();
+
+        if (!res.ok) {
+          alert(data.error || 'Failed to update table');
+          return;
+        }
+
+        const statusEl = card.querySelector('.tstatus');
+
+        if (data.is_available) {
+          card.classList.remove('unavailable');
+          statusEl.textContent = 'Available';
+        } else {
+          card.classList.add('unavailable');
+          statusEl.textContent = 'Unavailable';
+        }
+
+      } catch (e) {
+        console.error(e);
+        alert('Network error');
+      }
+    });
   });
-});
-
-   </script>
+  </script>
 </body>
 </html>
