@@ -174,6 +174,42 @@
 
     <!-- Main courses Breakfast Section -->
     <div class="main-courses-container">
+        @forelse($items as $item)
+      @php
+        $disabled = (!$item->can_make || $item->low_stock);
+        $label = !$item->can_make ? 'Out of stock' : ($item->low_stock ? 'Low stock' : 'Add to cart');
+      @endphp
+
+      <div class="menu-item">
+          <div class="menu-item-name">{{ $item->name }}</div>
+          <div class="menu-item-description">{{ $item->description }}</div>
+          <div class="menu-item-price">₱{{ number_format($item->price, 2) }}</div>
+
+          <button
+              class="add-to-cart-btn"
+              data-id="{{ $item->menu_id }}"
+              data-name="{{ $item->name }}"
+              data-price="{{ $item->price }}"
+              data-image="{{ $item->image ?? '' }}"
+              {{ $disabled ? 'disabled' : '' }}
+              style="
+                pointer-events: {{ $disabled ? 'none' : 'auto' }};
+                margin-top:8px;
+                padding:8px 14px;
+                border:none;
+                border-radius:8px;
+                font-weight:700;
+                background: {{ $disabled ? '#ccc' : '#F7B413' }};
+                color:#000;
+                cursor: {{ $disabled ? 'not-allowed' : 'pointer' }};
+                opacity: {{ $disabled ? '.6' : '1' }};
+              "
+          >
+              {{ $label }}
+          </button>
     </div>
+    @empty
+      <p>No items found.</p>
+    @endforelse
 </body>
 </html>
