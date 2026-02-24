@@ -24,7 +24,7 @@
 
     body{
       margin:0;
-      font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+      font-family: 'Figtree', sans-serif;
       background: #ffffff;
       color: var(--text);
     }
@@ -382,65 +382,47 @@
 <body>
   <div class="shell">
 
-@php
-  $pos = auth()->user()->position ?? null;
-@endphp
+    <!-- Sidebar -->
+    <aside class="sidebar">
+      <div class="brand">
+        <div class="logo-box">
+          <img src="{{ asset('images/logo-image.png') }}" alt="Silog Cafe Logo" />
+        </div>
+      </div>
 
-<aside class="sidebar">
-  <div class="brand">
-    <div class="logo-box">
-      <img src="{{ asset('images/logo-image.png') }}" alt="Silog Cafe Logo" />
-    </div>
-  </div>
+      <div class="side-section-title">Cashier Transaction</div>
+      <nav class="nav">
+        <a href="{{ route('admin.dashboard') }}"
+           class="{{ request()->routeIs('admin.dashboard') ? 'active' : '' }}">
+          Order Management
+        </a>
 
-  {{-- ================= CASHIER TRANSACTION ================= --}}
-  @if($pos === 'Cashier')
-    <div class="side-section-title">Cashier Transaction</div>
+        <a href="{{ route('admin.table-management') }}"
+           class="{{ request()->routeIs('admin.table-management') ? 'active' : '' }}">
+          Table Management
+        </a>
 
-    <nav class="nav">
-      <a href="{{ route('admin.dashboard') }}"
-         class="{{ request()->routeIs('admin.dashboard') ? 'active' : '' }}">
-        Order Management
-      </a>
+        <a href="#">
+          Daily Sales Report
+        </a>
+      </nav>
 
-      <a href="{{ route('admin.table-management') }}"
-         class="{{ request()->routeIs('admin.table-management') ? 'active' : '' }}">
-        Table Management
-      </a>
+      <div class="side-section-title" style="margin-top:18px;">Admin Management</div>
+      <nav class="nav">
+        <a href="{{ route('admin.menu-management') }}"
+           class="{{ request()->routeIs('admin.menu-management') ? 'active' : '' }}">
+          Menu Management
+        </a>
 
-      <a href="#">
-        Daily Sales Report
-      </a>
-    </nav>
-  @endif
+        <a href="{{ route('admin.feedbacks') }}"
+           class="{{ request()->routeIs('admin.feedbacks') ? 'active' : '' }}">
+          Feedback Management
+        </a>
 
-
-  {{-- ================= ADMIN MANAGEMENT ================= --}}
-  @if($pos === 'Admin')
-    <div class="side-section-title" style="margin-top:18px;">Admin Management</div>
-
-    <nav class="nav">
-      <a href="{{ route('admin.menu-management') }}"
-         class="{{ request()->routeIs('admin.menu-management') ? 'active' : '' }}">
-        Menu Management
-      </a>
-
-      <a href="{{ route('admin.feedbacks') }}"
-         class="{{ request()->routeIs('admin.feedbacks') ? 'active' : '' }}">
-        Feedback Management
-      </a>
-
-      <a href="{{ route('admin.inventory') }}"
-         class="{{ request()->routeIs('admin.inventory') ? 'active' : '' }}">
-        Inventory Management
-      </a>
-
-      <a href="#">
-        Sales and Stock Reports
-      </a>
-    </nav>
-  @endif
-</aside>
+        <a href="#">Inventory Management</a>
+        <a href="#">Sales and Stock Reports</a>
+      </nav>
+    </aside>
 
     <!-- Main -->
     <main class="content">

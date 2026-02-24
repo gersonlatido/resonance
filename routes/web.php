@@ -1,31 +1,21 @@
 <?php
 
 use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\MenuController;
+use App\Models\MenuItem;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\AdminController;
 use App\Http\Controllers\AdminOrderApiController;
+
 use App\Http\Controllers\OrderController;
+use App\Http\Controllers\TableController;
+
+use App\Http\Controllers\FeedbackController;
 use App\Http\Controllers\AdminFeedbackController;
-use App\Http\Controllers\InventoryController;
 use App\Http\Controllers\PaymentSuccessController;
 use App\Http\Controllers\PaymentReceiptController;
 
-/*
-|--------------------------------------------------------------------------
-| Fix for "Route [login] not defined"
-|--------------------------------------------------------------------------
-*/
-Route::get('/login', function () {
-    return redirect()->route('admin.login');
-})->name('login');
 
-<<<<<<< HEAD
-/*
-|--------------------------------------------------------------------------
-| AUTH ROUTES
-|--------------------------------------------------------------------------
-*/
-=======
 
 
 
@@ -129,30 +119,17 @@ Route::put('/admin/api/orders/{order_code}', [OrderController::class, 'updateSta
 // =======
 
 // Admin routes (login, dashboard, and logout)
->>>>>>> 8627347dd0f3dcaea7d48f9e4353baf0c08acbde
 Route::get('admin/login', [AuthController::class, 'showAdminLoginForm'])->name('admin.login');
-Route::post('admin/login', [AuthController::class, 'adminLogin'])->name('admin.login.post');
+Route::post('admin/login', [AuthController::class, 'adminLogin']);
 Route::post('admin/logout', [AuthController::class, 'logout'])->name('admin.logout');
 
-/*
-|--------------------------------------------------------------------------
-| CASHIER ROUTES (Cashier only)
-|--------------------------------------------------------------------------
-*/
-Route::middleware(['auth', 'cashier'])->group(function () {
 
-    Route::get('admin/dashboard', [AdminController::class, 'index'])
-        ->name('admin.dashboard');
+// Admin dashboard route (protected by 'auth' and 'admin' middleware)
+Route::middleware(['auth', 'admin'])->get('admin/dashboard', [AdminController::class, 'index'])->name('admin.dashboard');
 
-    Route::get('admin/table-management', [AdminController::class, 'tableManagement'])
-        ->name('admin.table-management');
+// Route for handling the orders data from localStorage (POST request)
+Route::post('admin/storeOrdersData', [AdminController::class, 'storeOrdersData'])->name('admin.storeOrdersData');
 
-<<<<<<< HEAD
-    Route::get('/admin/api/orders', [AdminOrderApiController::class, 'index']);
-    Route::put('/admin/api/orders/{order_code}', [OrderController::class, 'updateStatus']);
-
-    Route::post('/orders/mark-paid', [OrderController::class, 'markPaid']);
-=======
 // TRACK ORDER ROUTE 
 Route::get('/track-order', function () {
 
@@ -199,32 +176,10 @@ Route::prefix('admin')->name('admin.')->group(function () {
     Route::patch('/feedbacks/{id}/review', [AdminFeedbackController::class, 'markReviewed'])
         ->name('feedback.review');
 
->>>>>>> 8627347dd0f3dcaea7d48f9e4353baf0c08acbde
 });
 
-/*
-|--------------------------------------------------------------------------
-| ADMIN ROUTES (Admin only)
-|--------------------------------------------------------------------------
-*/
-Route::middleware(['auth', 'admin'])->group(function () {
 
-    Route::get('/admin/inventory', [InventoryController::class, 'index'])
-        ->name('admin.inventory');
 
-<<<<<<< HEAD
-    Route::get('/admin/menu-management', fn() => view('admin.menu-management'))
-        ->name('admin.menu-management');
-
-    Route::prefix('admin')->group(function () {
-        Route::get('/feedbacks', [AdminFeedbackController::class, 'index'])
-            ->name('admin.feedbacks');
-
-        Route::get('/api/feedbacks', [AdminFeedbackController::class, 'list']);
-        Route::put('/api/feedbacks/{id}/reviewed', [AdminFeedbackController::class, 'markReviewed']);
-    });
-});
-=======
 
 // Route::get('/feedback', function () {
 //     $table = session('table_number');
@@ -252,4 +207,3 @@ Route::post('/orders/mark-paid', [OrderController::class, 'markPaid']);
 //     return view('track-order');
 // });
 // Route::get('/api/track/{order_code}', [OrderController::class, 'track']);
->>>>>>> 8627347dd0f3dcaea7d48f9e4353baf0c08acbde

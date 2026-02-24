@@ -3,136 +3,65 @@
 namespace App\Http\Controllers;
 
 use App\Models\MenuItem;
-use App\Models\Recipe;
 use Illuminate\Http\Request;
 
 class MenuController extends Controller
 {
-    /**
-     * STRICT:
-     * - If no recipe => cannot make
-     * - If any ingredient stock < qty_needed*qty => cannot make
-     */
-    private function canMakeMenu(string $menuId, int $qty = 1): bool
-    {
-        $lines = Recipe::with('ingredient')
-            ->where('menu_id', $menuId)
-            ->get();
+    // ===== Customer menu pages (DB → Blade) =====
+// ===== Customer menu pages =====
 
-        if ($lines->isEmpty()) return false;
+public function breakfast()
+{
+    $items = MenuItem::where('category', 'All Day Breakfast')->get();
+    return view('all-day-breakfast-menu', compact('items'));
+}
 
-        foreach ($lines as $line) {
-            $need  = (float) $line->qty_needed * $qty;
-            $stock = (float) ($line->ingredient->stock_qty ?? 0);
+public function mainCourses()
+{
+    $items = MenuItem::where('category', 'main-courses')->get();
+    return view('main-courses-menu', compact('items'));
+}
 
-            if ($stock < $need) return false;
-        }
+public function pasta()
+{
+    $items = MenuItem::where('category', 'pasta')->get();
+    return view('pasta-menu', compact('items'));
+}
 
-        return true;
-    }
+public function chicken()
+{
+    $items = MenuItem::where('category', 'chicken-wings')->get();
+    return view('chicken-menu', compact('items'));
+}
 
-    /**
-     * LOW STOCK RULE:
-     * If ANY ingredient stock <= reorder_level => low stock
-     * STRICT:
-     * - If no recipe => treat as low stock (so button disabled)
-     */
-    private function isLowStockMenu(string $menuId): bool
-    {
-        $lines = Recipe::with('ingredient')
-            ->where('menu_id', $menuId)
-            ->get();
+public function drinks()
+{
+    $items = MenuItem::whereIn('category', [
+        'frappuccino',
+        'coffee-based',
+        'milk-based'
+    ])->get();
 
-        if ($lines->isEmpty()) return true;
+    return view('drinks-menu', compact('items'));
+}
 
-        foreach ($lines as $line) {
-            $stock   = (float) ($line->ingredient->stock_qty ?? 0);
-            $reorder = (float) ($line->ingredient->reorder_level ?? 0);
+public function pizza()
+{
+    $items = MenuItem::where('category', 'overload-premium')->get();
+    return view('pizza-menu', compact('items'));
+}
 
-            if ($reorder > 0 && $stock <= $reorder) {
-                return true;
-            }
-        }
+public function snacks()
+{
+    $items = MenuItem::where('category', 'snacks')->get();
+    return view('snacks-menu', compact('items'));
+}
 
-        return false;
-    }
-
-    /**
-     * Add can_make + low_stock flags into items (Blade + API)
-     */
-    private function attachAvailability($items)
-    {
-        return $items->map(function ($item) {
-            $item->can_make  = $this->canMakeMenu($item->menu_id, 1);
-            $item->low_stock = $this->isLowStockMenu($item->menu_id);
-
-            return $item;
-        });
-    }
-
-    // ===== Customer menu pages (Blade) =====
-
-    public function breakfast()
-    {
-        $items = MenuItem::where('category', 'All Day Breakfast')->get();
-        $items = $this->attachAvailability($items);
-        return view('all-day-breakfast-menu', compact('items'));
-    }
-
-    public function mainCourses()
-    {
-        $items = MenuItem::where('category', 'main-courses')->get();
-        $items = $this->attachAvailability($items);
-        return view('main-courses-menu', compact('items'));
-    }
-
-    public function pasta()
-    {
-        $items = MenuItem::where('category', 'pasta')->get();
-        $items = $this->attachAvailability($items);
-        return view('pasta-menu', compact('items'));
-    }
-
-    public function chicken()
-    {
-        $items = MenuItem::where('category', 'chicken-wings')->get();
-        $items = $this->attachAvailability($items);
-        return view('chicken-menu', compact('items'));
-    }
-
-    public function drinks()
-    {
-        $items = MenuItem::whereIn('category', [
-            'frappuccino',
-            'coffee-based',
-            'milk-based'
-        ])->get();
-
-        $items = $this->attachAvailability($items);
-        return view('drinks-menu', compact('items'));
-    }
-
-    public function pizza()
-    {
-        $items = MenuItem::where('category', 'overload-premium')->get();
-        $items = $this->attachAvailability($items);
-        return view('pizza-menu', compact('items'));
-    }
-
-    public function snacks()
-    {
-        $items = MenuItem::where('category', 'snacks')->get();
-        $items = $this->attachAvailability($items);
-        return view('snacks-menu', compact('items'));
-    }
 
     // ===== API: GET /api/menu =====
     public function index()
     {
-        $items = MenuItem::orderBy('created_at', 'desc')->get();
-        $items = $this->attachAvailability($items);
-
-        return response()->json($items);
+        return response()->json(MenuItem::orderBy('created_at', 'desc')->get());
     }
 
     // ===== API: POST /api/menu =====
@@ -148,8 +77,6 @@ class MenuController extends Controller
         ]);
 
         $item = MenuItem::create($data);
-        $item->can_make  = $this->canMakeMenu($item->menu_id, 1);
-        $item->low_stock = $this->isLowStockMenu($item->menu_id);
 
         return response()->json($item, 201);
     }
@@ -168,9 +95,6 @@ class MenuController extends Controller
         ]);
 
         $item->update($data);
-
-        $item->can_make  = $this->canMakeMenu($item->menu_id, 1);
-        $item->low_stock = $this->isLowStockMenu($item->menu_id);
 
         return response()->json($item);
     }

@@ -22,8 +22,7 @@ class MenuItem extends Model
         'image',
         'description',
         'price',
-        'category',
-        'is_available'
+        'category'
     ];
 
     // ✅ AUTO GENERATE MENU001, MENU002, etc.
@@ -43,10 +42,6 @@ class MenuItem extends Model
 
         $model->menu_id = 'MENU' . str_pad($nextNumber, 3, '0', STR_PAD_LEFT); // <- also use menu_id
     });
-}
-    public function recipes()
-{
-    return $this->hasMany(\App\Models\Recipe::class);
 }
 
 }

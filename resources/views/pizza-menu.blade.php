@@ -169,10 +169,42 @@
            <!-- Pizza Section -->
             <div class="pizza-category"><h2>10” Overload Premium Pizza</h2></div>
            <div class="overload-container">
+                <!-- <div class="menu-item">
+                    <div class="menu-item-image"><img src="/images/all-day-breakfast-entrees/beefsilog.png" alt=""></div>
+                    <div class="menu-item-details">
+                        <h3 class="menu-item-name">BEEFSILOG</h3>
+                            <p class="menu-item-description">
+                                Tender Beef Samgyup 
+                                with Egg and Fried Rice
+                                <b>(with Drinks Included)</b>
+                            </p>
+                              <div class="menu-item-button">
+                                <span class="menu-item-price">₱ 288</span>
+                                <button class="add-to-cart-btn">+ Add</button>
+                              </div>
+                    </div>
+                </div> -->
            </div> 
 
             <div class="pizza-category"><h2>6” Solo Mini Pizza</h2></div>
           <div class="solo-mini-container">
+                <!-- <div class="menu-item">
+                    <div class="menu-item-image"><img src="/images/all-day-breakfast-entrees/beefsilog.png" alt=""></div>
+                    <div class="menu-item-details">
+                        <h3 class="menu-item-name">BEEFSILOG</h3>
+                            <p class="menu-item-description">
+                                Tender Beef Samgyup 
+                                with Egg and Fried Rice
+                                <b>(with Drinks Included)</b>
+                            </p>
+                              <div class="menu-item-button">
+                                <span class="menu-item-price">₱ 288</span>
+                                <button class="add-to-cart-btn">+ Add</button>
+                              </div>
+                    </div>
+                </div> -->
            </div> 
+
+    
 </body>
 </html>
