@@ -123,7 +123,12 @@
     </style>
 </head>
 <body>
-      
+        @php
+  session([
+    'order_code' => $order->order_code ?? session('order_code'),
+    'table_number' => $order->table_number ?? session('table_number'),
+  ]);
+@endphp
 
 <div class="receipt-card" id="receipt">
     <div class="receipt-header">
@@ -141,12 +146,17 @@
 
     <div class="actions">
         <button onclick="printReceipt()">Download / Print Receipt</button>
-         <button onclick="window.location.href='{{ route('track.order') }}'" class="track-btn">
-    Track Order
-</button>
- <button onclick="window.location.href='{{ route('feedback.show') }}'" class="feedback-btn">
-   Send Feedback
-</button>
+   <a href="{{ route('track.order') }}" style="text-decoration:none;">
+  <button class="btn" style="width:100%;">Track Order</button>
+</a>
+
+
+
+<a href="{{ route('feedback.form') }}" class="btn btn-warning"
+   style="display:block; text-align:center; padding:12px; border-radius:10px; font-weight:700;">
+  Send Feedback
+</a>
+
 
     </div>
   

@@ -16,6 +16,19 @@ Route::delete('/menu/{menu_id}', [MenuController::class, 'destroy']);
 // =========================
 // ORDER TRACKING / UPDATE
 // =========================
+
+
+Route::get('/orders/{order_code}', [OrderController::class, 'publicTrack']);
+
+
+
+Route::get('/menu', function () {
+    return response()->json(MenuItem::all());
+});
+
+
+// Route::get('/api/orders/{order_code}', [OrderController::class, 'track']);
+
 Route::get('/orders/{order_code}', [OrderController::class, 'track']);
 Route::put('/orders/{order_code}', [OrderController::class, 'updateStatus']);
 

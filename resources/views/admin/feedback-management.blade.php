@@ -1,9 +1,3 @@
-
-@php
-  $tables = $tables ?? collect(); // ✅ prevent undefined variable crash
-@endphp
-
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -194,7 +188,7 @@
       align-items:center;
       justify-content:space-between;
       min-height: 54px;
-
+      
     }
 
     .stat .label{
@@ -274,6 +268,7 @@
       text-align:center;
       margin-top: 28px;
     }
+
 
     /* Responsive */
     @media (max-width: 980px){
@@ -383,22 +378,19 @@
   .room{ overflow:auto; }
   .room-inner{ position: relative; width: 900px; height: 360px; }
 }
+
   </style>
 </head>
 
 <body>
-  @php
-    $tableIsAvailable = function(int $n) use ($tables) {
-        return isset($tables[$n]) ? (bool) $tables[$n]->is_available : true;
-    };
-  @endphp
-
   <div class="shell">
     <!-- ===== Sidebar ===== -->
     <aside class="sidebar">
       <div class="brand">
         <div class="logo-box">
+          <!-- Replace with real logo if you have it -->
            <img src="{{ asset('images/logo-image.png') }}" alt="Silog Cafe Logo" />
+          {{-- <div class="logo-fallback">99<br/>Silog Cafe</div> --}}
         </div>
       </div>
 
@@ -420,6 +412,7 @@
   </a>
 </nav>
 
+
       <div class="side-section-title" style="margin-top:18px;">Admin Management</div>
       <nav class="nav">
        <a href="{{ route('admin.menu-management') }}"
@@ -440,7 +433,9 @@
     <!-- ===== Main content ===== -->
     <main class="content">
       <div class="topbar">
-        <div class="title">Table Management</div>
+       <div class="title">Feedback Management</div>
+
+
 
         <!-- Laravel logout form -->
         <form id="logout-form" method="POST" action="{{ route('admin.logout') }}">
@@ -511,120 +506,131 @@
         </div>
       </section>
 
-      <!-- ===== Table Management Layout ===== -->
-<section class="tables-panel" aria-label="Table management">
-  <div class="tables-title">Tables</div>
+    
+<!-- ===== Feedback Management Layout ===== -->
+<section class="tables-panel" aria-label="Feedback management">
+  <div class="tables-title">Feedbacks</div>
 
-  <div class="room">
-    <!-- Dividers -->
-    <div class="divider top-mid"></div>
-    <div class="divider bottom-mid"></div>
+  {{-- feedback list container (same gray background like your screenshot) --}}
+  <div class="room" style="padding: 14px; overflow:auto;">
 
-    <div class="room-inner" style="position:relative; width:100%; height:330px;">
+    {{-- ✅ LOOP: from controller $feedbacks --}}
+    @forelse ($feedbacks as $fb)
+      <div style="
+        background:#fff;
+        border: 1.5px solid rgba(245,158,11,.55);
+        border-radius: 14px;
+        box-shadow: 0 4px 12px rgba(0,0,0,.10);
+        padding: 14px 16px;
+        margin-bottom: 14px;
+      ">
 
-      <!-- Left column: 9,8,7 -->
-      <div class="tcard shape-rect {{ $tableIsAvailable(9) ? '' : 'unavailable' }}" data-table="9" style="left: 18px; top: 22px;">
-        <div class="tno">9</div>
-        <div class="tstatus">{{ $tableIsAvailable(9) ? 'Available' : 'Unavailable' }}</div>
+        <div style="display:flex; justify-content:space-between; gap:12px; flex-wrap:wrap;">
+          <div>
+            <div style="font-weight:900; font-size:14px; margin-bottom:6px;">
+              {{ $fb->customer_name ?? 'Customer' }}
+            </div>
+
+            <div style="display:flex; gap:18px; flex-wrap:wrap; font-size:12px; opacity:.85; margin-bottom:8px;">
+              <div><b>ID:</b> {{ $fb->id }}</div>
+              <div><b>{{ \Carbon\Carbon::parse($fb->created_at)->format('Y-m-d') }}</b></div>
+            </div>
+
+            {{-- Stars --}}
+            @php $rating = (int) ($fb->rating ?? 0); @endphp
+            <div style="display:flex; align-items:center; gap:10px; margin: 6px 0 10px;">
+              <div style="display:flex; gap:6px;">
+                @for($i=1; $i<=5; $i++)
+                  @if($i <= $rating)
+                    <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="#f59e0b">
+                      <path d="M12 17.27L18.18 21 16.54 13.97 22 9.24 14.81 8.63 12 2 9.19 8.63 2 9.24 7.46 13.97 5.82 21 12 17.27Z"/>
+                    </svg>
+                  @else
+                    <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#111" stroke-width="1.6">
+                      <path d="M12 17.27L18.18 21 16.54 13.97 22 9.24 14.81 8.63 12 2 9.19 8.63 2 9.24 7.46 13.97 5.82 21 12 17.27Z"/>
+                    </svg>
+                  @endif
+                @endfor
+              </div>
+
+              <div style="font-weight:900; min-width:40px;">
+                {{ number_format((float)($fb->rating ?? 0), 1) }}
+              </div>
+            </div>
+          </div>
+
+          {{-- Badges + button --}}
+          <div style="display:flex; align-items:flex-start; gap:10px; flex-wrap:wrap; margin-left:auto;">
+            <span class="chip" style="background:#fff; border:1px solid rgba(245,158,11,.6);">
+              TABLE# {{ $fb->table_number ?? '-' }}
+            </span>
+
+            @if(($fb->is_reviewed ?? 0) == 1)
+              <span class="chip">Reviewed</span>
+            @else
+              <span class="chip" style="background:#fff; border:1px solid rgba(245,158,11,.6);">
+                Pending
+              </span>
+            @endif
+
+            {{-- Mark reviewed --}}
+            @if(($fb->is_reviewed ?? 0) == 0)
+              <form method="POST" action="{{ route('admin.feedback.review', $fb->id) }}">
+                @csrf
+                @method('PATCH')
+                <button type="submit" class="logout-btn" style="border-radius:999px; padding:8px 14px;">
+                  Mark Reviewed
+                </button>
+              </form>
+            @else
+              <button type="button" class="logout-btn" style="border-radius:999px; padding:8px 14px; opacity:.6; cursor:not-allowed;" disabled>
+                Mark Reviewed
+              </button>
+            @endif
+          </div>
+        </div>
+
+        {{-- Comment box --}}
+        <div style="
+          margin-top: 10px;
+          border: 1px solid rgba(245,158,11,.45);
+          border-radius: 14px;
+          padding: 12px 14px;
+          background: #fff;
+          box-shadow: 0 3px 10px rgba(0,0,0,.08);
+          font-size: 13px;
+        ">
+          “{{ $fb->comment ?? 'No comment provided.' }}”
+        </div>
+
       </div>
+    @empty
+      <div class="empty">No feedbacks yet.</div>
+    @endforelse
 
-      <div class="tcard shape-rect {{ $tableIsAvailable(8) ? '' : 'unavailable' }}" data-table="8" style="left: 18px; top: 110px;">
-        <div class="tno">8</div>
-        <div class="tstatus">{{ $tableIsAvailable(8) ? 'Available' : 'Unavailable' }}</div>
-      </div>
-
-      <div class="tcard shape-rect {{ $tableIsAvailable(7) ? '' : 'unavailable' }}" data-table="7" style="left: 18px; top: 198px;">
-        <div class="tno">7</div>
-        <div class="tstatus">{{ $tableIsAvailable(7) ? 'Available' : 'Unavailable' }}</div>
-      </div>
-
-      <!-- Top left: 10 -->
-      <div class="tcard shape-rect {{ $tableIsAvailable(10) ? '' : 'unavailable' }}" data-table="10" style="left: 165px; top: 22px;">
-        <div class="tno">10</div>
-        <div class="tstatus">{{ $tableIsAvailable(10) ? 'Available' : 'Unavailable' }}</div>
-      </div>
-
-      <!-- Center top: 4 and 3 -->
-      <div class="tcard shape-rect {{ $tableIsAvailable(4) ? '' : 'unavailable' }}" data-table="4" style="left: 380px; top: 22px;">
-        <div class="tno">4</div>
-        <div class="tstatus">{{ $tableIsAvailable(4) ? 'Available' : 'Unavailable' }}</div>
-      </div>
-
-      <div class="tcard shape-rect {{ $tableIsAvailable(3) ? '' : 'unavailable' }}" data-table="3" style="left: 495px; top: 22px;">
-        <div class="tno">3</div>
-        <div class="tstatus">{{ $tableIsAvailable(3) ? 'Available' : 'Unavailable' }}</div>
-      </div>
-
-      <!-- Bottom left: 6 (round) -->
-      <div class="tcard shape-round {{ $tableIsAvailable(6) ? '' : 'unavailable' }}" data-table="6" style="left: 200px; top: 240px;">
-        <div class="tno">6</div>
-        <div class="tstatus">{{ $tableIsAvailable(6) ? 'Available' : 'Unavailable' }}</div>
-      </div>
-
-      <!-- Bottom center: 5 (oval) -->
-      <div class="tcard shape-oval {{ $tableIsAvailable(5) ? '' : 'unavailable' }}" data-table="5" style="left: 420px; top: 196px;">
-        <div class="tno">5</div>
-        <div class="tstatus">{{ $tableIsAvailable(5) ? 'Available' : 'Unavailable' }}</div>
-      </div>
-
-      <!-- Right: 2 (wide) -->
-      <div class="tcard shape-wide {{ $tableIsAvailable(2) ? '' : 'unavailable' }}" data-table="2" style="right: 18px; top: 70px;">
-        <div class="tno">2</div>
-        <div class="tstatus">{{ $tableIsAvailable(2) ? 'Available' : 'Unavailable' }}</div>
-      </div>
-
-      <!-- Right: 1 (wide) -->
-      <div class="tcard shape-wide {{ $tableIsAvailable(1) ? '' : 'unavailable' }}" data-table="1" style="right: 18px; top: 210px;">
-        <div class="tno">1</div>
-        <div class="tstatus">{{ $tableIsAvailable(1) ? 'Available' : 'Unavailable' }}</div>
-      </div>
-
-    </div>
   </div>
 </section>
 
+
+
+     
     </main>
   </div>
 
   <script>
-  const csrf = '{{ csrf_token() }}';
+ 
+// Toggle table status on click (front-end only for now)
+document.querySelectorAll('.tcard').forEach(card => {
+  card.addEventListener('click', () => {
+    const statusEl = card.querySelector('.tstatus');
+    const isUnavailable = card.classList.toggle('unavailable');
+    statusEl.textContent = isUnavailable ? 'Unavailable' : 'Available';
 
-  document.querySelectorAll('.tcard').forEach(card => {
-    card.addEventListener('click', async () => {
-      const tableNo = card.dataset.table;
-
-      try {
-        const res = await fetch(`/admin/tables/${tableNo}/toggle`, {
-          method: 'POST',
-          headers: {
-            'X-CSRF-TOKEN': csrf,
-            'Accept': 'application/json'
-          }
-        });
-
-        const data = await res.json();
-
-        if (!res.ok) {
-          alert(data.error || 'Failed to update table');
-          return;
-        }
-
-        const statusEl = card.querySelector('.tstatus');
-
-        if (data.is_available) {
-          card.classList.remove('unavailable');
-          statusEl.textContent = 'Available';
-        } else {
-          card.classList.add('unavailable');
-          statusEl.textContent = 'Unavailable';
-        }
-
-      } catch (e) {
-        console.error(e);
-        alert('Network error');
-      }
-    });
+    // Later: send to backend using fetch() to save in DB
+    // console.log('Table', card.dataset.table, 'status:', statusEl.textContent);
   });
-  </script>
+});
+
+   </script>
 </body>
 </html>
