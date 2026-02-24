@@ -7,64 +7,81 @@ use Illuminate\Http\Request;
 
 class MenuController extends Controller
 {
-    // ===== Customer menu pages (DB → Blade) =====
-// ===== Customer menu pages =====
+    // ===== Customer menu pages =====
 
-public function breakfast()
-{
-    $items = MenuItem::where('category', 'All Day Breakfast')->get();
-    return view('all-day-breakfast-menu', compact('items'));
-}
-
-public function mainCourses()
-{
-    $items = MenuItem::where('category', 'main-courses')->get();
-    return view('main-courses-menu', compact('items'));
-}
-
-public function pasta()
-{
-    $items = MenuItem::where('category', 'pasta')->get();
-    return view('pasta-menu', compact('items'));
-}
-
-public function chicken()
-{
-    $items = MenuItem::where('category', 'chicken-wings')->get();
-    return view('chicken-menu', compact('items'));
-}
-
-public function drinks()
-{
-    $items = MenuItem::whereIn('category', [
-        'frappuccino',
-        'coffee-based',
-        'milk-based'
-    ])->get();
-
-    return view('drinks-menu', compact('items'));
-}
-
-public function pizza()
-{
-    $items = MenuItem::where('category', 'overload-premium')->get();
-    return view('pizza-menu', compact('items'));
-}
-
-public function snacks()
-{
-    $items = MenuItem::where('category', 'snacks')->get();
-    return view('snacks-menu', compact('items'));
-}
-
-
-    // ===== API: GET /api/menu =====
-    public function index()
+    public function breakfast()
     {
-        return response()->json(MenuItem::orderBy('created_at', 'desc')->get());
+        $items = MenuItem::where('category', 'All Day Breakfast')
+            ->where('is_available', 1)
+            ->get();
+
+        return view('all-day-breakfast-menu', compact('items'));
     }
 
-    // ===== API: POST /api/menu =====
+    public function mainCourses()
+    {
+        $items = MenuItem::where('category', 'main-courses')
+            ->where('is_available', 1)
+            ->get();
+
+        return view('main-courses-menu', compact('items'));
+    }
+
+    public function pasta()
+    {
+        $items = MenuItem::where('category', 'pasta')
+            ->where('is_available', 1)
+            ->get();
+
+        return view('pasta-menu', compact('items'));
+    }
+
+    public function chicken()
+    {
+        $items = MenuItem::where('category', 'chicken-wings')
+            ->where('is_available', 1)
+            ->get();
+
+        return view('chicken-menu', compact('items'));
+    }
+
+    public function drinks()
+    {
+        $items = MenuItem::whereIn('category', [
+                'frappuccino',
+                'coffee-based',
+                'milk-based'
+            ])
+            ->where('is_available', 1)
+            ->get();
+
+        return view('drinks-menu', compact('items'));
+    }
+
+    public function pizza()
+    {
+        $items = MenuItem::where('category', 'overload-premium')
+            ->where('is_available', 1)
+            ->get();
+
+        return view('pizza-menu', compact('items'));
+    }
+
+    public function snacks()
+    {
+        $items = MenuItem::where('category', 'snacks')
+            ->where('is_available', 1)
+            ->get();
+
+        return view('snacks-menu', compact('items'));
+    }
+
+    // ===== API =====
+  public function index()
+{
+    return response()->json(MenuItem::orderBy('created_at', 'desc')->get());
+}
+
     public function store(Request $request)
     {
         $data = $request->validate([
@@ -81,7 +98,6 @@ public function snacks()
         return response()->json($item, 201);
     }
 
-    // ===== API: PUT /api/menu/{menu_id} =====
     public function update(Request $request, $menu_id)
     {
         $item = MenuItem::where('menu_id', $menu_id)->firstOrFail();
@@ -99,7 +115,6 @@ public function snacks()
         return response()->json($item);
     }
 
-    // ===== API: DELETE /api/menu/{menu_id} =====
     public function destroy($menu_id)
     {
         $item = MenuItem::where('menu_id', $menu_id)->firstOrFail();

@@ -2,24 +2,32 @@
 // ✅ MENU TOGGLE (CATEGORY MENU)
 // ===============================
 document.addEventListener('DOMContentLoaded', function () {
-  
-    const menuBtn = document.querySelector('.menu-btn');
-    const categoryContainer = document.querySelector('.category-container');
-    const closeBtn = document.querySelector('.category-close');
+  const menuBtn = document.querySelector('.menu-btn');
+  const categoryContainer = document.querySelector('.category-container');
+  const closeBtn = document.querySelector('.category-close');
 
-    if (menuBtn) {
-        menuBtn.addEventListener('click', () => {
-            categoryContainer.classList.toggle('displayed');
-        });
-    }
+  // ✅ create overlay for categories
+  let categoryOverlay = document.querySelector('.category-overlay');
+  if (!categoryOverlay) {
+    categoryOverlay = document.createElement('div');
+    categoryOverlay.className = 'category-overlay hidden';
+    document.body.appendChild(categoryOverlay);
+  }
 
-    if (closeBtn) {
-        closeBtn.addEventListener('click', () => {
-            categoryContainer.classList.remove('displayed');
-        });
-    }
+  function openCategories() {
+    categoryContainer.classList.add('displayed');
+    categoryOverlay.classList.remove('hidden');
+  }
+
+  function closeCategories() {
+    categoryContainer.classList.remove('displayed');
+    categoryOverlay.classList.add('hidden');
+  }
+
+  menuBtn?.addEventListener('click', openCategories);
+  closeBtn?.addEventListener('click', closeCategories);
+  categoryOverlay?.addEventListener('click', closeCategories);
 });
-
 
 // ===============================
 // ✅ LOAD MENU FROM LARAVEL API
@@ -179,30 +187,53 @@ function displayProducts(categoryKey, containerSelector) {
   // ✅ match by normalized category
   const filtered = menuItems.filter(item => normalizeCategory(item.category) === key);
 
-  container.innerHTML = filtered.map(product => `
-    <div class="menu-item">
+container.innerHTML = filtered.map(product => {
+  const available = Number(product.is_available ?? 1) === 1;
+
+  return `
+    <div class="menu-item ${available ? '' : 'is-unavailable'}">
       <div class="menu-item-image">
         <img src="${resolveImagePath(product.image)}" alt="${product.name || ''}">
       </div>
+
       <div class="menu-item-details">
         <h3 class="menu-item-name">${product.name || ''}</h3>
         <p class="menu-item-description">${product.description || ''}</p>
+
         <div class="menu-item-button">
           <span class="menu-item-price">₱ ${Number(product.price || 0).toFixed(2)}</span>
-          <button class="add-to-cart-btn" data-id="${product.menu_id}">+ Add</button>
+
+          <button
+            class="add-to-cart-btn"
+            data-id="${product.menu_id}"
+            ${available ? '' : 'disabled'}
+          >
+            ${available ? '+ Add' : 'Unavailable'}
+          </button>
         </div>
+
+        ${available ? '' : '<div class="stock-badge">Out of stock</div>'}
       </div>
     </div>
-  `).join('');
+  `;
+}).join('');
 
   // ✅ attach click once (no double listeners)
   container.querySelectorAll('.add-to-cart-btn').forEach(btn => {
     btn.addEventListener('click', function () {
       const productId = this.dataset.id;
-      const productToAdd = menuItems.find(p => String(p.menu_id) === String(productId));
-      if (!productToAdd) return;
+    const productToAdd = menuItems.find(p => String(p.menu_id) === String(productId));
+   if (!productToAdd) return;
 
-      addToCart(productToAdd);
+// ✅ block if unavailable
+if (Number(productToAdd.is_available ?? 1) !== 1) {
+    alert('Sorry, this item is currently out of stock.');
+    return;
+}
+
+
+
+addToCart(productToAdd);
 
       // "Added" state
       if (this.classList.contains('added')) return;

@@ -33,6 +33,16 @@ Route::post('/admin/inventory/{ingredient}/stock-out', [InventoryController::cla
     ->name('admin.inventory.stockout');  // optional, match blade if used
 
 
+
+
+
+
+
+
+
+
+
+
 // ✅ Table Management page
 
 Route::get('/admin/table-management', [AdminController::class, 'tableManagement'])

@@ -11,37 +11,24 @@ class MenuItem extends Model
 
     protected $table = 'menu_items';
 
+    // ✅ primary key is menu_id (ex: MENU001)
     protected $primaryKey = 'menu_id';
-    public $incrementing = false;     // ✅ STRING KEY, NOT AUTO INT
+    public $incrementing = false;
     protected $keyType = 'string';
 
-    
     protected $fillable = [
         'menu_id',
         'name',
         'image',
         'description',
         'price',
-        'category'
+        'category',
+        'is_available',
     ];
 
-    // ✅ AUTO GENERATE MENU001, MENU002, etc.
-    protected static function boot()
-{
-    parent::boot();
-
-    static::creating(function ($model) {
-        $lastItem = self::orderBy('menu_id', 'desc')->first(); // <- change here
-
-        if (!$lastItem) {
-            $nextNumber = 1;
-        } else {
-            $lastNumber = (int) substr($lastItem->menu_id, 4);
-            $nextNumber = $lastNumber + 1;
-        }
-
-        $model->menu_id = 'MENU' . str_pad($nextNumber, 3, '0', STR_PAD_LEFT); // <- also use menu_id
-    });
-}
-
+    // ✅ If recipes table uses menu_id too
+    public function recipes()
+    {
+        return $this->hasMany(\App\Models\Recipe::class, 'menu_id', 'menu_id');
+    }
 }
