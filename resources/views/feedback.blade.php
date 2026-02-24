@@ -105,7 +105,7 @@
       alert('Please select a star rating.');
       return;
     }
-
+        
     // show modal quickly then submit
     e.preventDefault();
     modalStars.innerHTML = '⭐'.repeat(selectedRating);

@@ -17,6 +17,20 @@ use App\Http\Controllers\PaymentReceiptController;
 
 
 
+// Inventory page
+use App\Http\Controllers\InventoryController;
+
+Route::get('/admin/inventory', [InventoryController::class, 'index'])
+    ->name('admin.inventory');
+
+Route::post('/admin/inventory/ingredients', [InventoryController::class, 'storeIngredient'])
+    ->name('admin.inventory.ingredients.store');
+
+Route::post('/admin/inventory/{ingredient}/stock-in', [InventoryController::class, 'stockIn'])
+    ->name('admin.inventory.stockin');   // ✅ matches your blade
+
+Route::post('/admin/inventory/{ingredient}/stock-out', [InventoryController::class, 'stockOut'])
+    ->name('admin.inventory.stockout');  // optional, match blade if used
 
 
 // ✅ Table Management page
