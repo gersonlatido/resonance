@@ -2,23 +2,35 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
 class Recipe extends Model
 {
+    use HasFactory;
+
+    protected $table = 'recipes';
+
     protected $fillable = [
-        'menu_item_id',
+        'menu_id',
         'ingredient_id',
-        'qty',
+        'qty_needed',
+        'unit', // optional if you later add this column
     ];
 
-public function ingredient()
-{
-    return $this->belongsTo(\App\Models\Ingredient::class);
-}
+    /**
+     * Recipe belongs to one Ingredient
+     */
+    public function ingredient()
+    {
+        return $this->belongsTo(\App\Models\Ingredient::class, 'ingredient_id');
+    }
 
+    /**
+     * Recipe belongs to one MenuItem (menu_id is string PK)
+     */
     public function menuItem()
     {
-        return $this->belongsTo(MenuItem::class, 'menu_item_id');
+        return $this->belongsTo(\App\Models\MenuItem::class, 'menu_id', 'menu_id');
     }
 }

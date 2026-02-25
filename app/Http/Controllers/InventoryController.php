@@ -10,23 +10,58 @@ use Illuminate\Http\Request;
 
 class InventoryController extends Controller
 {
-    public function index()
+    /**
+     * Inventory page
+     * - mode=ingredient (default): show/search ingredients
+     * - mode=menu: show/search menu items and show their ingredients (recipes)
+     */
+    public function index(Request $request)
     {
-        $ingredients = Ingredient::orderBy('name')->get();
+        $q = trim((string) $request->query('q', ''));
+        $mode = (string) $request->query('mode', 'ingredient'); // ingredient | menu
 
-        $total = $ingredients->count();
-        $outOfStock = $ingredients->where('stock_qty', '<=', 0)->count();
-        $lowStock = $ingredients->filter(fn ($i) => $i->stock_qty > 0 && $i->stock_qty <= $i->reorder_level)->count();
+        // ✅ Always load ingredient stats for the dashboard boxes
+        $ingredientsAll = Ingredient::orderBy('name')->get();
 
-        $lowItems = $ingredients->filter(fn ($i) => $i->stock_qty <= 0 || $i->stock_qty <= $i->reorder_level)->values();
+        $total = $ingredientsAll->count();
+        $outOfStock = $ingredientsAll->where('stock_qty', '<=', 0)->count();
+        $lowStock = $ingredientsAll->filter(fn ($i) => $i->stock_qty > 0 && $i->stock_qty <= $i->reorder_level)->count();
+
+        $lowItems = $ingredientsAll->filter(fn ($i) => $i->stock_qty <= 0 || $i->stock_qty <= $i->reorder_level)->values();
 
         $recentMovements = StockMovement::with('ingredient')
             ->latest()
             ->take(10)
             ->get();
 
+        // ✅ Variables for view (only one is used depending on mode)
+        $ingredients = collect();
+        $menuItems = collect();
+
+        if ($mode === 'menu') {
+            // Search menu items by name or menu_id
+            $menuItems = MenuItem::query()
+                ->when($q !== '', function ($query) use ($q) {
+                    $query->where('name', 'like', "%{$q}%")
+                          ->orWhere('menu_id', 'like', "%{$q}%");
+                })
+                // Load ingredients through recipes
+                ->with(['recipes.ingredient'])
+                ->orderBy('name')
+                ->get();
+        } else {
+            // Default: ingredient search/list
+            $ingredients = Ingredient::query()
+                ->when($q !== '', fn ($query) => $query->where('name', 'like', "%{$q}%"))
+                ->orderBy('name')
+                ->get();
+        }
+
         return view('admin.inventory', compact(
+            'mode',
+            'q',
             'ingredients',
+            'menuItems',
             'total',
             'lowStock',
             'outOfStock',
@@ -101,46 +136,45 @@ class InventoryController extends Controller
 
     /**
      * ✅ Recompute menu availability for all menus that use this ingredient.
-     * This version assumes recipes table uses menu_id (string) that matches menu_items.menu_id
+     * Assumes recipes.menu_id (string) matches menu_items.menu_id
      */
     private function recomputeMenusForIngredient(int $ingredientId): void
-{
-    // ✅ recipes table uses menu_id (string)
-    $menuIds = Recipe::where('ingredient_id', $ingredientId)
-        ->pluck('menu_id')
-        ->unique()
-        ->values();
+    {
+        $menuIds = Recipe::where('ingredient_id', $ingredientId)
+            ->pluck('menu_id')
+            ->unique()
+            ->values();
 
-    foreach ($menuIds as $menuId) {
-        $this->recomputeOneMenuAvailability((string) $menuId);
-    }
-}
-
-private function recomputeOneMenuAvailability(string $menuId): void
-{
-    // ✅ since MenuItem PK is menu_id now, this works
-    $menu = MenuItem::where('menu_id', $menuId)->first();
-    if (!$menu) return;
-
-    $recipes = Recipe::with('ingredient')->where('menu_id', $menuId)->get();
-
-    $available = true;
-
-    foreach ($recipes as $r) {
-        $ing = $r->ingredient;
-        if (!$ing) { $available = false; break; }
-
-    $need = (float) $r->qty_needed;
-        $stock = (float) $ing->stock_qty;
-        $reorder = (float) $ing->reorder_level;
-
-        // ✅ LOW/OUT disables menu
-        if ($stock <= 0 || $stock <= $reorder || $stock < $need) {
-            $available = false;
-            break;
+        foreach ($menuIds as $menuId) {
+            $this->recomputeOneMenuAvailability((string) $menuId);
         }
     }
 
-    $menu->update(['is_available' => $available ? 1 : 0]);
-}
+    private function recomputeOneMenuAvailability(string $menuId): void
+    {
+        $menu = MenuItem::where('menu_id', $menuId)->first();
+        if (!$menu) return;
+
+        $recipes = Recipe::with('ingredient')->where('menu_id', $menuId)->get();
+
+        $available = true;
+
+        foreach ($recipes as $r) {
+            $ing = $r->ingredient;
+            if (!$ing) { $available = false; break; }
+
+            // ✅ Keep your existing logic (uses Recipe::qty_needed accessor)
+            $need   = (float) $r->qty_needed;
+            $stock  = (float) $ing->stock_qty;
+            $reorder = (float) $ing->reorder_level;
+
+            // ✅ LOW/OUT disables menu
+            if ($stock <= 0 || $stock <= $reorder || $stock < $need) {
+                $available = false;
+                break;
+            }
+        }
+
+        $menu->update(['is_available' => $available ? 1 : 0]);
+    }
 }

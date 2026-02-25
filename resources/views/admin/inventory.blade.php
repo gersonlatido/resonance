@@ -162,13 +162,14 @@
     .panel-body{ padding:14px; }
 
     table{ width:100%;border-collapse:collapse;font-size:13px; }
-    th, td{ padding:10px 8px;border-bottom:1px solid rgba(0,0,0,.06);text-align:left; }
+    th, td{ padding:10px 8px;border-bottom:1px solid rgba(0,0,0,.06);text-align:left; vertical-align:top; }
     th{ color:var(--muted);font-size:12px;font-weight:900; }
     .badge{
       display:inline-flex;align-items:center;
       padding:4px 10px;border-radius:999px;
       border:1px solid rgba(0,0,0,.08);
       font-size:12px;font-weight:900;background:#fff;
+      white-space:nowrap;
     }
     .badge.good{ color:var(--good);border-color:rgba(22,163,74,.25); }
     .badge.warn{ color:var(--warn);border-color:rgba(245,158,11,.28); }
@@ -202,6 +203,12 @@
     .qty.in{ color:var(--good); }
     .qty.out{ color:var(--bad); }
     .empty{ color:var(--muted);font-weight:800;font-size:13px;text-align:center;padding:18px 0; }
+
+    /* Menu result cards inside table */
+    .menu-title{ font-weight:900; }
+    .menu-sub{ font-size:12px; color:var(--muted); font-weight:800; margin-top:4px; }
+    .ing-list{ margin:8px 0 0; padding-left:18px; }
+    .ing-list li{ margin:6px 0; }
 
     /* Modal */
     .modal-backdrop{
@@ -245,8 +252,13 @@
 </head>
 
 <body>
+@php
+  $mode = $mode ?? 'ingredient';
+  $q = $q ?? '';
+@endphp
+
 <div class="shell">
-  <!-- Sidebar (same sections like your dashboard) -->
+  <!-- Sidebar -->
   <aside class="sidebar">
     <div class="brand">
       <div class="logo-box">
@@ -300,16 +312,30 @@
       </div>
     @endif
 
-    <div class="actions">
-      <input id="searchInput" class="input" type="text" placeholder="Search ingredient…" />
-      <select id="statusFilter" class="select">
-        <option value="all">All Status</option>
-        <option value="good">Healthy</option>
-        <option value="warn">Low Stock</option>
-        <option value="bad">Out of Stock</option>
+    <!-- ✅ Server-side search form -->
+    <form class="actions" method="GET" action="{{ route('admin.inventory') }}">
+      <input id="searchInput" name="q" class="input" type="text"
+             placeholder="{{ $mode === 'menu' ? 'Search menu item…' : 'Search ingredient…' }}"
+             value="{{ $q }}" />
+
+      <select id="modeSelect" name="mode" class="select">
+        <option value="ingredient" {{ $mode === 'ingredient' ? 'selected' : '' }}>Ingredient</option>
+        <option value="menu" {{ $mode === 'menu' ? 'selected' : '' }}>Menu Item (show ingredients)</option>
       </select>
-      <button class="btn primary" id="openModalBtn">+ Add Ingredient</button>
-    </div>
+
+      @if($mode === 'ingredient')
+        <select id="statusFilter" class="select">
+          <option value="all">All Status</option>
+          <option value="good">Healthy</option>
+          <option value="warn">Low Stock</option>
+          <option value="bad">Out of Stock</option>
+        </select>
+
+        <button class="btn primary" type="button" id="openModalBtn">+ Add Ingredient</button>
+      @endif
+
+      <button class="btn primary" type="submit">Search</button>
+    </form>
 
     <section class="stats">
       <div class="stat">
@@ -340,107 +366,198 @@
       <div class="panel">
         <div class="panel-head">
           <div>
-            <h3>Low Stock Alerts</h3>
-            <p>Ingredients to restock soon</p>
+            <h3>{{ $mode === 'menu' ? 'Menu Item Results' : 'Low Stock Alerts' }}</h3>
+            <p>{{ $mode === 'menu' ? 'Search menu items and view ingredient requirements' : 'Ingredients to restock soon' }}</p>
           </div>
         </div>
 
         <div class="panel-body">
-          <table>
-            <thead>
-            <tr>
-              <th>Ingredient</th>
-              <th>Stock</th>
-              <th>Reorder</th>
-              <th>Status</th>
-              <th style="text-align:right;">Restock</th>
-            </tr>
-            </thead>
-            <tbody id="lowStockBody">
-            @forelse($lowItems as $i)
-              @php
-                $status = ($i->stock_qty ?? 0) <= 0 ? 'bad' : ((($i->stock_qty ?? 0) <= ($i->reorder_level ?? 0)) ? 'warn' : 'good');
-              @endphp
-              <tr data-name="{{ strtolower($i->name) }}" data-status="{{ $status }}">
-                <td><strong>{{ $i->name }}</strong></td>
-                <td>{{ number_format($i->stock_qty,2) }} {{ $i->unit }}</td>
-                <td>{{ number_format($i->reorder_level,2) }} {{ $i->unit }}</td>
-                <td>
-                  @if($status==='bad') <span class="badge bad">Out</span> @endif
-                  @if($status==='warn') <span class="badge warn">Low</span> @endif
-                  @if($status==='good') <span class="badge good">Healthy</span> @endif
-                </td>
-                <td style="text-align:right;">
-                  <form method="POST" action="{{ route('admin.inventory.stockin', $i->id) }}" style="display:flex; gap:6px; justify-content:flex-end;">
-                    @csrf
-                    <input class="mini-input" name="qty" type="number" step="0.01" placeholder="+qty" required />
-                    <button class="link-btn" type="submit">Restock</button>
-                  </form>
-                </td>
+          @if($mode === 'menu')
+            <table>
+              <thead>
+              <tr>
+                <th style="width:28%;">Menu Item</th>
+                <th style="width:58%;">Ingredients (per 1 order)</th>
+                <th style="width:14%;">Status</th>
               </tr>
-            @empty
-              <tr><td colspan="5" class="empty">No low stock items 🎉</td></tr>
-            @endforelse
-            </tbody>
-          </table>
-        </div>
+              </thead>
+              <tbody>
+              @forelse($menuItems as $item)
+                @php
+                  $recipes = $item->recipes ?? collect();
+                  $menuOk = true;
 
-        <div class="panel-head" style="border-top:1px solid rgba(0,0,0,.06);">
-          <div>
-            <h3>All Ingredients</h3>
-            <p>Manage stock levels</p>
-          </div>
-        </div>
+                  foreach ($recipes as $r) {
+                    $ing = $r->ingredient ?? null;
+                    if (!$ing) { $menuOk = false; break; }
 
-        <div class="panel-body">
-          <table>
-            <thead>
-            <tr>
-              <th>Ingredient</th>
-              <th>Unit</th>
-              <th>Stock</th>
-              <th>Reorder</th>
-              <th>Status</th>
-              <th style="text-align:right;">Action</th>
-            </tr>
-            </thead>
-            <tbody id="allBody">
-            @forelse($ingredients as $i)
-              @php
-                $status = ($i->stock_qty ?? 0) <= 0 ? 'bad' : ((($i->stock_qty ?? 0) <= ($i->reorder_level ?? 0)) ? 'warn' : 'good');
-              @endphp
-              <tr data-name="{{ strtolower($i->name) }}" data-status="{{ $status }}">
-                <td><strong>{{ $i->name }}</strong></td>
-                <td>{{ $i->unit }}</td>
-                <td>{{ number_format($i->stock_qty,2) }}</td>
-                <td>{{ number_format($i->reorder_level,2) }}</td>
-                <td>
-                  @if($status==='bad') <span class="badge bad">Out</span> @endif
-                  @if($status==='warn') <span class="badge warn">Low</span> @endif
-                  @if($status==='good') <span class="badge good">Healthy</span> @endif
-                </td>
-                <td style="text-align:right;">
-                  <div class="row-actions">
-                    <form method="POST" action="{{ route('admin.inventory.stockin', $i->id) }}" style="display:flex; gap:6px; align-items:center;">
+                    $need = (float) ($r->qty_needed ?? 0);
+                    $stock = (float) ($ing->stock_qty ?? 0);
+                    $reorder = (float) ($ing->reorder_level ?? 0);
+
+                    if ($stock <= 0 || $stock <= $reorder || ($need > 0 && $stock < $need)) {
+                      $menuOk = false;
+                      break;
+                    }
+                  }
+                @endphp
+
+                <tr>
+                  <td>
+                    <div class="menu-title">{{ $item->name }}</div>
+                    <div class="menu-sub">ID: {{ $item->menu_id }}</div>
+                  </td>
+
+                  <td>
+                    @if($recipes->count())
+                      <ul class="ing-list">
+                        @foreach($recipes as $r)
+                          @php
+                            $ing = $r->ingredient ?? null;
+                            $ingName = $ing->name ?? 'Unknown';
+                            $need = (float) ($r->qty_needed ?? 0);
+                            $unit = $r->unit ?? ($ing->unit ?? '');
+                            $stock = (float) ($ing->stock_qty ?? 0);
+                            $reorder = (float) ($ing->reorder_level ?? 0);
+                            $insufficient = ($stock <= 0) || ($stock <= $reorder) || ($need > 0 && $stock < $need);
+                            $canMake = $need > 0 ? (int) floor($stock / $need) : 0;
+                          @endphp
+
+                          <li>
+                            <strong>{{ $ingName }}</strong>
+                            — needs {{ number_format($need,2) }} {{ $unit }}
+                            <span style="color:var(--muted); font-weight:800;">
+                              | stock: {{ number_format($stock,2) }} {{ $ing->unit ?? '' }}
+                              | reorder: {{ number_format($reorder,2) }}
+                              | can make: {{ $canMake }}
+                            </span>
+                            @if($insufficient)
+                              <span class="badge bad" style="margin-left:8px;">INSUFFICIENT</span>
+                            @else
+                              <span class="badge good" style="margin-left:8px;">OK</span>
+                            @endif
+                          </li>
+                        @endforeach
+                      </ul>
+                    @else
+                      <div class="empty" style="padding:10px 0;">No recipe found for this item.</div>
+                    @endif
+                  </td>
+
+                  <td>
+                    @if($menuOk)
+                      <span class="badge good">AVAILABLE</span>
+                    @else
+                      <span class="badge bad">UNAVAILABLE</span>
+                    @endif
+                  </td>
+                </tr>
+              @empty
+                <tr><td colspan="3" class="empty">No menu items found.</td></tr>
+              @endforelse
+              </tbody>
+            </table>
+
+          @else
+            <!-- ✅ Original low stock alerts table -->
+            <table>
+              <thead>
+              <tr>
+                <th>Ingredient</th>
+                <th>Stock</th>
+                <th>Reorder</th>
+                <th>Status</th>
+                <th style="text-align:right;">Restock</th>
+              </tr>
+              </thead>
+              <tbody id="lowStockBody">
+              @forelse($lowItems as $i)
+                @php
+                  $status = ($i->stock_qty ?? 0) <= 0 ? 'bad' : ((($i->stock_qty ?? 0) <= ($i->reorder_level ?? 0)) ? 'warn' : 'good');
+                @endphp
+                <tr data-name="{{ strtolower($i->name) }}" data-status="{{ $status }}">
+                  <td><strong>{{ $i->name }}</strong></td>
+                  <td>{{ number_format($i->stock_qty,2) }} {{ $i->unit }}</td>
+                  <td>{{ number_format($i->reorder_level,2) }} {{ $i->unit }}</td>
+                  <td>
+                    @if($status==='bad') <span class="badge bad">Out</span> @endif
+                    @if($status==='warn') <span class="badge warn">Low</span> @endif
+                    @if($status==='good') <span class="badge good">Healthy</span> @endif
+                  </td>
+                  <td style="text-align:right;">
+                    <form method="POST" action="{{ route('admin.inventory.stockin', $i->id) }}" style="display:flex; gap:6px; justify-content:flex-end;">
                       @csrf
                       <input class="mini-input" name="qty" type="number" step="0.01" placeholder="+qty" required />
-                      <button class="link-btn" type="submit">+ Stock</button>
+                      <button class="link-btn" type="submit">Restock</button>
                     </form>
-
-                    <form method="POST" action="{{ route('admin.inventory.stockout', $i->id) }}" style="display:flex; gap:6px; align-items:center;">
-                      @csrf
-                      <input class="mini-input" name="qty" type="number" step="0.01" placeholder="-qty" required />
-                      <button class="link-btn" type="submit">- Stock</button>
-                    </form>
-                  </div>
-                </td>
-              </tr>
-            @empty
-              <tr><td colspan="6" class="empty">No ingredients yet.</td></tr>
-            @endforelse
-            </tbody>
-          </table>
+                  </td>
+                </tr>
+              @empty
+                <tr><td colspan="5" class="empty">No low stock items 🎉</td></tr>
+              @endforelse
+              </tbody>
+            </table>
+          @endif
         </div>
+
+        @if($mode === 'ingredient')
+          <div class="panel-head" style="border-top:1px solid rgba(0,0,0,.06);">
+            <div>
+              <h3>All Ingredients</h3>
+              <p>Manage stock levels</p>
+            </div>
+          </div>
+
+          <div class="panel-body">
+            <table>
+              <thead>
+              <tr>
+                <th>Ingredient</th>
+                <th>Unit</th>
+                <th>Stock</th>
+                <th>Reorder</th>
+                <th>Status</th>
+                <th style="text-align:right;">Action</th>
+              </tr>
+              </thead>
+              <tbody id="allBody">
+              @forelse($ingredients as $i)
+                @php
+                  $status = ($i->stock_qty ?? 0) <= 0 ? 'bad' : ((($i->stock_qty ?? 0) <= ($i->reorder_level ?? 0)) ? 'warn' : 'good');
+                @endphp
+                <tr data-name="{{ strtolower($i->name) }}" data-status="{{ $status }}">
+                  <td><strong>{{ $i->name }}</strong></td>
+                  <td>{{ $i->unit }}</td>
+                  <td>{{ number_format($i->stock_qty,2) }}</td>
+                  <td>{{ number_format($i->reorder_level,2) }}</td>
+                  <td>
+                    @if($status==='bad') <span class="badge bad">Out</span> @endif
+                    @if($status==='warn') <span class="badge warn">Low</span> @endif
+                    @if($status==='good') <span class="badge good">Healthy</span> @endif
+                  </td>
+                  <td style="text-align:right;">
+                    <div class="row-actions">
+                      <form method="POST" action="{{ route('admin.inventory.stockin', $i->id) }}" style="display:flex; gap:6px; align-items:center;">
+                        @csrf
+                        <input class="mini-input" name="qty" type="number" step="0.01" placeholder="+qty" required />
+                        <button class="link-btn" type="submit">+ Stock</button>
+                      </form>
+
+                      <form method="POST" action="{{ route('admin.inventory.stockout', $i->id) }}" style="display:flex; gap:6px; align-items:center;">
+                        @csrf
+                        <input class="mini-input" name="qty" type="number" step="0.01" placeholder="-qty" required />
+                        <button class="link-btn" type="submit">- Stock</button>
+                      </form>
+                    </div>
+                  </td>
+                </tr>
+              @empty
+                <tr><td colspan="6" class="empty">No ingredients yet.</td></tr>
+              @endforelse
+              </tbody>
+            </table>
+          </div>
+        @endif
       </div>
 
       <!-- Right -->
@@ -454,9 +571,7 @@
 
         <div class="panel-body">
           @forelse($recentMovements as $m)
-            @php
-              $type = $m->type ?? 'adjust';
-            @endphp
+            @php $type = $m->type ?? 'adjust'; @endphp
             <div class="movement">
               <div>
                 <div class="name">{{ $m->ingredient->name ?? 'Ingredient' }}</div>
@@ -475,61 +590,71 @@
   </main>
 </div>
 
-<!-- Modal -->
-<div class="modal-backdrop" id="modalBackdrop">
-  <div class="modal">
-    <div class="modal-head">
-      <strong>Add Ingredient</strong>
-      <button class="btn" id="closeModalBtn" type="button">Close</button>
-    </div>
+@if($mode === 'ingredient')
+  <!-- Modal -->
+  <div class="modal-backdrop" id="modalBackdrop">
+    <div class="modal">
+      <div class="modal-head">
+        <strong>Add Ingredient</strong>
+        <button class="btn" id="closeModalBtn" type="button">Close</button>
+      </div>
 
-    <div class="modal-body">
-      <form method="POST" action="{{ route('admin.inventory.ingredients.store') }}">
-        @csrf
-        <div class="form-grid">
-          <div class="full">
-            <label>Ingredient Name</label>
-            <input class="field" name="name" type="text" placeholder="e.g., Garlic" required />
+      <div class="modal-body">
+        <form method="POST" action="{{ route('admin.inventory.ingredients.store') }}">
+          @csrf
+          <div class="form-grid">
+            <div class="full">
+              <label>Ingredient Name</label>
+              <input class="field" name="name" type="text" placeholder="e.g., Garlic" required />
+            </div>
+            <div>
+              <label>Unit</label>
+              <select class="field" name="unit" required>
+                <option value="g">g</option>
+                <option value="ml">ml</option>
+                <option value="pcs">pcs</option>
+              </select>
+            </div>
+            <div>
+              <label>Starting Stock</label>
+              <input class="field" name="stock_qty" type="number" step="0.01" required />
+            </div>
+            <div>
+              <label>Reorder Level</label>
+              <input class="field" name="reorder_level" type="number" step="0.01" required />
+            </div>
           </div>
-          <div>
-            <label>Unit</label>
-            <select class="field" name="unit" required>
-              <option value="g">g</option>
-              <option value="ml">ml</option>
-              <option value="pcs">pcs</option>
-            </select>
-          </div>
-          <div>
-            <label>Starting Stock</label>
-            <input class="field" name="stock_qty" type="number" step="0.01" required />
-          </div>
-          <div>
-            <label>Reorder Level</label>
-            <input class="field" name="reorder_level" type="number" step="0.01" required />
-          </div>
-        </div>
 
-        <div class="modal-foot">
-          <button class="btn" type="button" id="closeModalBtn2">Cancel</button>
-          <button class="btn primary" type="submit">Save</button>
-        </div>
-      </form>
+          <div class="modal-foot">
+            <button class="btn" type="button" id="closeModalBtn2">Cancel</button>
+            <button class="btn primary" type="submit">Save</button>
+          </div>
+        </form>
+      </div>
     </div>
   </div>
-</div>
+@endif
 
 <script>
-  // modal
+  // modal (only exists in ingredient mode)
   const modal = document.getElementById("modalBackdrop");
-  document.getElementById("openModalBtn").addEventListener("click", () => modal.style.display = "flex");
-  document.getElementById("closeModalBtn").addEventListener("click", () => modal.style.display = "none");
-  document.getElementById("closeModalBtn2").addEventListener("click", () => modal.style.display = "none");
-  modal.addEventListener("click", (e) => { if(e.target === modal) modal.style.display = "none"; });
+  const openBtn = document.getElementById("openModalBtn");
+  const closeBtn = document.getElementById("closeModalBtn");
+  const closeBtn2 = document.getElementById("closeModalBtn2");
 
-  // search + filter
-  const searchInput = document.getElementById('searchInput');
+  if (modal && openBtn && closeBtn && closeBtn2) {
+    openBtn.addEventListener("click", () => modal.style.display = "flex");
+    closeBtn.addEventListener("click", () => modal.style.display = "none");
+    closeBtn2.addEventListener("click", () => modal.style.display = "none");
+    modal.addEventListener("click", (e) => { if(e.target === modal) modal.style.display = "none"; });
+  }
+
+  // Front-end filter only for ingredient mode tables
   const statusFilter = document.getElementById('statusFilter');
+  const searchInput = document.getElementById('searchInput');
+
   function applyFilters(){
+    if (!statusFilter) return; // menu mode -> no filter
     const q = (searchInput.value || '').trim().toLowerCase();
     const f = statusFilter.value;
     const rows = document.querySelectorAll('#allBody tr, #lowStockBody tr');
@@ -541,8 +666,10 @@
       row.style.display = (okSearch && okFilter) ? '' : 'none';
     });
   }
-  searchInput.addEventListener('input', applyFilters);
-  statusFilter.addEventListener('change', applyFilters);
+  if (statusFilter && searchInput) {
+    searchInput.addEventListener('input', applyFilters);
+    statusFilter.addEventListener('change', applyFilters);
+  }
 </script>
 </body>
 </html>
