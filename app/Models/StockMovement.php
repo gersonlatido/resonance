@@ -2,15 +2,22 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
 class StockMovement extends Model
 {
-    protected $fillable = ['ingredient_id','type','qty','reason'];
+    use HasFactory;
+
+    protected $fillable = [
+        'ingredient_id',
+        'type',
+        'qty',
+        'reason',
+    ];
 
     public function ingredient()
     {
-        return $this->belongsTo(\App\Models\Ingredient::class);
+        return $this->belongsTo(Ingredient::class);
     }
 }
-

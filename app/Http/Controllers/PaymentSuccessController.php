@@ -5,10 +5,12 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use App\Models\Order;
 use App\Models\Table;
+use App\Services\InventoryService;
+use Illuminate\Support\Facades\Log;
 
 class PaymentSuccessController extends Controller
 {
-    public function show(Request $request)
+    public function show(Request $request, InventoryService $inventory)
     {
         $orderCode = $request->query('order_code');
 
@@ -18,20 +20,31 @@ class PaymentSuccessController extends Controller
 
         $order = Order::where('order_code', $orderCode)->firstOrFail();
 
-        // ✅ store table in session so /feedback is clean
+        // store session for track/feedback
         session([
-            'table_number' => (int) $order->table_number,
             'order_code'   => (string) $order->order_code,
+            'table_number' => (int) $order->table_number,
         ]);
 
-        // ✅ mark paid
-        $order->update(['payment_status' => 'paid']);
+        // mark paid
+        if (($order->payment_status ?? null) !== 'paid') {
+            $order->update(['payment_status' => 'paid']);
+        }
 
-        // ✅ IMPORTANT: auto mark table unavailable AFTER payment
+        // ✅ DEDUCT INVENTORY (LOGS)
+        try {
+            $inventory->deductIngredientsForOrder($order);
+        } catch (\Throwable $e) {
+            Log::error('Inventory deduction failed', [
+                'order_code' => $order->order_code,
+                'error' => $e->getMessage(),
+            ]);
+        }
+
+        // mark table unavailable
         Table::where('number', (int) $order->table_number)
             ->update(['is_available' => false]);
 
-        // ✅ go to receipt
-        return redirect()->route('payment.receit');
+        return redirect()->route('payment.receipt', ['order_code' => $order->order_code]);
     }
 }

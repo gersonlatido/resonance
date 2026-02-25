@@ -6,155 +6,131 @@ use App\Models\MenuItem;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\AdminController;
 use App\Http\Controllers\AdminOrderApiController;
-
 use App\Http\Controllers\OrderController;
 use App\Http\Controllers\TableController;
-
 use App\Http\Controllers\FeedbackController;
 use App\Http\Controllers\AdminFeedbackController;
 use App\Http\Controllers\PaymentSuccessController;
 use App\Http\Controllers\PaymentReceiptController;
-
-
-
-// Inventory page
+use App\Http\Controllers\PaymentController;
 use App\Http\Controllers\InventoryController;
 
-Route::get('/admin/inventory', [InventoryController::class, 'index'])
-    ->name('admin.inventory');
+/*
+|--------------------------------------------------------------------------
+| INVENTORY
+|--------------------------------------------------------------------------
+*/
+Route::get('/admin/inventory', [InventoryController::class, 'index'])->name('admin.inventory');
+Route::post('/admin/inventory/ingredients', [InventoryController::class, 'storeIngredient'])->name('admin.inventory.ingredients.store');
+Route::post('/admin/inventory/{ingredient}/stock-in', [InventoryController::class, 'stockIn'])->name('admin.inventory.stockin');
+Route::post('/admin/inventory/{ingredient}/stock-out', [InventoryController::class, 'stockOut'])->name('admin.inventory.stockout');
 
-Route::post('/admin/inventory/ingredients', [InventoryController::class, 'storeIngredient'])
-    ->name('admin.inventory.ingredients.store');
+/*
+|--------------------------------------------------------------------------
+| TABLE MANAGEMENT
+|--------------------------------------------------------------------------
+*/
+Route::get('/admin/table-management', [AdminController::class, 'tableManagement'])->name('admin.table-management');
+Route::post('/admin/tables/{number}/toggle', [AdminController::class, 'toggleTable'])->name('admin.tables.toggle');
 
-Route::post('/admin/inventory/{ingredient}/stock-in', [InventoryController::class, 'stockIn'])
-    ->name('admin.inventory.stockin');   // ✅ matches your blade
-
-Route::post('/admin/inventory/{ingredient}/stock-out', [InventoryController::class, 'stockOut'])
-    ->name('admin.inventory.stockout');  // optional, match blade if used
-
-
-
-
-
-
-
-
-
-
-
-
-// ✅ Table Management page
-
-Route::get('/admin/table-management', [AdminController::class, 'tableManagement'])
-    ->name('admin.table-management');
-
-Route::post('/admin/tables/{number}/toggle', [AdminController::class, 'toggleTable'])
-    ->name('admin.tables.toggle');
-
-
-// Customer enters via QR
-// Route::get('/t/{table}', [TableController::class, 'enter'])->name('table.enter');
+/*
+|--------------------------------------------------------------------------
+| QR ENTRY
+|--------------------------------------------------------------------------
+*/
 Route::get('/t/{table}', function ($table) {
-    if ($table < 1 || $table > 10) abort(404); // adjust max tables
+    if ($table < 1 || $table > 10) abort(404);
     session(['table_number' => (int) $table]);
     return redirect('/');
 })->whereNumber('table');
 
-// Route::get('/track/{order_code}', function ($order_code) {
-//     return view('track-order', compact('order_code'));
-// });
-
-
-
-// General menu routes (customer side)
-Route::get('/', function () {
-    return view('home');
-});
-// Route::get('/payment-receit', function () {
-//     return view('payment-receit');
-// });
-
+/*
+|--------------------------------------------------------------------------
+| CUSTOMER PAGES
+|--------------------------------------------------------------------------
+*/
+Route::get('/', fn() => view('home'));
 
 Route::get('/all-day-breakfast-menu', [MenuController::class, 'breakfast'])->name('menu.breakfast');
 Route::get('/main-courses-menu', [MenuController::class, 'mainCourses'])->name('menu.main_courses');
 Route::get('/pasta-menu', [MenuController::class, 'pasta'])->name('menu.pasta');
-Route::get('/chicken-menu', [MenuController::class, 'chicken'])->name('menu.chicken'); 
-Route::get('/drinks-menu', [MenuController::class, 'drinks'])->name('menu.drinks'); 
+Route::get('/chicken-menu', [MenuController::class, 'chicken'])->name('menu.chicken');
+Route::get('/drinks-menu', [MenuController::class, 'drinks'])->name('menu.drinks');
 Route::get('/pizza-menu', [MenuController::class, 'pizza'])->name('menu.pizza');
 Route::get('/snacks-menu', [MenuController::class, 'snacks'])->name('menu.snacks');
 
-Route::get('/menu', function () {
-    return response()->json(MenuItem::all());
-});
+Route::get('/menu', fn() => response()->json(MenuItem::all()));
 
-// Order summary page
 Route::view('/order-summary', 'order-summary')->name('order.summary');
 
-// Payment routes
-use App\Http\Controllers\PaymentController;
-
+/*
+|--------------------------------------------------------------------------
+| PAYMENT FLOW (FIXED)
+|--------------------------------------------------------------------------
+*/
 Route::get('/payment', [PaymentController::class, 'show'])->name('payment.show');
 Route::post('/payment/initiate', [PaymentController::class, 'initiate']);
-// Route::get('/payment-success', fn () => view('payment-success'));
 
-// after Xendit redirect
+/* AFTER XENDIT REDIRECT */
 Route::get('/payment-success', [PaymentSuccessController::class, 'show'])
     ->name('payment.success');
 
-// receipt page
-Route::get('/payment-receit', [PaymentReceiptController::class, 'show'])
-    ->name('payment.receit');
+/* RECEIPT PAGE */
+Route::get('/payment-receipt/{order_code?}', [PaymentReceiptController::class, 'show'])
+    ->name('payment.receipt');
+
+/* ✅ BACKWARD COMPATIBILITY FOR OLD TYPO URL */
+Route::get('/payment-receit', function () {
+    $orderCode = session('order_code');
+    if (!$orderCode) return redirect('/');
+    return redirect()->route('payment.receipt', ['order_code' => $orderCode]);
+});
+
 Route::get('/payment-cancelled', fn () => view('payment-cancelled'));
 
+/*
+|--------------------------------------------------------------------------
+| FEEDBACK
+|--------------------------------------------------------------------------
+*/
 Route::get('/feedback', function () {
     $table = session('table_number');
-
     if (!$table) {
         return redirect('/')->with('error', 'No table found for feedback.');
     }
-
     return view('feedback', ['table' => (int) $table]);
 })->name('feedback.form');
 
+Route::post('/feedback', [FeedbackController::class, 'store'])->name('feedback.store');
 
-
-
+/*
+|--------------------------------------------------------------------------
+| ADMIN API
+|--------------------------------------------------------------------------
+*/
 Route::get('/admin/api/orders', [AdminOrderApiController::class, 'index']);
-// Route::put('/admin/orders/{order_code}', [OrderController::class, 'updateStatus']);
 Route::put('/admin/api/orders/{order_code}', [OrderController::class, 'updateStatus']);
 
-
-
-
-
-
-
-
-
-// // Payment routes
-// use App\Http\Controllers\PaymentController;
-
-// Route::get('/payment', [PaymentController::class, 'show'])->name('payment.show');
-// Route::post('/payment/initiate', [PaymentController::class, 'initiate']);
-
-
-// Route::view('/payment-success', 'payment-success');
-// Route::view('/payment-failed', 'payment-failed');
-// =======
-
-// Admin routes (login, dashboard, and logout)
+/*
+|--------------------------------------------------------------------------
+| ADMIN AUTH + DASHBOARD
+|--------------------------------------------------------------------------
+*/
 Route::get('admin/login', [AuthController::class, 'showAdminLoginForm'])->name('admin.login');
 Route::post('admin/login', [AuthController::class, 'adminLogin']);
 Route::post('admin/logout', [AuthController::class, 'logout'])->name('admin.logout');
 
+Route::middleware(['auth', 'admin'])
+    ->get('admin/dashboard', [AdminController::class, 'index'])
+    ->name('admin.dashboard');
 
-// Admin dashboard route (protected by 'auth' and 'admin' middleware)
-Route::middleware(['auth', 'admin'])->get('admin/dashboard', [AdminController::class, 'index'])->name('admin.dashboard');
-
-// Route for handling the orders data from localStorage (POST request)
 Route::post('admin/storeOrdersData', [AdminController::class, 'storeOrdersData'])->name('admin.storeOrdersData');
 
-// TRACK ORDER ROUTE 
+/*
+|--------------------------------------------------------------------------
+| TRACK ORDER (SESSION-BASED)
+|--------------------------------------------------------------------------
+*/
 Route::get('/track-order', function () {
 
     $orderCode = session('order_code');
@@ -183,51 +159,25 @@ Route::get('/track-order', function () {
 
 })->name('track.order');
 
-// =======
-Route::middleware(['auth', 'admin'])->get('admin/table-management', [AdminController::class, 'tableManagement'])->name('admin.table-management');
+/*
+|--------------------------------------------------------------------------
+| ADMIN EXTRA PAGES
+|--------------------------------------------------------------------------
+*/
+Route::middleware(['auth', 'admin'])
+    ->get('admin/table-management', [AdminController::class, 'tableManagement'])
+    ->name('admin.table-management');
+
 Route::get('/admin/menu-management', fn() => view('admin.menu-management'))->name('admin.menu-management');
 
-
-
-
 Route::prefix('admin')->name('admin.')->group(function () {
-
-    // Feedback page
-    Route::get('/feedbacks', [AdminFeedbackController::class, 'index'])
-        ->name('feedbacks');
-
-    // Mark reviewed button
-    Route::patch('/feedbacks/{id}/review', [AdminFeedbackController::class, 'markReviewed'])
-        ->name('feedback.review');
-
+    Route::get('/feedbacks', [AdminFeedbackController::class, 'index'])->name('feedbacks');
+    Route::patch('/feedbacks/{id}/review', [AdminFeedbackController::class, 'markReviewed'])->name('feedback.review');
 });
 
-
-
-
-// Route::get('/feedback', function () {
-//     $table = session('table_number');
-
-//     if (!$table) {
-//         abort(403, 'No table assigned.');
-//     }
-
-//     return view('feedback', ['table' => (int) $table]);
-// })->name('feedback.form');
-
-
-
-Route::post('/feedback', [FeedbackController::class, 'store'])
-    ->name('feedback.store');
-
-
-
-
-
-
+/*
+|--------------------------------------------------------------------------
+| ORDER STATUS UPDATE
+|--------------------------------------------------------------------------
+*/
 Route::post('/orders/mark-paid', [OrderController::class, 'markPaid']);
-
-// Route::get('/track-order', function () {
-//     return view('track-order');
-// });
-// Route::get('/api/track/{order_code}', [OrderController::class, 'track']);

@@ -33,18 +33,37 @@ class PaymentController extends Controller
             return response()->json(['error' => 'Xendit secret key not found. Put XENDIT_SECRET_KEY in .env'], 500);
         }
 
-        // Compute total + items
-        $total = 0;
-        $items = [];   // Xendit items
-        $dbItems = []; // DB items
+        $total   = 0;
+        $items   = [];   // Xendit items
+        $dbItems = [];   // DB items
 
         foreach ($data['cart'] as $item) {
-            $name   = (string) ($item['name'] ?? 'Item');
-            $price  = (float) ($item['price'] ?? 0);
-            $qty    = (int) ($item['qty'] ?? 1);
-            $menuId = (string) ($item['id'] ?? $item['menu_id'] ?? '');
+
+            $name  = (string) ($item['name'] ?? 'Item');
+            $price = (float) ($item['price'] ?? 0);
+            $qty   = (int) ($item['qty'] ?? 1);
 
             if ($price <= 0 || $qty <= 0) continue;
+
+            /**
+             * ✅ IMPORTANT:
+             * Your menu_items table uses menu_id like MENU001 as the key (NO numeric id column).
+             * So order_items.menu_id MUST be MENU001 etc.
+             */
+            $menuId = (string) ($item['menu_id'] ?? '');
+
+            // If frontend mistakenly sends "id" but it's actually "MENU001", accept it
+            if (!$menuId && isset($item['id']) && is_string($item['id']) && str_starts_with($item['id'], 'MENU')) {
+                $menuId = $item['id'];
+            }
+
+            // If still empty -> we cannot map numeric ids because menu_items has no id
+            if (!$menuId) {
+                return response()->json([
+                    'error' => 'Cart item missing menu_id (expected MENU001 etc). Please send menu_id from frontend cart.',
+                    'bad_item' => $item,
+                ], 422);
+            }
 
             $lineTotal = $price * $qty;
             $total += $lineTotal;
@@ -52,15 +71,15 @@ class PaymentController extends Controller
             $items[] = [
                 'name'     => $name,
                 'quantity' => $qty,
-                'price'    => (int) round($price), // Xendit expects integer PHP
+                'price'    => (int) round($price),
             ];
 
             $dbItems[] = [
-                'menu_id'  => $menuId ?: null,
+                'menu_id'  => $menuId,  // ✅ ALWAYS MENU001 format
                 'name'     => $name,
                 'price'    => $price,
                 'qty'      => $qty,
-                'subtotal' => $lineTotal, // ✅ ADD THIS
+                'subtotal' => $lineTotal,
             ];
         }
 
@@ -73,34 +92,32 @@ class PaymentController extends Controller
             return response()->json(['error' => 'Invalid amount computed.'], 422);
         }
 
-        // ✅ Create identifiers
         $orderCode  = 'ORD-' . now()->format('Ymd') . '-' . strtoupper(Str::random(6));
         $externalId = 'order_' . now()->timestamp . '_' . uniqid();
 
-        // ✅ Save order to DB BEFORE redirect (unpaid first)
+        // ✅ Create order first
         $order = Order::create([
-            'order_code'      => $orderCode,
-            'external_id'     => $externalId,
-            'table_number'    => (int) $data['table_number'],
-            'status'          => 'preparing',
-            'eta_minutes'     => null,
-            'payment_status'  => 'unpaid',
-            'total'           => $total,
+            'order_code'     => $orderCode,
+            'external_id'    => $externalId,
+            'table_number'   => (int) $data['table_number'],
+            'status'         => 'preparing',
+            'eta_minutes'    => null,
+            'payment_status' => 'unpaid',
+            'total'          => $total,
         ]);
 
-        // ✅ Save items WITH subtotal
+        // ✅ Save order items (menu_id is MENU001 etc)
         foreach ($dbItems as $it) {
             OrderItem::create([
-                'order_id'  => $order->id,
-                'menu_id'   => $it['menu_id'],
-                'name'      => $it['name'],
-                'price'     => $it['price'],
-                'qty'       => $it['qty'],
-                'subtotal'  => $it['subtotal'], // ✅ FIX
+                'order_id' => $order->id,
+                'menu_id'  => $it['menu_id'],
+                'name'     => $it['name'],
+                'price'    => $it['price'],
+                'qty'      => $it['qty'],
+                'subtotal' => $it['subtotal'],
             ]);
         }
 
-        // ✅ Put order_code + external_id in success URL so we can mark paid + show tracking
         $successUrl = url('/payment-success') . '?order_code=' . urlencode($orderCode) . '&external_id=' . urlencode($externalId);
         $failedUrl  = url('/payment-cancelled') . '?order_code=' . urlencode($orderCode);
 
@@ -146,9 +163,9 @@ class PaymentController extends Controller
             }
 
             return response()->json([
-                'redirect'     => $invoiceUrl,
-                'external_id'  => $externalId,
-                'order_code'   => $orderCode,
+                'redirect'    => $invoiceUrl,
+                'external_id' => $externalId,
+                'order_code'  => $orderCode,
             ]);
         } catch (\Throwable $e) {
             $order->update(['payment_status' => 'failed']);
