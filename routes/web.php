@@ -50,6 +50,8 @@ Route::get('/snacks-menu', [MenuController::class, 'snacks'])->name('menu.snacks
 Route::get('/menu', fn() => response()->json(MenuItem::all()));
 
 Route::view('/order-summary', 'order-summary')->name('order.summary');
+Route::post('/done-eating', [TableController::class, 'doneEating'])
+    ->name('table.done_eating');
 
 /*
 |---------------------------------------------------------------------------
@@ -123,6 +125,7 @@ Route::get('/track-order', function () {
     ]);
 
 })->name('track.order');
+Route::post('/done-eating', [TableController::class, 'doneEating'])->name('table.done_eating');
 
 /*
 |---------------------------------------------------------------------------

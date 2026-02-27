@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use App\Models\Table;
+use App\Models\Order;
 
 class TableController extends Controller
 {
@@ -125,6 +126,63 @@ class TableController extends Controller
         ]);
 
         return redirect('/');
+    }
+
+    /**
+     * ✅ Customer clicks "Done Eating" to set table(s) available again.
+     * - Supports shared tables via session('table_numbers')
+     * - Safe: requires a paid order in the session (order_code) OR any paid order for that table
+     */
+    public function doneEating(Request $request)
+    {
+        // get chosen tables (shared) or fallback to single
+        $tables = session('table_numbers');
+        if (!is_array($tables) || count($tables) === 0) {
+            $single = session('table_number');
+            $tables = $single ? [(int)$single] : [];
+        }
+
+        if (count($tables) === 0) {
+            return response()->json([
+                'ok' => false,
+                'message' => 'No table found in session.'
+            ], 400);
+        }
+
+        // ✅ Safety check: must have a paid order (prefer session order_code)
+        $orderCode = session('order_code');
+
+        $hasPaid = false;
+
+        if ($orderCode) {
+            $hasPaid = Order::where('order_code', (string)$orderCode)
+                ->where('payment_status', 'paid')
+                ->exists();
+        }
+
+        // fallback: check any paid order for those tables
+        if (!$hasPaid) {
+            $hasPaid = Order::whereIn('table_number', array_map('intval', $tables))
+                ->where('payment_status', 'paid')
+                ->exists();
+        }
+
+        if (!$hasPaid) {
+            return response()->json([
+                'ok' => false,
+                'message' => 'No paid order found for this table.'
+            ], 403);
+        }
+
+        // ✅ mark all tables available
+        Table::whereIn('number', array_map('intval', $tables))
+            ->update(['is_available' => true]);
+
+        return response()->json([
+            'ok' => true,
+            'message' => 'Table is now available.',
+            'tables' => array_map('intval', $tables),
+        ]);
     }
 
     private function findGroup(int $table): ?array

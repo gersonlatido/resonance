@@ -3,12 +3,12 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="csrf-token" content="{{ csrf_token() }}">
 <title>Payment Receipt</title>
 
 <link rel="stylesheet" href="{{ asset('css/app.css') }}">
 
 <style>
-    <style>
 /* ✅ Smooth page fade */
 .page-fade-out{
   opacity: 0;
@@ -130,7 +130,7 @@
     gap:10px;
 }
 
-/* ✅ SAME STYLE AS DOWNLOAD BUTTON (OLD CSS FEEL) */
+/* ✅ SAME STYLE AS DOWNLOAD BUTTON */
 .action-btn{
     background:#f7b413;
     color:#000;
@@ -144,6 +144,11 @@
     width:100%;
 }
 .action-btn:hover{ background:#e6a90f; }
+
+.action-btn:disabled{
+  opacity: .75;
+  cursor: not-allowed;
+}
 
 /* PRINT MODE */
 @media print{
@@ -209,30 +214,36 @@
     <div class="actions">
 
         <button class="action-btn" onclick="window.print()">
-        Download / Print Receipt
+            Download / Print Receipt
         </button>
 
-     <a href="{{ route('track.order') }}" style="text-decoration:none;">
-        <button class="action-btn" type="button">
-            Track Order
-        </button>
-     </a>
+        <a href="{{ route('track.order') }}" style="text-decoration:none;">
+            <button class="action-btn" type="button">
+                Track Order
+            </button>
+        </a>
 
-      <!--  ORDER AGAIN BUTTON -->
-     <button class="action-btn" id="orderAgainBtn" type="button">
-        Order Again
+        <!-- ✅ DONE EATING (sets table available again) -->
+        <button class="action-btn" id="doneEatingBtn" type="button">
+            Done Eating
         </button>
 
-     <a href="{{ route('feedback.form') }}" style="text-decoration:none;">
-        <button class="action-btn" type="button">
-            Send Feedback
+        <!-- ✅ ORDER AGAIN BUTTON -->
+        <button class="action-btn" id="orderAgainBtn" type="button">
+            Order Again
         </button>
-     </a>
+
+        <a href="{{ route('feedback.form') }}" style="text-decoration:none;">
+            <button class="action-btn" type="button">
+                Send Feedback
+            </button>
+        </a>
 
     </div>
-    <!-- ✅ Confirm New Order Modal -->
-<div class="confirm-overlay hidden" id="confirmOverlay"></div>
+</div>
 
+<!-- ✅ Confirm New Order Modal -->
+<div class="confirm-overlay hidden" id="confirmOverlay"></div>
 <div class="confirm-modal hidden" id="confirmModal" role="dialog" aria-modal="true" aria-labelledby="confirmTitle">
     <h3 id="confirmTitle">Start new order?</h3>
     <p>This will clear your current cart and bring you back to the menu.</p>
@@ -242,17 +253,40 @@
         <button type="button" class="confirm-ok" id="confirmOkBtn">Yes, start</button>
     </div>
 </div>
+
+<!-- ✅ Confirm Done Eating Modal -->
+<div class="confirm-overlay hidden" id="doneOverlay"></div>
+<div class="confirm-modal hidden" id="doneModal" role="dialog" aria-modal="true" aria-labelledby="doneTitle">
+    <h3 id="doneTitle">Mark table as available?</h3>
+    <p>Tap “Yes” if you are done eating. This will set your table back to available.</p>
+
+    <div class="confirm-actions">
+        <button type="button" class="confirm-cancel" id="doneCancelBtn">Cancel</button>
+        <button type="button" class="confirm-ok" id="doneOkBtn">Yes, done</button>
+    </div>
 </div>
+<!-- ✅ Success Modal -->
+<div class="confirm-overlay hidden" id="successOverlay"></div>
+<div class="confirm-modal hidden" id="successModal" role="dialog" aria-modal="true" aria-labelledby="successTitle">
+    <h3 id="successTitle">All set!</h3>
+    <p id="successMessage">Your table is now available. Thank you!</p>
+
+    <div class="confirm-actions">
+        <button type="button" class="confirm-ok" id="successOkBtn">Continue</button>
+    </div>
+</div>
+
 <script>
 document.addEventListener('DOMContentLoaded', function () {
     // ✅ fade-in on load
     document.body.classList.add('page-fade-in');
 
+    // =========================
+    // ORDER AGAIN MODAL
+    // =========================
     const orderAgainBtn = document.getElementById('orderAgainBtn');
-
     const overlay = document.getElementById('confirmOverlay');
     const modal = document.getElementById('confirmModal');
-
     const cancelBtn = document.getElementById('confirmCancelBtn');
     const okBtn = document.getElementById('confirmOkBtn');
 
@@ -273,11 +307,9 @@ document.addEventListener('DOMContentLoaded', function () {
     cancelBtn?.addEventListener('click', closeConfirm);
 
     okBtn?.addEventListener('click', function () {
-        // ✅ clear cart
         localStorage.removeItem('cart');
         localStorage.removeItem('order_summary');
 
-        // ✅ smooth fade then redirect
         document.body.classList.remove('page-fade-in');
         document.body.classList.add('page-fade-out');
 
@@ -286,13 +318,116 @@ document.addEventListener('DOMContentLoaded', function () {
         }, 220);
     });
 
-    // ESC to close
-    document.addEventListener('keydown', function(e){
-        if (e.key === 'Escape' && !modal.classList.contains('hidden')) {
-            closeConfirm();
+    // =========================
+    // DONE EATING MODAL + LOGIC
+    // =========================
+    const doneEatingBtn = document.getElementById('doneEatingBtn');
+    const doneOverlay = document.getElementById('doneOverlay');
+    const doneModal = document.getElementById('doneModal');
+    const doneCancel = document.getElementById('doneCancelBtn');
+    const doneOk = document.getElementById('doneOkBtn');
+
+    function openDone(){
+        doneOverlay.classList.remove('hidden');
+        doneModal.classList.remove('hidden');
+        doneModal.classList.add('show');
+    }
+
+    function closeDone(){
+        doneOverlay.classList.add('hidden');
+        doneModal.classList.add('hidden');
+        doneModal.classList.remove('show');
+    }
+
+    doneEatingBtn?.addEventListener('click', openDone);
+    doneOverlay?.addEventListener('click', closeDone);
+    doneCancel?.addEventListener('click', closeDone);
+
+    doneOk?.addEventListener('click', async function () {
+        const token = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+
+        doneOk.disabled = true;
+        doneEatingBtn.disabled = true;
+        doneOk.textContent = 'Updating...';
+
+        try {
+            const res = await fetch("{{ route('table.done_eating') }}", {
+                method: "POST",
+                headers: {
+                    "X-CSRF-TOKEN": token,
+                    "Accept": "application/json"
+                }
+            });
+
+            const data = await res.json().catch(() => ({}));
+
+            if (!res.ok || data.ok === false) {
+                alert(data.message || 'Failed to update table.');
+                doneOk.disabled = false;
+                doneEatingBtn.disabled = false;
+                doneOk.textContent = 'Yes, done';
+                return;
+            }
+
+           closeDone();
+
+// optional: clear cart to avoid re-using old order
+localStorage.removeItem('cart');
+localStorage.removeItem('order_summary');
+
+// ✅ Show success modal instead of alert
+openSuccess('Your table is now available. Thank you!');
+
+        } catch (e) {
+            alert('Network error. Please try again.');
+            doneOk.disabled = false;
+            doneEatingBtn.disabled = false;
+            doneOk.textContent = 'Yes, done';
         }
+    });
+// =========================
+// ✅ SUCCESS MODAL
+// =========================
+const successOverlay = document.getElementById('successOverlay');
+const successModal = document.getElementById('successModal');
+const successMsg = document.getElementById('successMessage');
+const successOk = document.getElementById('successOkBtn');
+
+function openSuccess(message){
+    if (successMsg) successMsg.textContent = message || 'Success!';
+    successOverlay.classList.remove('hidden');
+    successModal.classList.remove('hidden');
+    successModal.classList.add('show');
+}
+
+function closeSuccess(){
+    successOverlay.classList.add('hidden');
+    successModal.classList.add('hidden');
+    successModal.classList.remove('show');
+}
+
+// click to close + continue
+successOverlay?.addEventListener('click', closeSuccess);
+
+successOk?.addEventListener('click', function () {
+    closeSuccess();
+
+    // ✅ smooth fade then redirect
+    document.body.classList.remove('page-fade-in');
+    document.body.classList.add('page-fade-out');
+
+    setTimeout(() => {
+        window.location.href = '/';
+    }, 220);
+});
+    // ESC closes whichever modal is open
+    document.addEventListener('keydown', function(e){
+       if (!modal.classList.contains('hidden')) closeConfirm();
+if (!doneModal.classList.contains('hidden')) closeDone();
+if (!successModal.classList.contains('hidden')) closeSuccess();
     });
 });
 </script>
+
 </body>
 </html>
