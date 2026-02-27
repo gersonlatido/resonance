@@ -450,7 +450,7 @@
 
       <!-- Stats -->
    <section class="stats" aria-label="Order stats">
-  <div class="stat">
+   <div class="stat">
     <div>
       <div class="label">Active Orders</div>
       <div class="value" id="activeCount">{{ $activeCount ?? 0 }}</div>
@@ -462,7 +462,7 @@
         <path d="M4 20a6 6 0 0 1 16 0"/>
       </svg>
     </div>
-  </div>
+   </div>
 
   <div class="stat">
     <div>
@@ -507,18 +507,39 @@
   </div>
 </section>
 
-      @php
-        $grouped = $orders->groupBy('table_number');
-      @endphp
+@php
+  // Group by table
+  $grouped = $orders->groupBy('table_number');
+
+  // Keep only tables that have queue orders
+  $grouped = $grouped->filter(function ($tableOrders) {
+      return $tableOrders->whereIn('status', ['pending','preparing','serving'])->count() > 0;
+  });
+
+  // Sort by earliest queue order (FCFS)
+  $grouped = $grouped->sortBy(function ($tableOrders) {
+      $firstQueue = $tableOrders
+          ->whereIn('status', ['pending','preparing','serving'])
+          ->sortBy('created_at')
+          ->first();
+
+      return $firstQueue ? $firstQueue->created_at->timestamp : PHP_INT_MAX;
+  });
+@endphp
 
       <!-- Tables Grid -->
       <section class="tables-grid">
 
         @foreach($grouped as $tableNumber => $tableOrders)
-          @php
-            $inProgress = $tableOrders->whereIn('status', ['preparing','serving']);
-            $done = $tableOrders->whereIn('status', ['served','cancelled']);
-          @endphp
+@php
+  $inProgress = $tableOrders
+      ->whereIn('status', ['pending','preparing','serving'])
+      ->sortBy('created_at');
+
+  $done = $tableOrders
+      ->whereIn('status', ['served','cancelled'])
+      ->sortBy('created_at');
+@endphp
 
           <article class="table-card">
             <div class="table-card-header">

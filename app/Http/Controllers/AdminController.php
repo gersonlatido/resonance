@@ -17,10 +17,9 @@ class AdminController extends Controller
         $statusCol = $this->detectStatusColumn() ?? 'status';
 
         // ✅ Load orders (same logic as you had)
-        $orders = Order::with('items')
-            ->where('payment_status', 'paid')
-            ->orderByDesc('created_at')
-            ->get();
+     $orders = Order::with('items')
+    ->orderBy('created_at', 'asc') // FIRST COME FIRST SERVE
+    ->get();
 
         // ✅ Counts for dashboard cards
         // "Active" = preparing or serving (adjust easily later)
@@ -425,7 +424,7 @@ public function tableManagement()
     // Detect correct status column
     $statusCol = $this->detectStatusColumn() ?? 'status';
 
-    $orders = Order::all();
+ $orders = Order::orderBy('created_at', 'asc')->get();
 
     // Normalize status
     foreach ($orders as $o) {
