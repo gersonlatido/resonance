@@ -270,7 +270,10 @@
     <nav class="nav">
       <a href="{{ route('admin.dashboard') ?? '#' }}">Order Management</a>
       <a href="{{ route('admin.table-management') ?? '#' }}">Table Management</a>
-      <a href="#">Daily Sales Report</a>
+     <a href="{{ route('admin.daily-sales-report') }}"
+   class="{{ request()->routeIs('admin.daily-sales-report') ? 'active' : '' }}">
+  Daily Sales Report
+</a>
     </nav>
 
     <div class="side-section-title" style="margin-top:18px;">Admin Management</div>
@@ -278,7 +281,10 @@
       <a href="{{ route('admin.menu-management') ?? '#' }}">Menu Management</a>
       <a href="{{ route('admin.feedbacks') ?? '#' }}">Feedback Management</a>
       <a href="{{ route('admin.inventory') }}" class="active">Inventory Management</a>
-      <a href="#">Sales and Stock Reports</a>
+   <a href="{{ route('admin.sales-stock-reports') }}"
+   class="{{ request()->routeIs('admin.sales-stock-reports') ? 'active' : '' }}">
+  Sales and Stock Reports
+</a>
     </nav>
   </aside>
 

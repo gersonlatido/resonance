@@ -420,8 +420,15 @@
           Feedback Management
         </a>
 
-        <a href="#">Inventory Management</a>
-        <a href="#">Sales and Stock Reports</a>
+   <a href="{{ route('admin.inventory') }}"
+   class="{{ request()->routeIs('admin.inventory') ? 'active' : '' }}">
+  Inventory Management
+</a>
+
+<a href="{{ route('admin.sales-stock-reports') }}"
+   class="{{ request()->routeIs('admin.sales-stock-reports') ? 'active' : '' }}">
+  Sales and Stock Reports
+</a>
       </nav>
     </aside>
 
@@ -442,63 +449,63 @@
       </div>
 
       <!-- Stats -->
-      <section class="stats" aria-label="Order stats">
-        <div class="stat">
-          <div>
-            <div class="label">Active Orders</div>
-            <div class="value" id="activeCount">0</div>
-          </div>
-          <div class="icon active" title="Active">
-            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none"
-              stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <path d="M16 11a4 4 0 1 0-8 0"/>
-              <path d="M4 20a6 6 0 0 1 16 0"/>
-            </svg>
-          </div>
-        </div>
+   <section class="stats" aria-label="Order stats">
+  <div class="stat">
+    <div>
+      <div class="label">Active Orders</div>
+      <div class="value" id="activeCount">{{ $activeCount ?? 0 }}</div>
+    </div>
+    <div class="icon active" title="Active">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none"
+        stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M16 11a4 4 0 1 0-8 0"/>
+        <path d="M4 20a6 6 0 0 1 16 0"/>
+      </svg>
+    </div>
+  </div>
 
-        <div class="stat">
-          <div>
-            <div class="label">Pending Orders</div>
-            <div class="value" id="pendingCount">0</div>
-          </div>
-          <div class="icon pending" title="Pending">
-            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none"
-              stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <circle cx="12" cy="12" r="9"/>
-              <path d="M12 7v6l4 2"/>
-            </svg>
-          </div>
-        </div>
+  <div class="stat">
+    <div>
+      <div class="label">Pending Orders</div>
+      <div class="value" id="pendingCount">{{ $pendingCount ?? 0 }}</div>
+    </div>
+    <div class="icon pending" title="Pending">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none"
+        stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <circle cx="12" cy="12" r="9"/>
+        <path d="M12 7v6l4 2"/>
+      </svg>
+    </div>
+  </div>
 
-        <div class="stat">
-          <div>
-            <div class="label">Cancelled Orders</div>
-            <div class="value" id="cancelledCount">0</div>
-          </div>
-          <div class="icon cancelled" title="Cancelled">
-            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none"
-              stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <circle cx="12" cy="12" r="9"/>
-              <path d="M9 9l6 6"/>
-              <path d="M15 9l-6 6"/>
-            </svg>
-          </div>
-        </div>
+  <div class="stat">
+    <div>
+      <div class="label">Cancelled Orders</div>
+      <div class="value" id="cancelledCount">{{ $cancelledCount ?? 0 }}</div>
+    </div>
+    <div class="icon cancelled" title="Cancelled">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none"
+        stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <circle cx="12" cy="12" r="9"/>
+        <path d="M9 9l6 6"/>
+        <path d="M15 9l-6 6"/>
+      </svg>
+    </div>
+  </div>
 
-        <div class="stat">
-          <div>
-            <div class="label">Order Served</div>
-            <div class="value" id="servedCount">0</div>
-          </div>
-          <div class="icon served" title="Served">
-            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none"
-              stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <path d="M20 6 9 17l-5-5"/>
-            </svg>
-          </div>
-        </div>
-      </section>
+  <div class="stat">
+    <div>
+      <div class="label">Order Served</div>
+      <div class="value" id="servedCount">{{ $servedCount ?? 0 }}</div>
+    </div>
+    <div class="icon served" title="Served">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none"
+        stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M20 6 9 17l-5-5"/>
+      </svg>
+    </div>
+  </div>
+</section>
 
       @php
         $grouped = $orders->groupBy('table_number');

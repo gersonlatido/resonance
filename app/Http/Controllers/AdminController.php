@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Schema;
 use App\Models\Order;
 use App\Models\Table;
 use Carbon\Carbon;
@@ -12,12 +13,40 @@ class AdminController extends Controller
     // Admin dashboard page
     public function index()
     {
+        // ✅ Detect which status column exists (prevents mismatch issues)
+        $statusCol = $this->detectStatusColumn() ?? 'status';
+
+        // ✅ Load orders (same logic as you had)
         $orders = Order::with('items')
             ->where('payment_status', 'paid')
             ->orderByDesc('created_at')
             ->get();
 
-        return view('admin.dashboard', compact('orders'));
+        // ✅ Counts for dashboard cards
+        // "Active" = preparing or serving (adjust easily later)
+        $activeCount = Order::where('payment_status', 'paid')
+            ->whereIn($statusCol, ['preparing', 'serving'])
+            ->count();
+
+        $pendingCount = Order::where('payment_status', 'paid')
+            ->where($statusCol, 'pending')
+            ->count();
+
+        $cancelledCount = Order::where('payment_status', 'paid')
+            ->where($statusCol, 'cancelled')
+            ->count();
+
+        $servedCount = Order::where('payment_status', 'paid')
+            ->where($statusCol, 'served')
+            ->count();
+
+        return view('admin.dashboard', compact(
+            'orders',
+            'activeCount',
+            'pendingCount',
+            'cancelledCount',
+            'servedCount'
+        ));
     }
 
     /**
@@ -67,9 +96,6 @@ class AdminController extends Controller
 
     /**
      * ✅ PRINT VIEW (Save as PDF)
-     * Adds:
-     * - chart labels/values
-     * - best sellers
      */
     public function printSalesReport(Request $request)
     {
@@ -109,162 +135,148 @@ class AdminController extends Controller
     }
 
     /**
-     * ✅ CSV DOWNLOAD (Excel-friendly) — unchanged
+     * ✅ CSV DOWNLOAD (Excel-friendly)
      */
     public function exportSalesReportCsv(Request $request)
-{
-    $period = $request->query('period', 'daily');
-    $selectedDate = $request->query('date');
-    $day = $selectedDate ? Carbon::parse($selectedDate) : Carbon::today();
+    {
+        $period = $request->query('period', 'daily');
+        $selectedDate = $request->query('date');
+        $day = $selectedDate ? Carbon::parse($selectedDate) : Carbon::today();
 
-    [$start, $end, $rangeLabel] = $this->getRangeByPeriod($period, $day);
+        [$start, $end, $rangeLabel] = $this->getRangeByPeriod($period, $day);
 
-    // ✅ include items so we can add Best Sellers section too
-    $paidOrders = Order::with('items')
-        ->where('payment_status', 'paid')
-        ->whereBetween('created_at', [$start, $end])
-        ->orderByDesc('created_at')
-        ->get();
+        $paidOrders = Order::with('items')
+            ->where('payment_status', 'paid')
+            ->whereBetween('created_at', [$start, $end])
+            ->orderByDesc('created_at')
+            ->get();
 
-    $totalSales = (float) $paidOrders->sum('total');
-    $paidCount  = (int) $paidOrders->count();
-    $avgOrder   = $paidCount > 0 ? ($totalSales / $paidCount) : 0;
+        $totalSales = (float) $paidOrders->sum('total');
+        $paidCount  = (int) $paidOrders->count();
+        $avgOrder   = $paidCount > 0 ? ($totalSales / $paidCount) : 0;
 
-    // ✅ chart breakdown (same data used for graph)
-    [$chartLabels, $chartValues] = $this->buildSalesSeries($paidOrders, $period, $start, $end);
+        [$chartLabels, $chartValues] = $this->buildSalesSeries($paidOrders, $period, $start, $end);
+        $topItems = $this->computeTopItems($paidOrders, 10);
 
-    // ✅ best sellers
-    $topItems = $this->computeTopItems($paidOrders, 10);
+        $filename = "sales_report_{$period}_" . $start->format('Ymd') . "_to_" . $end->format('Ymd') . ".csv";
 
-    $filename = "sales_report_{$period}_" . $start->format('Ymd') . "_to_" . $end->format('Ymd') . ".csv";
+        $headers = [
+            'Content-Type'        => 'text/csv; charset=UTF-8',
+            'Content-Disposition' => 'attachment; filename="'.$filename.'"',
+        ];
 
-    $headers = [
-        'Content-Type'        => 'text/csv; charset=UTF-8',
-        'Content-Disposition' => 'attachment; filename="'.$filename.'"',
-    ];
+        $callback = function () use (
+            $period, $rangeLabel, $start, $end,
+            $totalSales, $paidCount, $avgOrder,
+            $paidOrders, $chartLabels, $chartValues, $topItems
+        ) {
+            $out = fopen('php://output', 'w');
 
-    $callback = function () use (
-        $period, $rangeLabel, $start, $end,
-        $totalSales, $paidCount, $avgOrder,
-        $paidOrders, $chartLabels, $chartValues, $topItems
-    ) {
-        $out = fopen('php://output', 'w');
+            // ✅ UTF-8 BOM so Excel opens ₱ correctly
+            fprintf($out, chr(0xEF).chr(0xBB).chr(0xBF));
 
-        // ✅ UTF-8 BOM so Excel opens ₱ correctly
-        fprintf($out, chr(0xEF).chr(0xBB).chr(0xBF));
+            fputcsv($out, ['99 SILOG CAFE']);
+            fputcsv($out, ['SALES REPORT']);
+            fputcsv($out, ['']);
+            fputcsv($out, ['Period', ucfirst($period)]);
+            fputcsv($out, ['Range', $rangeLabel]);
+            fputcsv($out, ['Start', $start->format('Y-m-d H:i:s')]);
+            fputcsv($out, ['End', $end->format('Y-m-d H:i:s')]);
+            fputcsv($out, ['Generated', now()->format('Y-m-d h:i A')]);
+            fputcsv($out, ['']);
+            fputcsv($out, ['Total Sales (Paid)', '₱' . number_format($totalSales, 2)]);
+            fputcsv($out, ['Paid Orders', $paidCount]);
+            fputcsv($out, ['Average Order', '₱' . number_format($avgOrder, 2)]);
+            fputcsv($out, ['']);
+            fputcsv($out, ['NOTE', 'This report includes only PAID orders (Xendit successful payments).']);
+            fputcsv($out, ['']);
+            fputcsv($out, ['============================================================']);
+            fputcsv($out, ['']);
 
-        // =========================================================
-        // HEADER / META (Excel-like layout)
-        // =========================================================
-        fputcsv($out, ['99 SILOG CAFE']);
-        fputcsv($out, ['SALES REPORT']);
-        fputcsv($out, ['']);
-        fputcsv($out, ['Period', ucfirst($period)]);
-        fputcsv($out, ['Range', $rangeLabel]);
-        fputcsv($out, ['Start', $start->format('Y-m-d H:i:s')]);
-        fputcsv($out, ['End', $end->format('Y-m-d H:i:s')]);
-        fputcsv($out, ['Generated', now()->format('Y-m-d h:i A')]);
-        fputcsv($out, ['']);
-        fputcsv($out, ['Total Sales (Paid)', '₱' . number_format($totalSales, 2)]);
-        fputcsv($out, ['Paid Orders', $paidCount]);
-        fputcsv($out, ['Average Order', '₱' . number_format($avgOrder, 2)]);
-        fputcsv($out, ['']);
-        fputcsv($out, ['NOTE', 'This report includes only PAID orders (Xendit successful payments).']);
-        fputcsv($out, ['']);
-        fputcsv($out, ['============================================================']);
-        fputcsv($out, ['']);
-
-        // =========================================================
-        // BREAKDOWN SECTION (for chart)
-        // =========================================================
-        fputcsv($out, ['SALES BREAKDOWN']);
-        fputcsv($out, ['Bucket', 'Total Sales']);
-        for ($i = 0; $i < count($chartLabels); $i++) {
-            fputcsv($out, [
-                (string) ($chartLabels[$i] ?? ''),
-                '₱' . number_format((float) ($chartValues[$i] ?? 0), 2)
-            ]);
-        }
-        fputcsv($out, ['']);
-        fputcsv($out, ['============================================================']);
-        fputcsv($out, ['']);
-
-        // =========================================================
-        // BEST SELLERS SECTION
-        // =========================================================
-        fputcsv($out, ['BEST-SELLING ITEMS']);
-        fputcsv($out, ['Item', 'Qty Sold']);
-        if (count($topItems) === 0) {
-            fputcsv($out, ['(none)', 0]);
-        } else {
-            foreach ($topItems as $it) {
-                fputcsv($out, [(string)$it['name'], (int)$it['qty']]);
+            fputcsv($out, ['SALES BREAKDOWN']);
+            fputcsv($out, ['Bucket', 'Total Sales']);
+            for ($i = 0; $i < count($chartLabels); $i++) {
+                fputcsv($out, [
+                    (string) ($chartLabels[$i] ?? ''),
+                    '₱' . number_format((float) ($chartValues[$i] ?? 0), 2)
+                ]);
             }
-        }
-        fputcsv($out, ['']);
-        fputcsv($out, ['============================================================']);
-        fputcsv($out, ['']);
+            fputcsv($out, ['']);
+            fputcsv($out, ['============================================================']);
+            fputcsv($out, ['']);
 
-        // =========================================================
-        // ORDERS LIST SECTION
-        // =========================================================
-        fputcsv($out, ['PAID ORDERS LIST']);
-        fputcsv($out, ['Order Code', 'Table Number', 'Total', 'Status', 'Paid Time']);
+            fputcsv($out, ['BEST-SELLING ITEMS']);
+            fputcsv($out, ['Item', 'Qty Sold']);
+            if (count($topItems) === 0) {
+                fputcsv($out, ['(none)', 0]);
+            } else {
+                foreach ($topItems as $it) {
+                    fputcsv($out, [(string)$it['name'], (int)$it['qty']]);
+                }
+            }
+            fputcsv($out, ['']);
+            fputcsv($out, ['============================================================']);
+            fputcsv($out, ['']);
 
-        foreach ($paidOrders as $order) {
-            fputcsv($out, [
-                (string) $order->order_code,
-                (string) $order->table_number,
-                '₱' . number_format((float)$order->total, 2),
-                (string) $order->status,
-                optional($order->created_at)->format('Y-m-d h:i A'),
-            ]);
-        }
+            fputcsv($out, ['PAID ORDERS LIST']);
+            fputcsv($out, ['Order Code', 'Table Number', 'Total', 'Status', 'Paid Time']);
+            foreach ($paidOrders as $order) {
+                fputcsv($out, [
+                    (string) $order->order_code,
+                    (string) $order->table_number,
+                    '₱' . number_format((float)$order->total, 2),
+                    (string) ($order->status ?? ''),
+                    optional($order->created_at)->format('Y-m-d h:i A'),
+                ]);
+            }
 
-        fclose($out);
-    };
+            fclose($out);
+        };
 
-    return response()->stream($callback, 200, $headers);
-}
+        return response()->stream($callback, 200, $headers);
+    }
 
-public function exportSalesReportXls(Request $request)
-{
-    $period = $request->query('period', 'daily');
-    $selectedDate = $request->query('date');
-    $day = $selectedDate ? Carbon::parse($selectedDate) : Carbon::today();
+    /**
+     * ✅ XLS DOWNLOAD (HTML-as-Excel)
+     */
+    public function exportSalesReportXls(Request $request)
+    {
+        $period = $request->query('period', 'daily');
+        $selectedDate = $request->query('date');
+        $day = $selectedDate ? Carbon::parse($selectedDate) : Carbon::today();
 
-    [$start, $end, $rangeLabel] = $this->getRangeByPeriod($period, $day);
+        [$start, $end, $rangeLabel] = $this->getRangeByPeriod($period, $day);
 
-    $paidOrders = Order::where('payment_status', 'paid')
-        ->whereBetween('created_at', [$start, $end])
-        ->orderByDesc('created_at')
-        ->get();
+        $paidOrders = Order::where('payment_status', 'paid')
+            ->whereBetween('created_at', [$start, $end])
+            ->orderByDesc('created_at')
+            ->get();
 
-    $totalSales = (float) $paidOrders->sum('total');
-    $paidCount  = (int) $paidOrders->count();
-    $avgOrder   = $paidCount > 0 ? ($totalSales / $paidCount) : 0;
+        $totalSales = (float) $paidOrders->sum('total');
+        $paidCount  = (int) $paidOrders->count();
+        $avgOrder   = $paidCount > 0 ? ($totalSales / $paidCount) : 0;
 
-    $filename = "sales_report_{$period}_" . $start->format('Ymd') . "_to_" . $end->format('Ymd') . ".xls";
+        $filename = "sales_report_{$period}_" . $start->format('Ymd') . "_to_" . $end->format('Ymd') . ".xls";
 
-    $html = view('admin.reports.sales-report-excel', [
-        'period'      => $period,
-        'rangeLabel'  => $rangeLabel,
-        'start'       => $start,
-        'end'         => $end,
-        'generatedAt' => Carbon::now()->format('Y-m-d h:i A'),
+        $html = view('admin.reports.sales-report-excel', [
+            'period'      => $period,
+            'rangeLabel'  => $rangeLabel,
+            'start'       => $start,
+            'end'         => $end,
+            'generatedAt' => Carbon::now()->format('Y-m-d h:i A'),
 
-        'paidOrders'  => $paidOrders,
-        'totalSales'  => $totalSales,
-        'paidCount'   => $paidCount,
-        'avgOrder'    => $avgOrder,
-    ])->render();
+            'paidOrders'  => $paidOrders,
+            'totalSales'  => $totalSales,
+            'paidCount'   => $paidCount,
+            'avgOrder'    => $avgOrder,
+        ])->render();
 
-    return response($html, 200, [
-        'Content-Type'        => 'application/vnd.ms-excel; charset=UTF-8',
-        'Content-Disposition' => 'attachment; filename="'.$filename.'"',
-        'Cache-Control'       => 'max-age=0',
-    ]);
-}
+        return response($html, 200, [
+            'Content-Type'        => 'application/vnd.ms-excel; charset=UTF-8',
+            'Content-Disposition' => 'attachment; filename="'.$filename.'"',
+            'Cache-Control'       => 'max-age=0',
+        ]);
+    }
 
     /**
      * ✅ Helper: compute date range by period
@@ -302,9 +314,6 @@ public function exportSalesReportXls(Request $request)
 
     /**
      * ✅ Build chart series (labels + values)
-     * - daily: by hour (00..23)
-     * - weekly/monthly: by day
-     * - yearly: by month
      */
     private function buildSalesSeries($orders, string $period, Carbon $start, Carbon $end): array
     {
@@ -314,7 +323,6 @@ public function exportSalesReportXls(Request $request)
         $values = [];
 
         if ($period === 'daily') {
-            // 24 hours
             for ($h = 0; $h < 24; $h++) {
                 $labels[] = str_pad((string)$h, 2, '0', STR_PAD_LEFT) . ':00';
                 $values[] = 0.0;
@@ -329,21 +337,19 @@ public function exportSalesReportXls(Request $request)
         }
 
         if ($period === 'yearly') {
-            // 12 months
             for ($m = 1; $m <= 12; $m++) {
                 $labels[] = Carbon::createFromDate($start->year, $m, 1)->format('M');
                 $values[] = 0.0;
             }
 
             foreach ($orders as $o) {
-                $month = (int) optional($o->created_at)->format('n'); // 1..12
+                $month = (int) optional($o->created_at)->format('n');
                 $values[$month - 1] += (float) $o->total;
             }
 
             return [$labels, $values];
         }
 
-        // weekly/monthly: by day within the range
         $cursor = $start->copy();
         $map = [];
         while ($cursor->lte($end)) {
@@ -360,7 +366,6 @@ public function exportSalesReportXls(Request $request)
             }
         }
 
-        // map values in the same order as labels
         $cursor = $start->copy();
         while ($cursor->lte($end)) {
             $values[] = (float) $map[$cursor->toDateString()];
@@ -371,12 +376,7 @@ public function exportSalesReportXls(Request $request)
     }
 
     /**
-     * ✅ Best sellers from Order->items safely (no column guessing)
-     * returns array of:
-     * [
-     *   ['name' => 'BEEFSILOG', 'qty' => 10],
-     *   ...
-     * ]
+     * ✅ Best sellers from Order->items safely
      */
     private function computeTopItems($orders, int $limit = 5): array
     {
@@ -405,11 +405,47 @@ public function exportSalesReportXls(Request $request)
         return $top;
     }
 
-    public function tableManagement()
+    // ✅ Detect status column safely
+    private function detectStatusColumn(): ?string
     {
-        $tables = Table::orderBy('number')->get()->keyBy('number');
-        return view('admin.table-management', compact('tables'));
+        $candidates = ['status', 'order_status', 'tracking_status'];
+
+        foreach ($candidates as $col) {
+            if (Schema::hasColumn('orders', $col)) {
+                return $col;
+            }
+        }
+
+        return null;
     }
+public function tableManagement()
+{
+    $tables = Table::orderBy('number')->get()->keyBy('number');
+
+    // Detect correct status column
+    $statusCol = $this->detectStatusColumn() ?? 'status';
+
+    $orders = Order::all();
+
+    // Normalize status
+    foreach ($orders as $o) {
+        $raw = $o->{$statusCol} ?? $o->status ?? '';
+        $o->status = strtolower(trim((string) $raw));
+    }
+
+    $activeCount    = $orders->whereIn('status', ['preparing', 'serving'])->count();
+    $pendingCount   = $orders->where('status', 'pending')->count();
+    $cancelledCount = $orders->where('status', 'cancelled')->count();
+    $servedCount    = $orders->where('status', 'served')->count();
+
+    return view('admin.table-management', compact(
+        'tables',
+        'activeCount',
+        'pendingCount',
+        'cancelledCount',
+        'servedCount'
+    ));
+}
 
     public function toggleTable(Request $request, $number)
     {

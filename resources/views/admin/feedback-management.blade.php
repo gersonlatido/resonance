@@ -388,45 +388,49 @@
     <aside class="sidebar">
       <div class="brand">
         <div class="logo-box">
-          <!-- Replace with real logo if you have it -->
-           <img src="{{ asset('images/logo-image.png') }}" alt="Silog Cafe Logo" />
-          {{-- <div class="logo-fallback">99<br/>Silog Cafe</div> --}}
+          <img src="{{ asset('images/logo-image.png') }}" alt="Silog Cafe Logo" />
         </div>
       </div>
 
       <div class="side-section-title">Cashier Transaction</div>
-     <nav class="nav">
-  <a href="{{ route('admin.dashboard') }}"
-     class="{{ request()->routeIs('admin.dashboard') ? 'active' : '' }}">
-    <span class="dot-icon"></span>Order Management
-  </a>
+      <nav class="nav">
+        <a href="{{ route('admin.dashboard') }}"
+           class="{{ request()->routeIs('admin.dashboard') ? 'active' : '' }}">
+          Order Management
+        </a>
 
-  <a href="{{ route('admin.table-management') }}"
-     class="{{ request()->routeIs('admin.table-management') ? 'active' : '' }}">
-    <span class="dot-icon"></span>Table Management
-  </a>
+        <a href="{{ route('admin.table-management') }}"
+           class="{{ request()->routeIs('admin.table-management') ? 'active' : '' }}">
+          Table Management
+        </a>
 
-  <a href="#"
-     {{-- class="{{ request()->routeIs('admin.daily-sales') ? 'active' : '' }}" --}}>
-    <span class="dot-icon"></span>Daily Sales Report
-  </a>
-</nav>
-
+     <a href="{{ route('admin.daily-sales-report') }}"
+   class="{{ request()->routeIs('admin.daily-sales-report') ? 'active' : '' }}">
+  Daily Sales Report
+</a>
+      </nav>
 
       <div class="side-section-title" style="margin-top:18px;">Admin Management</div>
       <nav class="nav">
-       <a href="{{ route('admin.menu-management') }}"
-     class="{{ request()->routeIs('admin.menu-management') ? 'active' : '' }}">
-    <span class="dot-icon"></span>Menu Management
-  </a>
+        <a href="{{ route('admin.menu-management') }}"
+           class="{{ request()->routeIs('admin.menu-management') ? 'active' : '' }}">
+          Menu Management
+        </a>
 
-    <a href="{{ route('admin.feedbacks') }}"
+        <a href="{{ route('admin.feedbacks') }}"
            class="{{ request()->routeIs('admin.feedbacks') ? 'active' : '' }}">
           Feedback Management
         </a>
 
-        <a href="#"><span class="dot-icon"></span>Inventory Management</a>
-        <a href="#"><span class="dot-icon"></span>Sales and Stock Reports</a>
+   <a href="{{ route('admin.inventory') }}"
+   class="{{ request()->routeIs('admin.inventory') ? 'active' : '' }}">
+  Inventory Management
+</a>
+
+<a href="{{ route('admin.sales-stock-reports') }}"
+   class="{{ request()->routeIs('admin.sales-stock-reports') ? 'active' : '' }}">
+  Sales and Stock Reports
+</a>
       </nav>
     </aside>
 
@@ -445,66 +449,39 @@
       </div>
 
       <!-- Stats -->
-      <section class="stats" aria-label="Order stats">
-        <div class="stat">
-          <div>
-            <div class="label">Active Orders</div>
-            <div class="value" id="activeCount">0</div>
-          </div>
-          <div class="icon active" title="Active"><svg xmlns="http://www.w3.org/2000/svg" width="26" height="26" viewBox="0 0 24 24" fill="none"
-     stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-  <path d="M16 11a4 4 0 1 0-8 0"/>
-  <path d="M4 20a6 6 0 0 1 16 0"/>
-  <path d="M20 20v0"/>
-</svg>
+   <section class="stats">
+  <div class="stat">
+    <div>
+      <div class="label">Pending Feedback</div>
+      <div class="value">{{ $pendingCount ?? 0 }}</div>
+    </div>
+    <div class="icon pending">⏳</div>
+  </div>
 
-</div>
-        </div>
+  <div class="stat">
+    <div>
+      <div class="label">Reviewed Feedback</div>
+      <div class="value">{{ $reviewedCount ?? 0 }}</div>
+    </div>
+    <div class="icon active">✔</div>
+  </div>
 
-        <div class="stat">
-          <div>
-            <div class="label">Pending Orders</div>
-            <div class="value" id="pendingCount">0</div>
-          </div>
-          <div class="icon pending" title="Pending"><svg xmlns="http://www.w3.org/2000/svg" width="26" height="26" viewBox="0 0 24 24" fill="none"
-     stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-  <circle cx="12" cy="12" r="9"/>
-  <path d="M12 7v6l4 2"/>
-</svg>
-</div>
-        </div>
+  <div class="stat">
+    <div>
+      <div class="label">Total Feedback</div>
+      <div class="value">{{ $totalCount ?? 0 }}</div>
+    </div>
+    <div class="icon served">📊</div>
+  </div>
 
-        <div class="stat">
-          <div>
-            <div class="label">Cancelled Orders</div>
-            <div class="value" id="cancelledCount">0</div>
-          </div>
-          <div class="icon cancelled" title="Cancelled"><svg xmlns="http://www.w3.org/2000/svg" width="26" height="26" viewBox="0 0 24 24" fill="none"
-     stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-  <circle cx="12" cy="12" r="9"/>
-  <path d="M9 9l6 6"/>
-  <path d="M15 9l-6 6"/>
-</svg>
-</div>
-        </div>
-
-        <div class="stat">
-          <div>
-            <div class="label">Order Served</div>
-            <div class="value" id="servedCount">0</div>
-          </div>
-          <div class="icon served" title="Served"><svg xmlns="http://www.w3.org/2000/svg" width="26" height="26" viewBox="0 0 24 24" fill="none"
-     stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-  <path d="M6 7h14"/>
-  <path d="M6 12h14"/>
-  <path d="M6 17h14"/>
-  <path d="M4 7h.01"/>
-  <path d="M4 12h.01"/>
-  <path d="M4 17h.01"/>
-</svg>
-</div>
-        </div>
-      </section>
+  <div class="stat">
+    <div>
+      <div class="label">Average Rating</div>
+      <div class="value">{{ $averageRating ?? 0 }}</div>
+    </div>
+    <div class="icon cancelled">⭐</div>
+  </div>
+</section>
 
     
 <!-- ===== Feedback Management Layout ===== -->

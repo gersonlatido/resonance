@@ -418,30 +418,41 @@
       <nav class="nav">
         <a href="{{ route('admin.dashboard') }}"
            class="{{ request()->routeIs('admin.dashboard') ? 'active' : '' }}">
-          <span class="dot-icon"></span>Order Management
+          Order Management
         </a>
 
         <a href="{{ route('admin.table-management') }}"
            class="{{ request()->routeIs('admin.table-management') ? 'active' : '' }}">
-          <span class="dot-icon"></span>Table Management
+          Table Management
         </a>
 
-        <a href="#"><span class="dot-icon"></span>Daily Sales Report</a>
+     <a href="{{ route('admin.daily-sales-report') }}"
+   class="{{ request()->routeIs('admin.daily-sales-report') ? 'active' : '' }}">
+  Daily Sales Report
+</a>
       </nav>
 
       <div class="side-section-title" style="margin-top:18px;">Admin Management</div>
       <nav class="nav">
         <a href="{{ route('admin.menu-management') }}"
            class="{{ request()->routeIs('admin.menu-management') ? 'active' : '' }}">
-          <span class="dot-icon"></span>Menu Management
+          Menu Management
         </a>
-    <a href="{{ route('admin.feedbacks') }}"
+
+        <a href="{{ route('admin.feedbacks') }}"
            class="{{ request()->routeIs('admin.feedbacks') ? 'active' : '' }}">
           Feedback Management
         </a>
 
-        <a href="#"><span class="dot-icon"></span>Inventory Management</a>
-        <a href="#"><span class="dot-icon"></span>Sales and Stock Reports</a>
+   <a href="{{ route('admin.inventory') }}"
+   class="{{ request()->routeIs('admin.inventory') ? 'active' : '' }}">
+  Inventory Management
+</a>
+
+<a href="{{ route('admin.sales-stock-reports') }}"
+   class="{{ request()->routeIs('admin.sales-stock-reports') ? 'active' : '' }}">
+  Sales and Stock Reports
+</a>
       </nav>
     </aside>
 

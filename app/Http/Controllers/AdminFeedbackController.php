@@ -14,7 +14,19 @@ class AdminFeedbackController extends Controller
     {
         $feedbacks = Feedback::latest()->get();
 
-        return view('admin.feedback-management', compact('feedbacks'));
+        // ✅ Counts for stat cards
+        $pendingCount   = Feedback::where('is_reviewed', 0)->count();
+        $reviewedCount  = Feedback::where('is_reviewed', 1)->count();
+        $totalCount     = Feedback::count();
+        $averageRating  = round(Feedback::avg('rating') ?? 0, 1);
+
+        return view('admin.feedback-management', compact(
+            'feedbacks',
+            'pendingCount',
+            'reviewedCount',
+            'totalCount',
+            'averageRating'
+        ));
     }
 
     /**

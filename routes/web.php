@@ -15,6 +15,9 @@ use App\Http\Controllers\PaymentReceiptController;
 use App\Http\Controllers\PaymentController;
 use App\Http\Controllers\InventoryController;
 
+// ✅ ADD THIS (new controller for Sales & Stock Reports)
+use App\Http\Controllers\SalesStockReportController;
+
 /*
 |---------------------------------------------------------------------------
 | QR ENTRY
@@ -144,11 +147,20 @@ Route::middleware(['auth', 'admin'])->group(function () {
 
     /*
     |-----------------------------------------------------------------------
-    | DAILY SALES REPORT ✅ (NEW)
+    | DAILY SALES REPORT ✅
     |-----------------------------------------------------------------------
     */
     Route::get('/admin/daily-sales-report', [AdminController::class, 'dailySalesReport'])
         ->name('admin.daily-sales-report');
+
+    /*
+    |-----------------------------------------------------------------------
+    | SALES & STOCK REPORTS ✅ (NEW PAGE)
+    |-----------------------------------------------------------------------
+    */
+      Route::get('/admin/sales-stock-reports', [SalesStockReportController::class, 'index'])
+    ->name('admin.sales-stock-reports');
+     
 
     /*
     |-----------------------------------------------------------------------
@@ -215,6 +227,20 @@ Route::middleware(['auth', 'admin'])
     ->get('/admin/sales-report/print', [AdminController::class, 'printSalesReport'])
     ->name('admin.sales-report.print');
 
-    Route::middleware(['auth', 'admin'])
+Route::middleware(['auth', 'admin'])
     ->get('/admin/sales-report/export/xls', [AdminController::class, 'exportSalesReportXls'])
     ->name('admin.sales-report.export.xls');
+
+
+    // SALES & STOCK REPORTS
+// Sales & Stock Reports (page)
+Route::get('/admin/sales-stock-reports', [SalesStockReportController::class, 'index'])
+    ->name('admin.sales-stock-reports');
+
+// ✅ PRINT/PDF VIEW (combined / sales / stock)
+Route::get('/admin/sales-stock-reports/print', [SalesStockReportController::class, 'print'])
+    ->name('admin.sales-stock-reports.print');
+
+// ✅ CSV EXPORT (combined / sales / stock)
+Route::get('/admin/sales-stock-reports/export/csv', [SalesStockReportController::class, 'exportCsv'])
+    ->name('admin.sales-stock-reports.export.csv');

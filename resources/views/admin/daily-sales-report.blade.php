@@ -336,9 +336,10 @@
           Inventory Management
         </a>
 
-        <a href="#">
-          Sales and Stock Reports
-        </a>
+   <a href="{{ route('admin.sales-stock-reports') }}"
+   class="{{ request()->routeIs('admin.sales-stock-reports') ? 'active' : '' }}">
+  Sales and Stock Reports
+</a>
       </nav>
     </aside>
 
