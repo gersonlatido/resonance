@@ -204,9 +204,26 @@ document.addEventListener('DOMContentLoaded', () => {
 
   let cart = JSON.parse(localStorage.getItem('cart')) || [];
 
-  function saveCart() {
-    localStorage.setItem('cart', JSON.stringify(cart));
+ function updateCartBadge() {
+  const badge = document.querySelector('.cart-badge');
+  if (!badge) return;
+
+  // total qty (so if item qty=3 it shows 3)
+  const count = cart.reduce((sum, item) => sum + Number(item.qty || 0), 0);
+
+  if (count > 0) {
+    badge.textContent = String(count);
+    badge.classList.remove('hidden');
+  } else {
+    badge.textContent = '0';
+    badge.classList.add('hidden');
   }
+}
+
+function saveCart() {
+  localStorage.setItem('cart', JSON.stringify(cart));
+  updateCartBadge(); // ✅ keep badge synced always
+}
 
   function openCart() {
     cartContainer.classList.add('active');
@@ -286,6 +303,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if (btn.classList.contains('remove-item')) cart.splice(i, 1);
 
     renderCart();
+    updateCartBadge(); //show badge on page load
   });
 
   // ✅ IMPORTANT FIX: store resolved image path in cart
@@ -303,9 +321,11 @@ document.addEventListener('DOMContentLoaded', () => {
       });
     }
     renderCart();
+    updateCartBadge(); //  show badge on page load
   };
 
   renderCart(); // render saved cart on load
+  updateCartBadge(); // show badge on page load
 
   // ===============================
   // PROCEED TO PAYMENT
@@ -336,6 +356,7 @@ document.addEventListener('DOMContentLoaded', () => {
     cart = [];
     localStorage.removeItem('cart');
     renderCart();
+    updateCartBadge(); //  show badge on page load
     closeSummary();
   });
 });

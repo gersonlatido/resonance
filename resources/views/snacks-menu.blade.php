@@ -24,8 +24,10 @@
                 </span>
             </div>
         </div>
-        <button type="button" class="cart-btn" aria-label="View cart">Cart</button>
-
+        <button type="button" class="cart-btn" aria-label="View cart">
+  Cart
+  <span class="cart-badge hidden" aria-label="Cart items count">0</span>
+</button>
 
                        
         <!-- Cart Overlay -->

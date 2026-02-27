@@ -773,7 +773,40 @@ textarea {
     to { transform: scale(1); opacity: 1; }
 }
 
+/* ===============================
+   🛒 CART BADGE (dot / number)
+   =============================== */
+.cart-btn{
+  position: relative; /* important so badge positions correctly */
+}
 
+.cart-badge{
+  position: absolute;
+  top: -6px;
+  right: -6px;
+
+  min-width: 18px;
+  height: 18px;
+  padding: 0 5px;
+
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 1;
+
+  background: #ef4444; /* red */
+  color: #fff;
+
+  border: 2px solid #fff; /* clean outline */
+}
+
+.cart-badge.hidden{
+  display: none !important;
+}
 
 }   
 
