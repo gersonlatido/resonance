@@ -42,8 +42,16 @@ class PaymentSuccessController extends Controller
         }
 
         // mark table unavailable
-        Table::where('number', (int) $order->table_number)
-            ->update(['is_available' => false]);
+// ✅ mark table(s) unavailable AFTER payment
+
+$tablesToBlock = $order->table_numbers;
+
+if (!is_array($tablesToBlock) || count($tablesToBlock) === 0) {
+    $tablesToBlock = [$order->table_number];
+}
+
+Table::whereIn('number', $tablesToBlock)
+    ->update(['is_available' => false]);
 
         return redirect()->route('payment.receipt', ['order_code' => $order->order_code]);
     }

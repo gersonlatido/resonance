@@ -568,7 +568,7 @@
                           <div class="order-top">
                             <div>
                               <strong>{{ $order->order_code }}</strong>
-                              <span class="muted">• Table {{ $order->table_number }}</span>
+                           <span class="muted">• {{ $order->table_label ?? ('Table ' . $order->table_number) }}</span>
                             </div>
                             <span class="save-msg"></span>
                           </div>

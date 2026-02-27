@@ -10,19 +10,24 @@ class Order extends Model
 {
     use HasFactory;
 
-    protected $fillable = [
-        'order_code',
-        'external_id',
-        'table_number',
-        'status',
-        'eta_minutes',
-        'payment_status',
-        'inventory_deducted_at',
-        'total',
-    ];
+ protected $fillable = [
+    'order_code',
+    'external_id',
+
+    'table_number',
+    'table_label',     
+    'table_numbers',   
+
+    'status',
+    'eta_minutes',
+    'payment_status',
+    'inventory_deducted_at',
+    'total',
+];
 
     protected $casts = [
         'inventory_deducted_at' => 'datetime',
+        'table_numbers' => 'array',
     ];
 
     /**

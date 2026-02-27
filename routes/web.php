@@ -23,11 +23,14 @@ use App\Http\Controllers\SalesStockReportController;
 | QR ENTRY
 |---------------------------------------------------------------------------
 */
-Route::get('/t/{table}', function ($table) {
-    if ($table < 1 || $table > 10) abort(404);
-    session(['table_number' => (int) $table]);
-    return redirect('/');
-})->whereNumber('table');
+
+
+Route::get('/t/{table}', [TableController::class, 'enter'])
+    ->whereNumber('table')
+    ->name('table.enter');
+
+Route::post('/t/select', [TableController::class, 'select'])
+    ->name('table.select');
 
 /*
 |---------------------------------------------------------------------------

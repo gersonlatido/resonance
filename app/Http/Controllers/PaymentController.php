@@ -25,7 +25,8 @@ class PaymentController extends Controller
     {
         $data = $request->validate([
             'cart' => 'required|array|min:1',
-            'table_number' => 'required|integer|min:1|max:10',
+            // We will get table from session, not from user input
+'table_number' => 'nullable',
         ]);
 
         $xenditKey = env('XENDIT_SECRET_KEY');
@@ -94,17 +95,33 @@ class PaymentController extends Controller
 
         $orderCode  = 'ORD-' . now()->format('Ymd') . '-' . strtoupper(Str::random(6));
         $externalId = 'order_' . now()->timestamp . '_' . uniqid();
+   // ✅ Get shared/solo session data
+$tableNumbers = session('table_numbers');
+$tableLabel   = session('table_label');
 
-        // ✅ Create order first
-        $order = Order::create([
-            'order_code'     => $orderCode,
-            'external_id'    => $externalId,
-            'table_number'   => (int) $data['table_number'],
-            'status'         => 'preparing',
-            'eta_minutes'    => null,
-            'payment_status' => 'unpaid',
-            'total'          => $total,
-        ]);
+// fallback if no shared session
+if (!is_array($tableNumbers) || count($tableNumbers) < 1) {
+    $tableNumbers = [(int) $data['table_number']];
+    $tableLabel   = 'Table ' . (int) $data['table_number'];
+}
+
+sort($tableNumbers);
+$primaryTable = (int) $tableNumbers[0];
+
+// ✅ Create order with shared support
+$order = Order::create([
+    'order_code'     => $orderCode,
+    'external_id'    => $externalId,
+
+    'table_number'   => $primaryTable,
+    'table_label'    => $tableLabel,
+    'table_numbers'  => $tableNumbers,
+
+    'status'         => 'preparing',
+    'eta_minutes'    => null,
+    'payment_status' => 'unpaid',
+    'total'          => $total,
+]);
 
         // ✅ Save order items (menu_id is MENU001 etc)
         foreach ($dbItems as $it) {
