@@ -16,27 +16,9 @@ use App\Http\Controllers\PaymentController;
 use App\Http\Controllers\InventoryController;
 
 /*
-|--------------------------------------------------------------------------
-| INVENTORY
-|--------------------------------------------------------------------------
-*/
-Route::get('/admin/inventory', [InventoryController::class, 'index'])->name('admin.inventory');
-Route::post('/admin/inventory/ingredients', [InventoryController::class, 'storeIngredient'])->name('admin.inventory.ingredients.store');
-Route::post('/admin/inventory/{ingredient}/stock-in', [InventoryController::class, 'stockIn'])->name('admin.inventory.stockin');
-Route::post('/admin/inventory/{ingredient}/stock-out', [InventoryController::class, 'stockOut'])->name('admin.inventory.stockout');
-
-/*
-|--------------------------------------------------------------------------
-| TABLE MANAGEMENT
-|--------------------------------------------------------------------------
-*/
-Route::get('/admin/table-management', [AdminController::class, 'tableManagement'])->name('admin.table-management');
-Route::post('/admin/tables/{number}/toggle', [AdminController::class, 'toggleTable'])->name('admin.tables.toggle');
-
-/*
-|--------------------------------------------------------------------------
+|---------------------------------------------------------------------------
 | QR ENTRY
-|--------------------------------------------------------------------------
+|---------------------------------------------------------------------------
 */
 Route::get('/t/{table}', function ($table) {
     if ($table < 1 || $table > 10) abort(404);
@@ -45,9 +27,9 @@ Route::get('/t/{table}', function ($table) {
 })->whereNumber('table');
 
 /*
-|--------------------------------------------------------------------------
+|---------------------------------------------------------------------------
 | CUSTOMER PAGES
-|--------------------------------------------------------------------------
+|---------------------------------------------------------------------------
 */
 Route::get('/', fn() => view('home'));
 
@@ -64,9 +46,9 @@ Route::get('/menu', fn() => response()->json(MenuItem::all()));
 Route::view('/order-summary', 'order-summary')->name('order.summary');
 
 /*
-|--------------------------------------------------------------------------
-| PAYMENT FLOW (FIXED)
-|--------------------------------------------------------------------------
+|---------------------------------------------------------------------------
+| PAYMENT FLOW (XENDIT)
+|---------------------------------------------------------------------------
 */
 Route::get('/payment', [PaymentController::class, 'show'])->name('payment.show');
 Route::post('/payment/initiate', [PaymentController::class, 'initiate']);
@@ -89,9 +71,9 @@ Route::get('/payment-receit', function () {
 Route::get('/payment-cancelled', fn () => view('payment-cancelled'));
 
 /*
-|--------------------------------------------------------------------------
+|---------------------------------------------------------------------------
 | FEEDBACK
-|--------------------------------------------------------------------------
+|---------------------------------------------------------------------------
 */
 Route::get('/feedback', function () {
     $table = session('table_number');
@@ -104,32 +86,9 @@ Route::get('/feedback', function () {
 Route::post('/feedback', [FeedbackController::class, 'store'])->name('feedback.store');
 
 /*
-|--------------------------------------------------------------------------
-| ADMIN API
-|--------------------------------------------------------------------------
-*/
-Route::get('/admin/api/orders', [AdminOrderApiController::class, 'index']);
-Route::put('/admin/api/orders/{order_code}', [OrderController::class, 'updateStatus']);
-
-/*
-|--------------------------------------------------------------------------
-| ADMIN AUTH + DASHBOARD
-|--------------------------------------------------------------------------
-*/
-Route::get('admin/login', [AuthController::class, 'showAdminLoginForm'])->name('admin.login');
-Route::post('admin/login', [AuthController::class, 'adminLogin']);
-Route::post('admin/logout', [AuthController::class, 'logout'])->name('admin.logout');
-
-Route::middleware(['auth', 'admin'])
-    ->get('admin/dashboard', [AdminController::class, 'index'])
-    ->name('admin.dashboard');
-
-Route::post('admin/storeOrdersData', [AdminController::class, 'storeOrdersData'])->name('admin.storeOrdersData');
-
-/*
-|--------------------------------------------------------------------------
+|---------------------------------------------------------------------------
 | TRACK ORDER (SESSION-BASED)
-|--------------------------------------------------------------------------
+|---------------------------------------------------------------------------
 */
 Route::get('/track-order', function () {
 
@@ -160,24 +119,102 @@ Route::get('/track-order', function () {
 })->name('track.order');
 
 /*
-|--------------------------------------------------------------------------
-| ADMIN EXTRA PAGES
-|--------------------------------------------------------------------------
+|---------------------------------------------------------------------------
+| ADMIN AUTH
+|---------------------------------------------------------------------------
 */
-Route::middleware(['auth', 'admin'])
-    ->get('admin/table-management', [AdminController::class, 'tableManagement'])
-    ->name('admin.table-management');
+Route::get('admin/login', [AuthController::class, 'showAdminLoginForm'])->name('admin.login');
+Route::post('admin/login', [AuthController::class, 'adminLogin']);
+Route::post('admin/logout', [AuthController::class, 'logout'])->name('admin.logout');
 
-Route::get('/admin/menu-management', fn() => view('admin.menu-management'))->name('admin.menu-management');
+/*
+|---------------------------------------------------------------------------
+| ADMIN (PROTECTED)
+|---------------------------------------------------------------------------
+*/
+Route::middleware(['auth', 'admin'])->group(function () {
 
-Route::prefix('admin')->name('admin.')->group(function () {
-    Route::get('/feedbacks', [AdminFeedbackController::class, 'index'])->name('feedbacks');
-    Route::patch('/feedbacks/{id}/review', [AdminFeedbackController::class, 'markReviewed'])->name('feedback.review');
+    /*
+    |-----------------------------------------------------------------------
+    | ADMIN DASHBOARD
+    |-----------------------------------------------------------------------
+    */
+    Route::get('admin/dashboard', [AdminController::class, 'index'])->name('admin.dashboard');
+    Route::post('admin/storeOrdersData', [AdminController::class, 'storeOrdersData'])->name('admin.storeOrdersData');
+
+    /*
+    |-----------------------------------------------------------------------
+    | DAILY SALES REPORT ✅ (NEW)
+    |-----------------------------------------------------------------------
+    */
+    Route::get('/admin/daily-sales-report', [AdminController::class, 'dailySalesReport'])
+        ->name('admin.daily-sales-report');
+
+    /*
+    |-----------------------------------------------------------------------
+    | INVENTORY
+    |-----------------------------------------------------------------------
+    */
+    Route::get('/admin/inventory', [InventoryController::class, 'index'])->name('admin.inventory');
+    Route::post('/admin/inventory/ingredients', [InventoryController::class, 'storeIngredient'])->name('admin.inventory.ingredients.store');
+    Route::post('/admin/inventory/{ingredient}/stock-in', [InventoryController::class, 'stockIn'])->name('admin.inventory.stockin');
+    Route::post('/admin/inventory/{ingredient}/stock-out', [InventoryController::class, 'stockOut'])->name('admin.inventory.stockout');
+
+    /*
+    |-----------------------------------------------------------------------
+    | TABLE MANAGEMENT
+    |-----------------------------------------------------------------------
+    */
+    Route::get('/admin/table-management', [AdminController::class, 'tableManagement'])->name('admin.table-management');
+    Route::post('/admin/tables/{number}/toggle', [AdminController::class, 'toggleTable'])->name('admin.tables.toggle');
+
+    /*
+    |-----------------------------------------------------------------------
+    | ADMIN MENU MANAGEMENT (VIEW)
+    |-----------------------------------------------------------------------
+    */
+    Route::get('/admin/menu-management', fn() => view('admin.menu-management'))->name('admin.menu-management');
+
+    /*
+    |-----------------------------------------------------------------------
+    | ADMIN FEEDBACK ROUTES
+    |-----------------------------------------------------------------------
+    */
+    Route::prefix('admin')->name('admin.')->group(function () {
+        Route::get('/feedbacks', [AdminFeedbackController::class, 'index'])->name('feedbacks');
+        Route::patch('/feedbacks/{id}/review', [AdminFeedbackController::class, 'markReviewed'])->name('feedback.review');
+    });
+
+    /*
+    |-----------------------------------------------------------------------
+    | ADMIN API
+    |-----------------------------------------------------------------------
+    */
+    Route::get('/admin/api/orders', [AdminOrderApiController::class, 'index']);
+    Route::put('/admin/api/orders/{order_code}', [OrderController::class, 'updateStatus']);
 });
 
 /*
-|--------------------------------------------------------------------------
-| ORDER STATUS UPDATE
-|--------------------------------------------------------------------------
+|---------------------------------------------------------------------------
+| ORDER STATUS UPDATE (PUBLIC/INTERNAL)
+|---------------------------------------------------------------------------
 */
 Route::post('/orders/mark-paid', [OrderController::class, 'markPaid']);
+
+
+/*
+|--------------------------------------------------------------------------
+| SALES REPORT EXPORT (NO PACKAGES)
+|--------------------------------------------------------------------------
+*/
+Route::middleware(['auth', 'admin'])
+    ->get('/admin/sales-report/export/csv', [AdminController::class, 'exportSalesReportCsv'])
+    ->name('admin.sales-report.export.csv');
+
+Route::middleware(['auth', 'admin'])
+    ->get('/admin/sales-report/print', [AdminController::class, 'printSalesReport'])
+    ->name('admin.sales-report.print');
+
+    Route::middleware(['auth', 'admin'])
+    ->get('/admin/sales-report/export/xls', [AdminController::class, 'exportSalesReportXls'])
+    ->name('admin.sales-report.export.xls');

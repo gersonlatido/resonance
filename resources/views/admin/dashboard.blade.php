@@ -402,9 +402,10 @@
           Table Management
         </a>
 
-        <a href="#">
-          Daily Sales Report
-        </a>
+     <a href="{{ route('admin.daily-sales-report') }}"
+   class="{{ request()->routeIs('admin.daily-sales-report') ? 'active' : '' }}">
+  Daily Sales Report
+</a>
       </nav>
 
       <div class="side-section-title" style="margin-top:18px;">Admin Management</div>
