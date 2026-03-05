@@ -14,43 +14,56 @@ class TableController extends Controller
         [3, 4],
     ];
 
-    public function enter(int $table)
-    {
-        if ($table < 1 || $table > 10) abort(404);
+  public function enter(Request $request, int $table)
+{
+    if ($table < 1 || $table > 10) abort(404);
 
-        // ✅ NEW RULE: cannot scan an unavailable table
-        $scannedRow = Table::where('number', $table)->first();
-        if ($scannedRow && !$scannedRow->is_available) {
-            return redirect('/')->with('error', "Table {$table} is unavailable.");
-        }
+    // ✅ BLOCK IMMEDIATELY if scanned table is unavailable
+    $scannedRow = Table::where('number', $table)->first();
+    if ($scannedRow && !$scannedRow->is_available) {
+        return redirect('/')->with('error', "Table {$table} is unavailable.");
+    }
 
-        // Find share group
-        $group = $this->findGroup($table);
+    /**
+     * ✅ Show loading screen for valid tables
+     * Redirect back to same URL with ?go=1 after 3 seconds
+     */
+    if (!$request->boolean('go')) {
+        $redirectUrl = route('table.enter', ['table' => $table]) . '?go=1';
 
-        // Not shareable → old behavior
-        if (!$group) {
-            session([
-                'table_number'  => (int) $table,
-                'table_numbers' => [(int) $table],
-                'table_label'   => 'Table ' . (int) $table,
-            ]);
-            return redirect('/');
-        }
-
-        // Load availability for group (for UI display only)
-        $tables = Table::whereIn('number', $group)->get()->keyBy('number');
-
-        $availability = [];
-        foreach ($group as $n) {
-            $availability[$n] = isset($tables[$n]) ? (bool) $tables[$n]->is_available : true;
-        }
-
-        return view('choose-table', [
-            'scanned'      => (int) $table,
-            'group'        => $group,
-            'availability' => $availability,
+        return view('table-loading', [
+            'table' => (int) $table,
+            'redirectUrl' => $redirectUrl,
         ]);
     }
+
+    // Find share group
+    $group = $this->findGroup($table);
+
+    // Not shareable → old behavior (solo tables: 1,2,5,6,10 etc)
+    if (!$group) {
+        session([
+            'table_number'  => (int) $table,
+            'table_numbers' => [(int) $table],
+            'table_label'   => 'Table ' . (int) $table,
+        ]);
+        return redirect('/');
+    }
+
+    // Share group → show choose-table
+    $tables = Table::whereIn('number', $group)->get()->keyBy('number');
+
+    $availability = [];
+    foreach ($group as $n) {
+        $availability[$n] = isset($tables[$n]) ? (bool) $tables[$n]->is_available : true;
+    }
+
+    return view('choose-table', [
+        'scanned'      => (int) $table,
+        'group'        => $group,
+        'availability' => $availability,
+    ]);
+}
 
     public function select(Request $request)
     {

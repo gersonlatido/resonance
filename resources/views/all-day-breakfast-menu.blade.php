@@ -12,13 +12,13 @@
     <script src="{{ asset('js/app.js') }}" defer></script>
     
 </head>
-<body   data-category="all-day-breakfast"   >
+<body data-category="all-day-breakfast">
 
-     <span
-    id="serverTableNumber"
-    data-table="{{ session('table_number') ?? '' }}"
-    style="display:none;">
-  </span>
+    <span
+        id="serverTableNumber"
+        data-table="{{ session('table_number') ?? '' }}"
+        style="display:none;">
+    </span>
     
     <!-- Navbar -->
     <div class="navbar">
@@ -32,12 +32,12 @@
                 </span>
             </div>
         </div>
-       <button type="button" class="cart-btn" aria-label="View cart">
-  Cart
-  <span class="cart-badge hidden" aria-label="Cart items count">0</span>
-</button>
-        
-        
+
+        <button type="button" class="cart-btn" aria-label="View cart">
+            Cart
+            <span class="cart-badge hidden" aria-label="Cart items count">0</span>
+        </button>
+
         <!-- Cart Overlay -->
         <div class="cart-overlay hidden"></div>
 
@@ -64,7 +64,7 @@
                         <p class="item-price">₱150.00</p>
 
                         <div class="quantity-controls">
-                            <button type="button" class="qty-btn minus" >−</button>
+                            <button type="button" class="qty-btn minus">−</button>
                             <span class="item-qty">1</span>
                             <button type="button" class="qty-btn plus">+</button>
                         </div>
@@ -89,119 +89,241 @@
                 </button>
             </div>
         </div>
-                
-            </div>
-
-            <div class="order-summary-overlay hidden"></div>
-
-                <div class="order-summary hidden">
-                    <h2>Order Summary</h2>
-
-                    <div class="summary-items"></div>
-
-                    <div class="summary-total">
-                        <strong>Total:</strong>
-                        <span class="summary-total-amount">₱0.00</span>
-                    </div>
-
-                    <button class="confirm-payment-btn">Confirm Payment</button>
-                    <button class="close-summary-btn">Cancel</button>
-                </div>
-
-
-    <!-- Menu Bar -->
-    <div class="menu-bar">
-        <!-- Hamburger/menu button -->
-        <button type="button" class="menu-btn" aria-label="Open menu" aria-expanded="false">
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-                <rect x="3" y="6" width="25" height="3" rx="1" fill="#F7B413" />
-                <rect x="3" y="13" width="25" height="3" rx="1" fill="#F7B413" />
-                <rect x="3" y="20" width="25" height="3" rx="1" fill="#F7B413" />
-            </svg>
-        </button>
-
-        <!-- Category Panel -->
-        <div class="category-container">
-            <button type="button" class="category-close" aria-label="Close categories">
-                <svg width="25" height="25" viewBox="0 0 24 24" fill="none">
-                    <path d="M18 6L6 18" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
-                    <path d="M6 6L18 18" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
-                </svg>
-            </button>
-
-            <!-- Category Cards -->
-            <div class="category-card">
-                <div class="category-content">
-                    <a href="{{ route('menu.breakfast') }}">
-                        <img src="{{ asset('images/All-Day Breakfast.png') }}" alt="All Day Breakfast">
-                    </a>
-                </div>
-            </div>
-            
-
-             <div class="category-card">
-                <div class="category-content">
-                    <a href="{{ route('menu.main_courses') }}">
-                        <img src="{{ asset('images/Main Courses.png') }}" alt="Main Courses">
-                    </a>
-                </div>
-             </div> 
-
-               <div class="category-card">
-                <div class="category-content">
-                    <a href="{{ route('menu.pasta') }}">
-                        <img src="{{ asset('images/Pasta Menu.png') }}" alt="Pasta Menu">
-                    </a>
-                </div>
-            </div> 
-
-              <div class="category-card">
-                <div class="category-content">
-                    <a href="{{ route('menu.chicken') }}">
-                        <img src="{{ asset('images/Chicken Menu.png') }}" alt="Chicken Menu">
-                    </a>
-                </div>
-            </div> 
-            
-            <div class="category-card">
-                    <div class="category-content">
-                        <a href="{{ route('menu.drinks') }}">
-                            <img src="{{ asset('images/Drinks Menu.png') }}" alt="Drinks Menu">
-                        </a>
-                    </div>
-            </div> 
-
-                    <div class="category-card">
-                        <div class="category-content">
-                            <a href="{{ route('menu.pizza') }}">
-                                <img src="{{ asset('images/Pizza Menu.png') }}" alt="Pizza Menu">
-                            </a>
-                        </div>
-                    </div> 
-
-
-            <div class="category-card">
-                <div class="category-content">
-                    <a href="{{ route('menu.snacks') }}">
-                        <img src="{{ asset('images/Snacks Menu.png') }}" alt="Snacks Menu">
-                    </a>
-                </div>
-            </div> 
-
-        </div>
     </div>
+
+    <div class="order-summary-overlay hidden"></div>
+
+    <div class="order-summary hidden">
+        <h2>Order Summary</h2>
+
+        <div class="summary-items"></div>
+
+        <div class="summary-total">
+            <strong>Total:</strong>
+            <span class="summary-total-amount">₱0.00</span>
+        </div>
+
+        <button class="confirm-payment-btn">Confirm Payment</button>
+        <button class="close-summary-btn">Cancel</button>
+    </div>
+
+
+<!-- CATEGORY SCROLLER  -->
+<div class="fp-cats-wrap">
+
+  <button class="fp-scroll-btn fp-left" id="fpArrowLeft" type="button" aria-label="Scroll left">‹</button>
+
+  <div class="fp-cats" id="fpCats">
+
+    <a href="{{ route('menu.breakfast') }}"
+       class="fp-cat {{ request()->routeIs('menu.breakfast') ? 'is-active' : '' }}">
+      <div class="fp-cat-card">
+        <img src="{{ asset('images/beefsilog.png') }}" alt="Breakfast">
+      </div>
+      <div class="fp-cat-label">Breakfast</div>
+    </a>
+
+    <a href="{{ route('menu.main_courses') }}"
+       class="fp-cat {{ request()->routeIs('menu.main_courses') ? 'is-active' : '' }}">
+      <div class="fp-cat-card">
+        <img src="{{ asset('images/STEAK RICE.png') }}" alt="Main Courses">
+      </div>
+      <div class="fp-cat-label">Main Courses</div>
+    </a>
+
+    <a href="{{ route('menu.pasta') }}"
+       class="fp-cat {{ request()->routeIs('menu.pasta') ? 'is-active' : '' }}">
+      <div class="fp-cat-card">
+        <img src="{{ asset('images/creamy-pesto-pasta.png') }}" alt="Pasta">
+      </div>
+      <div class="fp-cat-label">Pasta</div>
+    </a>
+
+    <a href="{{ route('menu.chicken') }}"
+       class="fp-cat {{ request()->routeIs('menu.chicken') ? 'is-active' : '' }}">
+      <div class="fp-cat-card">
+        <img src="{{ asset('images/unli-basic.png') }}" alt="Chicken">
+      </div>
+      <div class="fp-cat-label">Chicken</div>
+    </a>
+
+    <a href="{{ route('menu.drinks') }}"
+       class="fp-cat {{ request()->routeIs('menu.drinks') ? 'is-active' : '' }}">
+      <div class="fp-cat-card">
+        <img src="{{ asset('images/coffee-cream-frappe.png') }}" alt="Drinks">
+      </div>
+      <div class="fp-cat-label">Drinks</div>
+    </a>
+
+    <a href="{{ route('menu.pizza') }}"
+       class="fp-cat {{ request()->routeIs('menu.pizza') ? 'is-active' : '' }}">
+      <div class="fp-cat-card">
+        <img src="{{ asset('images/6-cheese.png') }}" alt="Pizza">
+      </div>
+      <div class="fp-cat-label">Pizza</div>
+    </a>
+
+    <a href="{{ route('menu.snacks') }}"
+       class="fp-cat {{ request()->routeIs('menu.snacks') ? 'is-active' : '' }}">
+      <div class="fp-cat-card">
+        <img src="{{ asset('images/chicken-poppers.png') }}" alt="Snacks">
+      </div>
+      <div class="fp-cat-label">Snacks</div>
+    </a>
+
+  </div>
+
+  <button class="fp-scroll-btn fp-right" id="fpArrowRight" type="button" aria-label="Scroll right">›</button>
+
+</div>
 
     <!-- All Day Breakfast Section -->
     <div class="all-day-breakfast-container">
-          @forelse($items as $item)
-        <div class="menu-item">
-            <div class="menu-item-name">{{ $item->name }}</div>
-            <div class="menu-item-description">{{ $item->description }}</div>
-            <div class="menu-item-price">₱{{ number_format($item->price, 2) }}</div>
-        </div>
-    @empty
-        <p>No items found.</p>
-    @endforelse
+        @forelse($items as $item)
+            <div class="menu-item">
+                <div class="menu-item-name">{{ $item->name }}</div>
+                <div class="menu-item-description">{{ $item->description }}</div>
+                <div class="menu-item-price">₱{{ number_format($item->price, 2) }}</div>
+            </div>
+        @empty
+            <p>No items found.</p>
+        @endforelse
     </div>
+
+
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+
+  const cats     = document.getElementById('fpCats');
+  const leftBtn  = document.getElementById('fpArrowLeft');
+  const rightBtn = document.getElementById('fpArrowRight');
+
+  if (!cats || !leftBtn || !rightBtn) return;
+
+  const KEY = "fpCatsScrollPos"; // shared for all category pages
+  let scrollTimer = null;
+
+  function items() {
+    return Array.from(cats.querySelectorAll('.fp-cat'));
+  }
+
+  function maxScrollLeft() {
+    return cats.scrollWidth - cats.clientWidth;
+  }
+
+  function passedFirstItem() {
+    const list = items();
+    if (list.length < 2) return false;
+    const secondLeft = list[1].offsetLeft;
+    return cats.scrollLeft >= (secondLeft - 6);
+  }
+
+  function atEnd() {
+    return cats.scrollLeft >= (maxScrollLeft() - 4);
+  }
+
+  function updateArrows() {
+    if (maxScrollLeft() <= 1) {
+      leftBtn.style.display = "none";
+      rightBtn.style.display = "none";
+      return;
+    }
+
+    // left appears only starting from 2nd category
+    leftBtn.style.display = passedFirstItem() ? "flex" : "none";
+
+    // right hidden only at end
+    rightBtn.style.display = atEnd() ? "none" : "flex";
+  }
+
+  function hideArrowsWhileScrolling() {
+    leftBtn.style.display = "none";
+    rightBtn.style.display = "none";
+  }
+
+  // ✅ move 1 category per click
+  function scrollOne(dir) {
+    const list = items();
+    if (!list.length) return;
+
+    const x = cats.scrollLeft;
+
+    let currentIndex = 0;
+    for (let i = 0; i < list.length; i++) {
+      if (list[i].offsetLeft <= x + 6) currentIndex = i;
+      else break;
+    }
+
+    let targetIndex = currentIndex + dir;
+    if (targetIndex < 0) targetIndex = 0;
+    if (targetIndex > list.length - 1) targetIndex = list.length - 1;
+
+    cats.scrollTo({ left: list[targetIndex].offsetLeft, behavior: 'smooth' });
+  }
+
+  leftBtn.addEventListener('click', function () { scrollOne(-1); });
+  rightBtn.addEventListener('click', function () { scrollOne(1); });
+
+  // ✅ save while scrolling + arrows behavior
+  cats.addEventListener('scroll', function () {
+    // save current position
+    sessionStorage.setItem(KEY, String(cats.scrollLeft));
+
+    hideArrowsWhileScrolling();
+    clearTimeout(scrollTimer);
+    scrollTimer = setTimeout(updateArrows, 180);
+  }, { passive: true });
+
+  // ✅ save before navigation when clicking a category link
+  cats.addEventListener('click', function (e) {
+    const link = e.target.closest('a.fp-cat');
+    if (!link) return;
+    sessionStorage.setItem(KEY, String(cats.scrollLeft));
+  });
+
+  window.addEventListener('resize', function () {
+    // keep saved position on resize too
+    sessionStorage.setItem(KEY, String(cats.scrollLeft));
+    updateArrows();
+  });
+
+  // ✅ restore saved position; if none, center active category
+  function restoreOrCenterActive() {
+    const oldSnap = cats.style.scrollSnapType;
+    cats.style.scrollSnapType = "none";
+
+    const saved = sessionStorage.getItem(KEY);
+
+    if (saved !== null) {
+      const value = parseFloat(saved) || 0;
+      cats.scrollTo({ left: value, top: 0, behavior: "auto" });
+      cats.scrollLeft = value;
+    } else {
+      const active = cats.querySelector('.fp-cat.is-active');
+      if (active) {
+        const target =
+          active.offsetLeft - (cats.clientWidth / 2) + (active.offsetWidth / 2);
+        const clamped = Math.max(0, Math.min(target, maxScrollLeft()));
+        cats.scrollTo({ left: clamped, top: 0, behavior: "auto" });
+        cats.scrollLeft = clamped;
+      } else {
+        cats.scrollTo({ left: 0, top: 0, behavior: "auto" });
+        cats.scrollLeft = 0;
+      }
+    }
+
+    requestAnimationFrame(() => {
+      cats.style.scrollSnapType = oldSnap || "x mandatory";
+      updateArrows();
+    });
+  }
+
+  // Run restore after layout settles (important for mobile)
+  restoreOrCenterActive();
+  window.addEventListener('load', restoreOrCenterActive);
+  window.addEventListener('pageshow', restoreOrCenterActive);
+
+});
+</script>
 </body>
 </html>

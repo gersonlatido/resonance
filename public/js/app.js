@@ -15,19 +15,47 @@ document.addEventListener('DOMContentLoaded', function () {
   }
 
   function openCategories() {
-    categoryContainer.classList.add('displayed');
-    categoryOverlay.classList.remove('hidden');
+    categoryContainer?.classList.add('displayed');
+    categoryOverlay?.classList.remove('hidden');
   }
 
   function closeCategories() {
-    categoryContainer.classList.remove('displayed');
-    categoryOverlay.classList.add('hidden');
+    categoryContainer?.classList.remove('displayed');
+    categoryOverlay?.classList.add('hidden');
   }
 
   menuBtn?.addEventListener('click', openCategories);
   closeBtn?.addEventListener('click', closeCategories);
   categoryOverlay?.addEventListener('click', closeCategories);
 });
+
+// ===============================
+// ✅ QR SPLASH LOADER (Logo + dots)
+// ✅ Works only if #qrSplash exists in the page
+// ===============================
+(function () {
+  const splash = document.getElementById("qrSplash");
+  if (!splash) return;
+
+  // ✅ Show once per tab session (prevents annoying splash on every navigation)
+  try {
+    const shown = sessionStorage.getItem("qrSplashShown");
+    if (shown === "1") {
+      splash.classList.add("is-hidden");
+      return;
+    }
+    sessionStorage.setItem("qrSplashShown", "1");
+  } catch (e) {}
+
+  const MIN_MS = 900;
+
+  window.addEventListener("load", () => {
+    setTimeout(() => {
+      splash.classList.add("is-hidden");
+      setTimeout(() => splash.remove(), 450);
+    }, MIN_MS);
+  });
+})();
 
 // ===============================
 // ✅ TABLE NUMBER (QR -> session -> localStorage)
@@ -204,35 +232,35 @@ document.addEventListener('DOMContentLoaded', () => {
 
   let cart = JSON.parse(localStorage.getItem('cart')) || [];
 
- function updateCartBadge() {
-  const badge = document.querySelector('.cart-badge');
-  if (!badge) return;
+  function updateCartBadge() {
+    const badge = document.querySelector('.cart-badge');
+    if (!badge) return;
 
-  // total qty (so if item qty=3 it shows 3)
-  const count = cart.reduce((sum, item) => sum + Number(item.qty || 0), 0);
+    // total qty (so if item qty=3 it shows 3)
+    const count = cart.reduce((sum, item) => sum + Number(item.qty || 0), 0);
 
-  if (count > 0) {
-    badge.textContent = String(count);
-    badge.classList.remove('hidden');
-  } else {
-    badge.textContent = '0';
-    badge.classList.add('hidden');
+    if (count > 0) {
+      badge.textContent = String(count);
+      badge.classList.remove('hidden');
+    } else {
+      badge.textContent = '0';
+      badge.classList.add('hidden');
+    }
   }
-}
 
-function saveCart() {
-  localStorage.setItem('cart', JSON.stringify(cart));
-  updateCartBadge(); // ✅ keep badge synced always
-}
+  function saveCart() {
+    localStorage.setItem('cart', JSON.stringify(cart));
+    updateCartBadge(); // ✅ keep badge synced always
+  }
 
   function openCart() {
-    cartContainer.classList.add('active');
-    cartOverlay.classList.remove('hidden');
+    cartContainer?.classList.add('active');
+    cartOverlay?.classList.remove('hidden');
   }
 
   function closeCart() {
-    cartContainer.classList.remove('active');
-    cartOverlay.classList.add('hidden');
+    cartContainer?.classList.remove('active');
+    cartOverlay?.classList.add('hidden');
   }
 
   cartBtn?.addEventListener('click', openCart);
@@ -246,10 +274,12 @@ function saveCart() {
   }
 
   function renderCart() {
+    if (!cartItemsContainer) return;
+
     cartItemsContainer.innerHTML = '';
     if (cart.length === 0) {
       cartItemsContainer.innerHTML = '<p>Your cart is empty</p>';
-      cartTotalEl.textContent = '₱0.00';
+      if (cartTotalEl) cartTotalEl.textContent = '₱0.00';
       saveCart();
       return;
     }
@@ -285,11 +315,11 @@ function saveCart() {
       `;
     });
 
-    cartTotalEl.textContent = `₱${total.toFixed(2)}`;
+    if (cartTotalEl) cartTotalEl.textContent = `₱${total.toFixed(2)}`;
     saveCart();
   }
 
-  cartItemsContainer.addEventListener('click', e => {
+  cartItemsContainer?.addEventListener('click', e => {
     const btn = e.target.closest('.qty-btn, .remove-item');
     if (!btn) return;
 
@@ -303,7 +333,7 @@ function saveCart() {
     if (btn.classList.contains('remove-item')) cart.splice(i, 1);
 
     renderCart();
-    updateCartBadge(); //show badge on page load
+    updateCartBadge();
   });
 
   // ✅ IMPORTANT FIX: store resolved image path in cart
@@ -321,7 +351,7 @@ function saveCart() {
       });
     }
     renderCart();
-    updateCartBadge(); //  show badge on page load
+    updateCartBadge();
   };
 
   renderCart(); // render saved cart on load
@@ -351,12 +381,11 @@ function saveCart() {
   closeSummaryBtn?.addEventListener('click', closeSummary);
   summaryOverlay?.addEventListener('click', closeSummary);
 
-  confirmPaymentBtn?.addEventListener('click', () => {
-    alert('Order placed successfully!');
-    cart = [];
-    localStorage.removeItem('cart');
-    renderCart();
-    updateCartBadge(); //  show badge on page load
-    closeSummary();
-  });
+confirmPaymentBtn?.addEventListener('click', () => {
+  cart = [];
+  localStorage.removeItem('cart');
+  renderCart();
+  updateCartBadge();
+  closeSummary();
+});
 });
