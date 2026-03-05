@@ -3,206 +3,55 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
-use App\Models\Order;
 use App\Models\Ingredient;
+use App\Models\StockMovement;
 use Carbon\Carbon;
+use Illuminate\Support\Facades\DB;
 
 class SalesStockReportController extends Controller
 {
     public function index(Request $request)
     {
-        [$data, $meta] = $this->buildReportData($request);
-
+        [$data, $meta] = $this->buildStockData($request, true);
         return view('admin.reports.sales-stock-report', array_merge($meta, $data));
     }
 
-    /**
-     * ✅ PRINT VIEW (user saves as PDF)
-     */
-   public function print(Request $request)
-{
-    $period = $request->query('period', 'daily');
-    $selectedDate = $request->query('date');
-    $type = $request->query('type', 'combined'); // combined | sales | stock
+    public function print(Request $request)
+    {
+        [$data, $meta] = $this->buildStockData($request, false);
 
-    $day = $selectedDate ? Carbon::parse($selectedDate) : Carbon::today();
-    [$start, $end, $rangeLabel] = $this->getRangeByPeriod($period, $day);
+        $payload = array_merge($meta, $data, [
+            'generatedAt' => now()->format('Y-m-d h:i A'),
+            'type' => 'stock',
+        ]);
 
-    $paidOrders = Order::with('items')
-        ->where('payment_status', 'paid')
-        ->whereBetween('created_at', [$start, $end])
-        ->orderByDesc('created_at')
-        ->get();
-
-    $totalSales = (float) $paidOrders->sum('total');
-    $paidCount  = (int) $paidOrders->count();
-    $avgOrder   = $paidCount > 0 ? ($totalSales / $paidCount) : 0;
-
-    $topItems = $this->computeTopItems($paidOrders, 10);
-
-    $ingredients = Ingredient::orderBy('name')->get();
-    $lowStock = $ingredients->filter(function ($i) {
-        return ($i->stock_qty <= 0) || ($i->stock_qty <= $i->reorder_level);
-    })->values();
-
-    $data = [
-        'period'       => $period,
-        'selectedDate' => $day->toDateString(),
-        'rangeLabel'   => $rangeLabel,
-        'generatedAt'  => now()->format('Y-m-d h:i A'),
-
-        'paidOrders'   => $paidOrders,
-        'totalSales'   => $totalSales,
-        'paidCount'    => $paidCount,
-        'avgOrder'     => $avgOrder,
-
-        'topItems'     => $topItems,
-        'ingredients'  => $ingredients,
-        'lowStock'     => $lowStock,
-        'type'         => $type,
-    ];
-
-    if ($type === 'sales') {
-        return view('admin.reports.sales-stock-report-print-sales', $data);
+        return view('admin.reports.sales-stock-report-print-stock', $payload);
     }
 
-    if ($type === 'stock') {
-        return view('admin.reports.sales-stock-report-print-stock', $data);
-    }
-
-    return view('admin.reports.sales-stock-report-print', $data); // combined
-}
-
-// public function exportCsv(Request $request)
-// {
-//     $period = $request->query('period', 'daily');
-//     $selectedDate = $request->query('date');
-//     $type = $request->query('type', 'combined'); // combined | sales | stock
-
-//     $day = $selectedDate ? Carbon::parse($selectedDate) : Carbon::today();
-//     [$start, $end, $rangeLabel] = $this->getRangeByPeriod($period, $day);
-
-//     $paidOrders = Order::with('items')
-//         ->where('payment_status', 'paid')
-//         ->whereBetween('created_at', [$start, $end])
-//         ->orderByDesc('created_at')
-//         ->get();
-
-//     $totalSales = (float) $paidOrders->sum('total');
-//     $paidCount  = (int) $paidOrders->count();
-//     $avgOrder   = $paidCount > 0 ? ($totalSales / $paidCount) : 0;
-
-//     $topItems = $this->computeTopItems($paidOrders, 10);
-
-//     $ingredients = Ingredient::orderBy('name')->get();
-//     $lowStock = $ingredients->filter(function ($i) {
-//         return ($i->stock_qty <= 0) || ($i->stock_qty <= $i->reorder_level);
-//     })->values();
-
-//     $filename = "sales_stock_report_{$type}_{$period}_" . $start->format('Ymd') . "_to_" . $end->format('Ymd') . ".csv";
-
-//     $headers = [
-//         'Content-Type'        => 'text/csv; charset=UTF-8',
-//         'Content-Disposition' => 'attachment; filename="'.$filename.'"',
-//     ];
-
-//     $callback = function () use ($type, $period, $rangeLabel, $start, $end, $paidOrders, $totalSales, $paidCount, $avgOrder, $topItems, $ingredients, $lowStock) {
-//         $out = fopen('php://output', 'w');
-//         fprintf($out, chr(0xEF).chr(0xBB).chr(0xBF)); // BOM for Excel ₱
-
-//         fputcsv($out, ['99 SILOG CAFE']);
-//         fputcsv($out, ['SALES & STOCK REPORT']);
-//         fputcsv($out, ['Type', strtoupper($type)]);
-//         fputcsv($out, ['Period', ucfirst($period)]);
-//         fputcsv($out, ['Range', $rangeLabel]);
-//         fputcsv($out, ['Start', $start->format('Y-m-d H:i:s')]);
-//         fputcsv($out, ['End', $end->format('Y-m-d H:i:s')]);
-//         fputcsv($out, ['Generated', now()->format('Y-m-d h:i A')]);
-//         fputcsv($out, []);
-
-//         if ($type === 'sales' || $type === 'combined') {
-//             fputcsv($out, ['SALES SUMMARY']);
-//             fputcsv($out, ['Total Sales (Paid)', '₱' . number_format($totalSales, 2)]);
-//             fputcsv($out, ['Paid Orders', $paidCount]);
-//             fputcsv($out, ['Average Order', '₱' . number_format($avgOrder, 2)]);
-//             fputcsv($out, []);
-
-//             fputcsv($out, ['BEST SELLERS']);
-//             fputcsv($out, ['Item', 'Qty Sold']);
-//             if (count($topItems) === 0) {
-//                 fputcsv($out, ['(none)', 0]);
-//             } else {
-//                 foreach ($topItems as $it) {
-//                     fputcsv($out, [(string)$it['name'], (int)$it['qty']]);
-//                 }
-//             }
-//             fputcsv($out, []);
-
-//             fputcsv($out, ['PAID ORDERS']);
-//             fputcsv($out, ['Order Code', 'Table', 'Total', 'Status', 'Time']);
-//             foreach ($paidOrders as $o) {
-//                 fputcsv($out, [
-//                     (string)$o->order_code,
-//                     (string)$o->table_number,
-//                     '₱' . number_format((float)$o->total, 2),
-//                     (string)$o->status,
-//                     optional($o->created_at)->format('Y-m-d h:i A'),
-//                 ]);
-//             }
-//             fputcsv($out, []);
-//         }
-
-//         if ($type === 'stock' || $type === 'combined') {
-//             fputcsv($out, ['INVENTORY SNAPSHOT']);
-//             fputcsv($out, ['Ingredient', 'Unit', 'Stock', 'Reorder', 'Status']);
-
-//             foreach ($ingredients as $ing) {
-//                 $stock = (float)($ing->stock_qty ?? 0);
-//                 $reorder = (float)($ing->reorder_level ?? 0);
-//                 $status = ($stock <= 0) ? 'OUT' : (($stock <= $reorder) ? 'LOW' : 'OK');
-
-//                 fputcsv($out, [
-//                     (string)$ing->name,
-//                     (string)$ing->unit,
-//                     number_format($stock, 2),
-//                     number_format($reorder, 2),
-//                     $status
-//                 ]);
-//             }
-
-//             fputcsv($out, []);
-//             fputcsv($out, ['LOW STOCK COUNT', count($lowStock)]);
-//         }
-
-//         fclose($out);
-//     };
-
-//     return response()->stream($callback, 200, $headers);
-// }
-
-    /**
-     * ✅ CSV DOWNLOAD (Excel-friendly)
-     * includes: Sales summary, Best sellers, Low stock, Paid orders list
-     */
     public function exportCsv(Request $request)
     {
-        [$data, $meta] = $this->buildReportData($request);
+        [$data, $meta] = $this->buildStockData($request, false);
 
-        $period       = $meta['period'];
-        $rangeLabel   = $meta['rangeLabel'];
-        $selectedDate = $meta['selectedDate'];
-        $start        = $meta['start'];
-        $end          = $meta['end'];
+        $rangeLabel = $meta['rangeLabel'];
+        $start      = $meta['start'];
+        $end        = $meta['end'];
 
-        $totalSales    = $data['totalSales'];
-        $paidCount     = $data['paidCount'];
-        $avgOrder      = $data['avgOrder'];
-        $paidOrders    = $data['paidOrders'];
-        $topItems      = $data['topItems'];
-        $lowStock      = $data['lowStock'];
-        $lowStockCount = $data['lowStockCount'];
+        $from   = $meta['from'];
+        $to     = $meta['to'];
+        $q      = $meta['q'];
+        $status = $meta['status'];
 
-        $filename = "sales_stock_report_{$period}_" . $start->format('Ymd') . "_to_" . $end->format('Ymd') . ".csv";
+        $ingredients    = $data['ingredients'];     // Collection
+        $lowStockCount  = $data['lowStockCount'];
+
+        $movements      = $data['movements'];       // Collection
+        $movementCount  = $data['movementCount'];
+
+        $consumedRows   = $data['consumedRows'];    // Collection rows: name, unit, qty_used
+        $consumedCount  = $data['consumedCount'];
+        $consumedTotal  = $data['consumedTotal'];
+
+        $filename = "stock_report_" . $start->format('Ymd') . "_to_" . $end->format('Ymd') . ".csv";
 
         $headers = [
             'Content-Type'        => 'text/csv; charset=UTF-8',
@@ -210,84 +59,84 @@ class SalesStockReportController extends Controller
         ];
 
         $callback = function () use (
-            $period, $rangeLabel, $selectedDate, $start, $end,
-            $totalSales, $paidCount, $avgOrder,
-            $topItems, $lowStock, $lowStockCount, $paidOrders
+            $rangeLabel, $start, $end,
+            $from, $to, $q, $status,
+            $ingredients, $lowStockCount,
+            $movements, $movementCount,
+            $consumedRows, $consumedCount, $consumedTotal
         ) {
             $out = fopen('php://output', 'w');
+            fprintf($out, chr(0xEF).chr(0xBB).chr(0xBF)); // BOM
 
-            // ✅ UTF-8 BOM for Excel (₱)
-            fprintf($out, chr(0xEF).chr(0xBB).chr(0xBF));
-
-            // Header
             fputcsv($out, ['99 SILOG CAFE']);
-            fputcsv($out, ['SALES & STOCK REPORT']);
+            fputcsv($out, ['STOCK REPORT']);
             fputcsv($out, ['']);
-            fputcsv($out, ['Period', ucfirst($period)]);
-            fputcsv($out, ['Range', $rangeLabel]);
-            fputcsv($out, ['Selected Date', $selectedDate]);
+            fputcsv($out, ['Range Label', $rangeLabel]);
+            fputcsv($out, ['From', $from ?: '(auto)']);
+            fputcsv($out, ['To', $to ?: '(auto)']);
+            fputcsv($out, ['Search', $q !== '' ? $q : '(none)']);
+            fputcsv($out, ['Status Filter', strtoupper($status)]);
             fputcsv($out, ['Start', $start->format('Y-m-d H:i:s')]);
             fputcsv($out, ['End', $end->format('Y-m-d H:i:s')]);
             fputcsv($out, ['Generated', now()->format('Y-m-d h:i A')]);
-            fputcsv($out, ['']);
-            fputcsv($out, ['Total Sales (Paid)', '₱' . number_format($totalSales, 2)]);
-            fputcsv($out, ['Paid Orders', $paidCount]);
-            fputcsv($out, ['Average Order', '₱' . number_format($avgOrder, 2)]);
-            fputcsv($out, ['Low Stock Items', $lowStockCount]);
-            fputcsv($out, ['']);
-            fputcsv($out, ['============================================================']);
-            fputcsv($out, ['']);
-
-            // Best sellers
-            fputcsv($out, ['BEST-SELLING ITEMS']);
-            fputcsv($out, ['Item', 'Qty Sold']);
-            if (count($topItems) === 0) {
-                fputcsv($out, ['(none)', 0]);
-            } else {
-                foreach ($topItems as $it) {
-                    fputcsv($out, [(string)$it['name'], (int)$it['qty']]);
-                }
-            }
-
+            fputcsv($out, ['Low/Out Items (filtered)', $lowStockCount]);
+            fputcsv($out, ['Movement Rows (filtered)', $movementCount]);
+            fputcsv($out, ['Consumed Items', $consumedCount]);
+            fputcsv($out, ['Total Consumed Qty (sum of OUT)', number_format((float)$consumedTotal, 2)]);
             fputcsv($out, ['']);
             fputcsv($out, ['============================================================']);
             fputcsv($out, ['']);
 
-            // Low stock
-            fputcsv($out, ['LOW STOCK INGREDIENTS']);
+            // Inventory Snapshot
+            fputcsv($out, ['INVENTORY SNAPSHOT (FILTERED, CURRENT STOCK)']);
             fputcsv($out, ['Ingredient', 'Unit', 'Stock', 'Reorder Level', 'Status']);
-            if (count($lowStock) === 0) {
-                fputcsv($out, ['(none)', '', 0, 0, 'OK']);
-            } else {
-                foreach ($lowStock as $ing) {
-                    $stock = (float) ($ing->stock_qty ?? 0);
-                    $reorder = (float) ($ing->reorder_level ?? 0);
-                    $status = ($stock <= 0) ? 'OUT' : 'LOW';
+            foreach ($ingredients as $ing) {
+                $stock   = (float) ($ing->stock_qty ?? 0);
+                $reorder = (float) ($ing->reorder_level ?? 0);
+                $rowStatus = ($stock <= 0) ? 'OUT' : (($stock <= $reorder) ? 'LOW' : 'OK');
 
-                    fputcsv($out, [
-                        (string) $ing->name,
-                        (string) $ing->unit,
-                        number_format($stock, 2),
-                        number_format($reorder, 2),
-                        $status
-                    ]);
-                }
+                fputcsv($out, [
+                    (string) $ing->name,
+                    (string) $ing->unit,
+                    number_format($stock, 2),
+                    number_format($reorder, 2),
+                    $rowStatus,
+                ]);
             }
 
             fputcsv($out, ['']);
             fputcsv($out, ['============================================================']);
             fputcsv($out, ['']);
 
-            // Paid orders list
-            fputcsv($out, ['PAID ORDERS LIST']);
-            fputcsv($out, ['Order Code', 'Table', 'Total', 'Status', 'Paid Time']);
-            foreach ($paidOrders as $order) {
+            // Consumed Summary
+            fputcsv($out, ['INGREDIENTS CONSUMED SUMMARY (SUM OF OUT IN RANGE)']);
+            fputcsv($out, ['Ingredient', 'Unit', 'Qty Used']);
+            foreach ($consumedRows as $r) {
                 fputcsv($out, [
-                    (string) $order->order_code,
-                    (string) $order->table_number,
-                    '₱' . number_format((float)$order->total, 2),
-                    (string) $order->status,
-                    optional($order->created_at)->format('Y-m-d h:i A'),
+                    (string)($r->ingredient_name ?? ''),
+                    (string)($r->unit ?? ''),
+                    number_format((float)($r->qty_used ?? 0), 2),
+                ]);
+            }
+
+            fputcsv($out, ['']);
+            fputcsv($out, ['============================================================']);
+            fputcsv($out, ['']);
+
+            // Movements
+            fputcsv($out, ['STOCK MOVEMENTS (HISTORY, FILTERED BY DATE RANGE)']);
+            fputcsv($out, ['Date', 'Ingredient', 'Type', 'Qty', 'Reason']);
+            foreach ($movements as $m) {
+                $type = strtoupper((string)($m->type ?? ''));
+                $qty  = (float)($m->qty ?? 0);
+                $date = optional($m->created_at)->format('Y-m-d h:i A');
+
+                fputcsv($out, [
+                    $date,
+                    (string) optional($m->ingredient)->name,
+                    $type,
+                    number_format($qty, 2),
+                    (string)($m->reason ?? ''),
                 ]);
             }
 
@@ -297,112 +146,141 @@ class SalesStockReportController extends Controller
         return response()->stream($callback, 200, $headers);
     }
 
-    /**
-     * ✅ One shared builder so index/print/export all match
-     */
-    private function buildReportData(Request $request): array
+    private function buildStockData(Request $request, bool $paginate): array
     {
-        $period = $request->query('period', 'daily');
-        $selectedDate = $request->query('date');
-        $day = $selectedDate ? Carbon::parse($selectedDate) : Carbon::today();
+        // Date range (used for movements + consumed summary)
+        $from = trim((string) $request->query('from', ''));
+        $to   = trim((string) $request->query('to', ''));
 
-        [$start, $end, $rangeLabel] = $this->getRangeByPeriod($period, $day);
+        // Default range: last 7 days
+        if ($from === '' && $to === '') {
+            $start = Carbon::today()->subDays(6)->startOfDay();
+            $end   = Carbon::today()->endOfDay();
+            $rangeLabel = "Last 7 days (" . $start->format('M d, Y') . " - " . $end->format('M d, Y') . ")";
+        } else {
+            $fromDate = $from !== '' ? Carbon::parse($from)->startOfDay() : Carbon::parse($to)->startOfDay();
+            $toDate   = $to !== ''   ? Carbon::parse($to)->endOfDay()     : Carbon::parse($from)->endOfDay();
+            $start = $fromDate;
+            $end   = $toDate;
+            $rangeLabel = "Custom (" . $start->format('M d, Y') . " - " . $end->format('M d, Y') . ")";
+        }
 
-        $paidOrders = Order::with('items')
-            ->where('payment_status', 'paid')
+        // Ingredient filters
+        $q = trim((string) $request->query('q', ''));
+        $status = strtolower((string) $request->query('status', 'all')); // all|ok|low|out
+
+        $ingredientQuery = Ingredient::query();
+
+        if ($q !== '') {
+            $ingredientQuery->where('name', 'like', "%{$q}%");
+        }
+
+        if ($status === 'out') {
+            $ingredientQuery->where('stock_qty', '<=', 0);
+        } elseif ($status === 'low') {
+            $ingredientQuery->where('stock_qty', '>', 0)
+                ->whereColumn('stock_qty', '<=', 'reorder_level');
+        } elseif ($status === 'ok') {
+            $ingredientQuery->where('stock_qty', '>', 0)
+                ->whereColumn('stock_qty', '>', 'reorder_level');
+        } else {
+            $status = 'all';
+        }
+
+        $ingredientQuery->orderBy('name');
+
+        $filteredTotal = (clone $ingredientQuery)->count();
+
+        $lowStockCount = (clone $ingredientQuery)->where(function ($qq) {
+            $qq->where('stock_qty', '<=', 0)
+               ->orWhereColumn('stock_qty', '<=', 'reorder_level');
+        })->count();
+
+        // Ingredients data
+        if ($paginate) {
+            $ingredients = $ingredientQuery->paginate(10, ['*'], 'inv_page')->withQueryString();
+        } else {
+            $ingredients = $ingredientQuery->get();
+        }
+
+        // Movements (history)
+        $movementQuery = StockMovement::with('ingredient')
             ->whereBetween('created_at', [$start, $end])
-            ->orderByDesc('created_at')
-            ->get();
+            ->orderByDesc('created_at');
 
-        $totalSales = (float) $paidOrders->sum('total');
-        $paidCount  = (int) $paidOrders->count();
-        $avgOrder   = $paidCount > 0 ? ($totalSales / $paidCount) : 0;
+        if ($q !== '') {
+            $movementQuery->whereHas('ingredient', function ($qq) use ($q) {
+                $qq->where('name', 'like', "%{$q}%");
+            });
+        }
 
-        $topItems = $this->computeTopItems($paidOrders, 10);
+        $movementCount = (clone $movementQuery)->count();
 
-        $ingredients = Ingredient::orderBy('name')->get();
+        if ($paginate) {
+            $movements = $movementQuery->paginate(10, ['*'], 'mv_page')->withQueryString();
+        } else {
+            $movements = $movementQuery->take(500)->get();
+        }
 
-        $lowStock = $ingredients->filter(function ($i) {
-            return ($i->stock_qty <= 0) || ($i->stock_qty <= $i->reorder_level);
-        })->values();
+        /**
+         * ✅ NEW: Consumed Summary
+         * Sum ONLY type = 'out' within range
+         */
+        $consumedBase = StockMovement::query()
+            ->join('ingredients', 'ingredients.id', '=', 'stock_movements.ingredient_id')
+            ->where('stock_movements.type', 'out')
+            ->whereBetween('stock_movements.created_at', [$start, $end]);
 
-        $lowStockCount = $lowStock->count();
+        // apply search too (same q)
+        if ($q !== '') {
+            $consumedBase->where('ingredients.name', 'like', "%{$q}%");
+        }
+
+        $consumedRowsQuery = (clone $consumedBase)
+            ->select([
+                DB::raw('ingredients.name as ingredient_name'),
+                DB::raw('ingredients.unit as unit'),
+                DB::raw('SUM(stock_movements.qty) as qty_used'),
+            ])
+            ->groupBy('ingredients.name', 'ingredients.unit')
+            ->orderByDesc(DB::raw('SUM(stock_movements.qty)'));
+
+        $consumedCount = (clone $consumedRowsQuery)->get()->count(); // grouped rows count
+        $consumedTotal = (clone $consumedBase)->sum('stock_movements.qty');
+
+        if ($paginate) {
+            // Unique page name so it won't conflict
+            $consumedRows = $consumedRowsQuery->paginate(10, ['*'], 'use_page')->withQueryString();
+        } else {
+            $consumedRows = $consumedRowsQuery->get();
+        }
 
         $data = [
-            'paidOrders'     => $paidOrders,
-            'totalSales'     => $totalSales,
-            'paidCount'      => $paidCount,
-            'avgOrder'       => $avgOrder,
-            'topItems'       => $topItems,
             'ingredients'    => $ingredients,
-            'lowStock'       => $lowStock,
+            'filteredTotal'  => $filteredTotal,
             'lowStockCount'  => $lowStockCount,
+
+            'movements'      => $movements,
+            'movementCount'  => $movementCount,
+
+            'consumedRows'   => $consumedRows,
+            'consumedCount'  => $consumedCount,
+            'consumedTotal'  => $consumedTotal,
         ];
 
         $meta = [
-            'period'       => $period,
-            'selectedDate' => $day->toDateString(),
-            'rangeLabel'   => $rangeLabel,
-            'start'        => $start,
-            'end'          => $end,
+            'period'     => 'custom',
+            'rangeLabel' => $rangeLabel,
+            'start'      => $start,
+            'end'        => $end,
+
+            'from'       => $from,
+            'to'         => $to,
+
+            'q'          => $q,
+            'status'     => $status,
         ];
 
         return [$data, $meta];
-    }
-
-    private function getRangeByPeriod(string $period, Carbon $day): array
-    {
-        $period = strtolower($period);
-
-        if ($period === 'weekly') {
-            $start = $day->copy()->startOfWeek(Carbon::MONDAY)->startOfDay();
-            $end   = $day->copy()->endOfWeek(Carbon::MONDAY)->endOfDay();
-            $label = "Weekly (" . $start->format('M d, Y') . " - " . $end->format('M d, Y') . ")";
-            return [$start, $end, $label];
-        }
-
-        if ($period === 'monthly') {
-            $start = $day->copy()->startOfMonth()->startOfDay();
-            $end   = $day->copy()->endOfMonth()->endOfDay();
-            $label = "Monthly (" . $start->format('F Y') . ")";
-            return [$start, $end, $label];
-        }
-
-        if ($period === 'yearly') {
-            $start = $day->copy()->startOfYear()->startOfDay();
-            $end   = $day->copy()->endOfYear()->endOfDay();
-            $label = "Yearly (" . $start->format('Y') . ")";
-            return [$start, $end, $label];
-        }
-
-        $start = $day->copy()->startOfDay();
-        $end   = $day->copy()->endOfDay();
-        $label = "Daily (" . $day->format('M d, Y') . ")";
-        return [$start, $end, $label];
-    }
-
-    private function computeTopItems($orders, int $limit = 10): array
-    {
-        $counts = [];
-
-        foreach ($orders as $order) {
-            foreach ($order->items ?? [] as $item) {
-                $name = (string) ($item->name ?? 'Unknown Item');
-                $qty  = (int) ($item->qty ?? 0);
-
-                if (!isset($counts[$name])) $counts[$name] = 0;
-                $counts[$name] += $qty;
-            }
-        }
-
-        arsort($counts);
-
-        $top = [];
-        foreach ($counts as $name => $qty) {
-            $top[] = ['name' => $name, 'qty' => $qty];
-            if (count($top) >= $limit) break;
-        }
-
-        return $top;
     }
 }

@@ -10,56 +10,75 @@ use Illuminate\Http\Request;
 
 class InventoryController extends Controller
 {
-    /**
-     * Inventory page
-     * - mode=ingredient (default): show/search ingredients
-     * - mode=menu: show/search menu items and show their ingredients (recipes)
-     */
     public function index(Request $request)
     {
         $q = trim((string) $request->query('q', ''));
         $mode = (string) $request->query('mode', 'ingredient'); // ingredient | menu
 
-        // ✅ Always load ingredient stats for the dashboard boxes
-        $ingredientsAll = Ingredient::orderBy('name')->get();
+        // ✅ NEW: movement date filter (YYYY-MM-DD)
+        $movementDate = trim((string) $request->query('movement_date', ''));
 
-        $total = $ingredientsAll->count();
-        $outOfStock = $ingredientsAll->where('stock_qty', '<=', 0)->count();
-        $lowStock = $ingredientsAll->filter(fn ($i) => $i->stock_qty > 0 && $i->stock_qty <= $i->reorder_level)->count();
+        // ✅ Dashboard stats (fast)
+        $total = Ingredient::count();
+        $outOfStock = Ingredient::where('stock_qty', '<=', 0)->count();
+        $lowStock = Ingredient::where('stock_qty', '>', 0)
+            ->whereColumn('stock_qty', '<=', 'reorder_level')
+            ->count();
 
-        $lowItems = $ingredientsAll->filter(fn ($i) => $i->stock_qty <= 0 || $i->stock_qty <= $i->reorder_level)->values();
+        // ✅ Recent movements (NOW PAGINATED + FILTERABLE BY DATE)
+        $movementsQuery = StockMovement::with('ingredient')->latest();
 
-        $recentMovements = StockMovement::with('ingredient')
-            ->latest()
-            ->take(10)
-            ->get();
+        if ($movementDate !== '') {
+            $movementsQuery->whereDate('created_at', $movementDate);
+        }
 
-        // ✅ Variables for view (only one is used depending on mode)
-        $ingredients = collect();
-        $menuItems = collect();
+        $recentMovements = $movementsQuery
+            ->paginate(10, ['*'], 'move_page')
+            ->withQueryString();
+
+        // ✅ Variables for view
+        $ingredients = null;
+        $menuItems = null;
+
+        // ✅ Low stock alerts (paginated, separate page name to avoid conflict)
+        $lowItems = null;
+        if ($mode === 'ingredient') {
+            $lowItems = Ingredient::query()
+                ->where(function ($qq) {
+                    $qq->where('stock_qty', '<=', 0)
+                       ->orWhereColumn('stock_qty', '<=', 'reorder_level');
+                })
+                ->orderBy('name')
+                ->paginate(10, ['*'], 'low_page')
+                ->withQueryString();
+        } else {
+            $lowItems = collect(); // not used in menu mode
+        }
 
         if ($mode === 'menu') {
-            // Search menu items by name or menu_id
             $menuItems = MenuItem::query()
                 ->when($q !== '', function ($query) use ($q) {
-                    $query->where('name', 'like', "%{$q}%")
-                          ->orWhere('menu_id', 'like', "%{$q}%");
+                    $query->where(function ($sub) use ($q) {
+                        $sub->where('name', 'like', "%{$q}%")
+                            ->orWhere('menu_id', 'like', "%{$q}%");
+                    });
                 })
-                // Load ingredients through recipes
                 ->with(['recipes.ingredient'])
                 ->orderBy('name')
-                ->get();
+                ->paginate(10, ['*'], 'menu_page')
+                ->withQueryString();
         } else {
-            // Default: ingredient search/list
             $ingredients = Ingredient::query()
                 ->when($q !== '', fn ($query) => $query->where('name', 'like', "%{$q}%"))
                 ->orderBy('name')
-                ->get();
+                ->paginate(10, ['*'], 'ing_page')
+                ->withQueryString();
         }
 
         return view('admin.inventory', compact(
             'mode',
             'q',
+            'movementDate',
             'ingredients',
             'menuItems',
             'total',
@@ -101,7 +120,6 @@ class InventoryController extends Controller
             'reason' => $data['reason'] ?? 'Restock',
         ]);
 
-        // ✅ UPDATE AFFECTED MENUS (call ONCE)
         $this->recomputeMenusForIngredient($ingredient->id);
 
         return back()->with('success', 'Stock added ✅');
@@ -128,16 +146,11 @@ class InventoryController extends Controller
             'reason' => $data['reason'] ?? 'Manual deduction',
         ]);
 
-        // ✅ UPDATE AFFECTED MENUS
         $this->recomputeMenusForIngredient($ingredient->id);
 
         return back()->with('success', 'Stock deducted ✅');
     }
 
-    /**
-     * ✅ Recompute menu availability for all menus that use this ingredient.
-     * Assumes recipes.menu_id (string) matches menu_items.menu_id
-     */
     private function recomputeMenusForIngredient(int $ingredientId): void
     {
         $menuIds = Recipe::where('ingredient_id', $ingredientId)
@@ -163,12 +176,10 @@ class InventoryController extends Controller
             $ing = $r->ingredient;
             if (!$ing) { $available = false; break; }
 
-            // ✅ Keep your existing logic (uses Recipe::qty_needed accessor)
             $need   = (float) $r->qty_needed;
             $stock  = (float) $ing->stock_qty;
             $reorder = (float) $ing->reorder_level;
 
-            // ✅ LOW/OUT disables menu
             if ($stock <= 0 || $stock <= $reorder || $stock < $need) {
                 $available = false;
                 break;

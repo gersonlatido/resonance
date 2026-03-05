@@ -210,6 +210,88 @@
     .ing-list{ margin:8px 0 0; padding-left:18px; }
     .ing-list li{ margin:6px 0; }
 
+    /* ✅ Pagination styles */
+    .pager-wrap{
+      padding:12px 14px;
+      border-top:1px solid rgba(0,0,0,.06);
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:10px;
+      flex-wrap:wrap;
+      background:#fff;
+    }
+    .pager-info{
+      font-size:12px;
+      color:var(--muted);
+      font-weight:800;
+    }
+    .pager{
+      display:flex;
+      align-items:center;
+      gap:6px;
+      flex-wrap:wrap;
+    }
+    .page-btn{
+      min-width:34px;
+      height:34px;
+      padding:0 10px;
+      border-radius:10px;
+      border:1px solid rgba(0,0,0,.12);
+      background:#fff;
+      cursor:pointer;
+      font-weight:900;
+      font-size:12px;
+      display:inline-flex;
+      align-items:center;
+      justify-content:center;
+      text-decoration:none;
+      color:#111;
+    }
+    .page-btn:hover{ filter:brightness(.98); }
+    .page-btn.active{
+      background:var(--orange);
+      border-color:rgba(245,158,11,.45);
+    }
+    .page-btn.disabled{
+      opacity:.45;
+      pointer-events:none;
+    }
+
+    /* ✅ Movement date filter mini form */
+    .mini-filter{
+      display:flex;
+      gap:8px;
+      align-items:center;
+      flex-wrap:wrap;
+      margin-top:8px;
+    }
+    .date-input{
+      border:1px solid rgba(0,0,0,.10);
+      background:#fff;
+      padding:9px 10px;
+      border-radius:12px;
+      font-size:12px;
+      font-weight:800;
+      outline:none;
+    }
+    .tiny-btn{
+      border:1px solid rgba(0,0,0,.10);
+      background:#fff;
+      padding:9px 12px;
+      border-radius:12px;
+      cursor:pointer;
+      font-weight:900;
+      font-size:12px;
+      box-shadow:0 6px 14px rgba(0,0,0,.06);
+      text-decoration:none;
+      color:#111;
+      display:inline-flex;
+      align-items:center;
+      justify-content:center;
+    }
+    .tiny-btn.primary{ background:var(--orange); }
+
     /* Modal */
     .modal-backdrop{
       position:fixed;inset:0;background:rgba(0,0,0,.45);
@@ -247,6 +329,8 @@
       .shell{ grid-template-columns:1fr; }
       .sidebar{ display:none; }
       .stats{ grid-template-columns:1fr; }
+      .pager-wrap{ justify-content:center; }
+      .pager-info{ width:100%; text-align:center; }
     }
   </style>
 </head>
@@ -255,6 +339,7 @@
 @php
   $mode = $mode ?? 'ingredient';
   $q = $q ?? '';
+  $movementDate = $movementDate ?? '';
 @endphp
 
 <div class="shell">
@@ -270,10 +355,10 @@
     <nav class="nav">
       <a href="{{ route('admin.dashboard') ?? '#' }}">Order Management</a>
       <a href="{{ route('admin.table-management') ?? '#' }}">Table Management</a>
-     <a href="{{ route('admin.daily-sales-report') }}"
-   class="{{ request()->routeIs('admin.daily-sales-report') ? 'active' : '' }}">
-  Daily Sales Report
-</a>
+      <a href="{{ route('admin.daily-sales-report') }}"
+         class="{{ request()->routeIs('admin.daily-sales-report') ? 'active' : '' }}">
+        Daily Sales Report
+      </a>
     </nav>
 
     <div class="side-section-title" style="margin-top:18px;">Admin Management</div>
@@ -281,10 +366,10 @@
       <a href="{{ route('admin.menu-management') ?? '#' }}">Menu Management</a>
       <a href="{{ route('admin.feedbacks') ?? '#' }}">Feedback Management</a>
       <a href="{{ route('admin.inventory') }}" class="active">Inventory Management</a>
-   <a href="{{ route('admin.sales-stock-reports') }}"
-   class="{{ request()->routeIs('admin.sales-stock-reports') ? 'active' : '' }}">
-  Sales and Stock Reports
-</a>
+      <a href="{{ route('admin.sales-stock-reports') }}"
+         class="{{ request()->routeIs('admin.sales-stock-reports') ? 'active' : '' }}">
+        Sales and Stock Reports
+      </a>
     </nav>
   </aside>
 
@@ -328,6 +413,9 @@
         <option value="ingredient" {{ $mode === 'ingredient' ? 'selected' : '' }}>Ingredient</option>
         <option value="menu" {{ $mode === 'menu' ? 'selected' : '' }}>Menu Item (show ingredients)</option>
       </select>
+
+      {{-- keep movement date in URL when searching --}}
+      <input type="hidden" name="movement_date" value="{{ $movementDate }}">
 
       @if($mode === 'ingredient')
         <select id="statusFilter" class="select">
@@ -465,7 +553,6 @@
             </table>
 
           @else
-            <!-- ✅ Original low stock alerts table -->
             <table>
               <thead>
               <tr>
@@ -505,6 +592,56 @@
             </table>
           @endif
         </div>
+
+        {{-- ✅ PAGINATION for MENU mode --}}
+        @if($mode === 'menu' && $menuItems instanceof \Illuminate\Pagination\LengthAwarePaginator)
+          <div class="pager-wrap">
+            <div class="pager-info">
+              Showing {{ $menuItems->firstItem() ?? 0 }} - {{ $menuItems->lastItem() ?? 0 }} of {{ $menuItems->total() }} menu items
+            </div>
+            <div class="pager">
+              <a class="page-btn {{ $menuItems->onFirstPage() ? 'disabled' : '' }}" href="{{ $menuItems->previousPageUrl() ?? '#' }}">Prev</a>
+              @php $start = max(1, $menuItems->currentPage() - 2); $end = min($menuItems->lastPage(), $menuItems->currentPage() + 2); @endphp
+              @if($start > 1)
+                <a class="page-btn" href="{{ $menuItems->url(1) }}">1</a>
+                @if($start > 2)<span class="page-btn disabled">…</span>@endif
+              @endif
+              @for($p=$start; $p<=$end; $p++)
+                <a class="page-btn {{ $p === $menuItems->currentPage() ? 'active' : '' }}" href="{{ $menuItems->url($p) }}">{{ $p }}</a>
+              @endfor
+              @if($end < $menuItems->lastPage())
+                @if($end < $menuItems->lastPage()-1)<span class="page-btn disabled">…</span>@endif
+                <a class="page-btn" href="{{ $menuItems->url($menuItems->lastPage()) }}">{{ $menuItems->lastPage() }}</a>
+              @endif
+              <a class="page-btn {{ $menuItems->hasMorePages() ? '' : 'disabled' }}" href="{{ $menuItems->nextPageUrl() ?? '#' }}">Next</a>
+            </div>
+          </div>
+        @endif
+
+        {{-- ✅ PAGINATION for LOW STOCK ALERTS --}}
+        @if($mode === 'ingredient' && $lowItems instanceof \Illuminate\Pagination\LengthAwarePaginator)
+          <div class="pager-wrap">
+            <div class="pager-info">
+              Showing {{ $lowItems->firstItem() ?? 0 }} - {{ $lowItems->lastItem() ?? 0 }} of {{ $lowItems->total() }} low stock items
+            </div>
+            <div class="pager">
+              <a class="page-btn {{ $lowItems->onFirstPage() ? 'disabled' : '' }}" href="{{ $lowItems->previousPageUrl() ?? '#' }}">Prev</a>
+              @php $start = max(1, $lowItems->currentPage() - 2); $end = min($lowItems->lastPage(), $lowItems->currentPage() + 2); @endphp
+              @if($start > 1)
+                <a class="page-btn" href="{{ $lowItems->url(1) }}">1</a>
+                @if($start > 2)<span class="page-btn disabled">…</span>@endif
+              @endif
+              @for($p=$start; $p<=$end; $p++)
+                <a class="page-btn {{ $p === $lowItems->currentPage() ? 'active' : '' }}" href="{{ $lowItems->url($p) }}">{{ $p }}</a>
+              @endfor
+              @if($end < $lowItems->lastPage())
+                @if($end < $lowItems->lastPage()-1)<span class="page-btn disabled">…</span>@endif
+                <a class="page-btn" href="{{ $lowItems->url($lowItems->lastPage()) }}">{{ $lowItems->lastPage() }}</a>
+              @endif
+              <a class="page-btn {{ $lowItems->hasMorePages() ? '' : 'disabled' }}" href="{{ $lowItems->nextPageUrl() ?? '#' }}">Next</a>
+            </div>
+          </div>
+        @endif
 
         @if($mode === 'ingredient')
           <div class="panel-head" style="border-top:1px solid rgba(0,0,0,.06);">
@@ -563,16 +700,58 @@
               </tbody>
             </table>
           </div>
+
+          {{-- ✅ PAGINATION for ALL INGREDIENTS --}}
+          @if($ingredients instanceof \Illuminate\Pagination\LengthAwarePaginator)
+            <div class="pager-wrap">
+              <div class="pager-info">
+                Showing {{ $ingredients->firstItem() ?? 0 }} - {{ $ingredients->lastItem() ?? 0 }} of {{ $ingredients->total() }} ingredients
+              </div>
+              <div class="pager">
+                <a class="page-btn {{ $ingredients->onFirstPage() ? 'disabled' : '' }}" href="{{ $ingredients->previousPageUrl() ?? '#' }}">Prev</a>
+                @php $start = max(1, $ingredients->currentPage() - 2); $end = min($ingredients->lastPage(), $ingredients->currentPage() + 2); @endphp
+                @if($start > 1)
+                  <a class="page-btn" href="{{ $ingredients->url(1) }}">1</a>
+                  @if($start > 2)<span class="page-btn disabled">…</span>@endif
+                @endif
+                @for($p=$start; $p<=$end; $p++)
+                  <a class="page-btn {{ $p === $ingredients->currentPage() ? 'active' : '' }}" href="{{ $ingredients->url($p) }}">{{ $p }}</a>
+                @endfor
+                @if($end < $ingredients->lastPage())
+                  @if($end < $ingredients->lastPage()-1)<span class="page-btn disabled">…</span>@endif
+                  <a class="page-btn" href="{{ $ingredients->url($ingredients->lastPage()) }}">{{ $ingredients->lastPage() }}</a>
+                @endif
+                <a class="page-btn {{ $ingredients->hasMorePages() ? '' : 'disabled' }}" href="{{ $ingredients->nextPageUrl() ?? '#' }}">Next</a>
+              </div>
+            </div>
+          @endif
         @endif
       </div>
 
       <!-- Right -->
       <aside class="panel">
-        <div class="panel-head">
-          <div>
-            <h3>Recent Stock Movements</h3>
-            <p>Automatic logs</p>
+        <div class="panel-head" style="flex-direction:column; align-items:flex-start;">
+          <div style="display:flex; width:100%; align-items:center; justify-content:space-between; gap:10px;">
+            <div>
+              <h3>Recent Stock Movements</h3>
+              <p>Automatic logs</p>
+            </div>
           </div>
+
+          {{-- ✅ Date filter form for movements --}}
+          <form class="mini-filter" method="GET" action="{{ route('admin.inventory') }}">
+            <input type="hidden" name="mode" value="{{ $mode }}">
+            <input type="hidden" name="q" value="{{ $q }}">
+            <input type="hidden" name="low_page" value="{{ request('low_page') }}">
+            <input type="hidden" name="ing_page" value="{{ request('ing_page') }}">
+            <input type="hidden" name="menu_page" value="{{ request('menu_page') }}">
+
+            <input class="date-input" type="date" name="movement_date" value="{{ $movementDate }}">
+
+            <button class="tiny-btn primary" type="submit">Filter</button>
+
+            <a class="tiny-btn" href="{{ route('admin.inventory', ['mode' => $mode, 'q' => $q]) }}">Clear</a>
+          </form>
         </div>
 
         <div class="panel-body">
@@ -588,9 +767,40 @@
               </div>
             </div>
           @empty
-            <div class="empty">No movements yet.</div>
+            <div class="empty">
+              @if($movementDate)
+                No movements for {{ \Carbon\Carbon::parse($movementDate)->format('M d, Y') }}.
+              @else
+                No movements yet.
+              @endif
+            </div>
           @endforelse
         </div>
+
+        {{-- ✅ PAGINATION for MOVEMENTS --}}
+        @if($recentMovements instanceof \Illuminate\Pagination\LengthAwarePaginator)
+          <div class="pager-wrap">
+            <div class="pager-info">
+              Showing {{ $recentMovements->firstItem() ?? 0 }} - {{ $recentMovements->lastItem() ?? 0 }} of {{ $recentMovements->total() }} movements
+            </div>
+            <div class="pager">
+              <a class="page-btn {{ $recentMovements->onFirstPage() ? 'disabled' : '' }}" href="{{ $recentMovements->previousPageUrl() ?? '#' }}">Prev</a>
+              @php $start = max(1, $recentMovements->currentPage() - 2); $end = min($recentMovements->lastPage(), $recentMovements->currentPage() + 2); @endphp
+              @if($start > 1)
+                <a class="page-btn" href="{{ $recentMovements->url(1) }}">1</a>
+                @if($start > 2)<span class="page-btn disabled">…</span>@endif
+              @endif
+              @for($p=$start; $p<=$end; $p++)
+                <a class="page-btn {{ $p === $recentMovements->currentPage() ? 'active' : '' }}" href="{{ $recentMovements->url($p) }}">{{ $p }}</a>
+              @endfor
+              @if($end < $recentMovements->lastPage())
+                @if($end < $recentMovements->lastPage()-1)<span class="page-btn disabled">…</span>@endif
+                <a class="page-btn" href="{{ $recentMovements->url($recentMovements->lastPage()) }}">{{ $recentMovements->lastPage() }}</a>
+              @endif
+              <a class="page-btn {{ $recentMovements->hasMorePages() ? '' : 'disabled' }}" href="{{ $recentMovements->nextPageUrl() ?? '#' }}">Next</a>
+            </div>
+          </div>
+        @endif
       </aside>
     </section>
   </main>
@@ -642,7 +852,6 @@
 @endif
 
 <script>
-  // modal (only exists in ingredient mode)
   const modal = document.getElementById("modalBackdrop");
   const openBtn = document.getElementById("openModalBtn");
   const closeBtn = document.getElementById("closeModalBtn");
@@ -655,12 +864,12 @@
     modal.addEventListener("click", (e) => { if(e.target === modal) modal.style.display = "none"; });
   }
 
-  // Front-end filter only for ingredient mode tables
+  // Front-end filter (current page only)
   const statusFilter = document.getElementById('statusFilter');
   const searchInput = document.getElementById('searchInput');
 
   function applyFilters(){
-    if (!statusFilter) return; // menu mode -> no filter
+    if (!statusFilter) return;
     const q = (searchInput.value || '').trim().toLowerCase();
     const f = statusFilter.value;
     const rows = document.querySelectorAll('#allBody tr, #lowStockBody tr');
@@ -672,6 +881,7 @@
       row.style.display = (okSearch && okFilter) ? '' : 'none';
     });
   }
+
   if (statusFilter && searchInput) {
     searchInput.addEventListener('input', applyFilters);
     statusFilter.addEventListener('change', applyFilters);
