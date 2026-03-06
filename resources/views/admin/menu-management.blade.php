@@ -111,14 +111,6 @@
       box-shadow: 0 2px 8px rgba(0,0,0,.08);
     }
 
-    .dot-icon{
-      width: 16px;
-      height: 16px;
-      border-radius: 50%;
-      background: rgba(0,0,0,.18);
-      display:none;
-    }
-
     .content{
       padding: 22px 24px;
     }
@@ -212,11 +204,51 @@
       border-radius: 10px;
       padding: 10px 12px;
       margin-bottom: 10px;
+      gap: 12px;
+      flex-wrap: wrap;
     }
 
     .menu-panel-header .h-title{
       font-weight: 800;
       color:#111;
+    }
+
+    .header-right{
+      display:flex;
+      align-items:center;
+      gap:10px;
+      flex-wrap: wrap;
+      margin-left: auto;
+    }
+
+    .toolbar{
+      display:flex;
+      align-items:center;
+      gap:10px;
+      flex-wrap: wrap;
+      width: 100%;
+      margin-bottom: 12px;
+    }
+
+    .search-box,
+    .filter-box{
+      background: #fff;
+      border: 1px solid rgba(0,0,0,.12);
+      border-radius: 10px;
+      padding: 10px 12px;
+      font-size: 13px;
+      outline: none;
+      min-height: 42px;
+    }
+
+    .search-box{
+      flex: 1;
+      min-width: 220px;
+    }
+
+    .filter-box{
+      min-width: 180px;
+      cursor: pointer;
     }
 
     .btn-add{
@@ -229,6 +261,7 @@
       display:flex;
       align-items:center;
       gap:8px;
+      min-height: 42px;
     }
     .btn-add:hover{ filter: brightness(.97); }
 
@@ -300,6 +333,7 @@
       gap: 14px;
       padding-top: 4px;
     }
+
     .icon-btn{
       width: 28px;
       height: 28px;
@@ -314,6 +348,15 @@
     .icon-btn:hover{ background: rgba(245,158,11,.12); }
     .icon-btn.delete:hover{ background: rgba(239,68,68,.12); border-color: rgba(239,68,68,.25); }
 
+    .empty-state{
+      padding: 16px;
+      text-align: center;
+      color: #6b7280;
+      border: 1px dashed rgba(0,0,0,.12);
+      border-radius: 10px;
+      background: #fafafa;
+    }
+
     /* ===== Modal ===== */
     .modal-backdrop{
       position: fixed;
@@ -325,6 +368,7 @@
       padding: 16px;
       z-index: 9999;
     }
+
     .modal{
       width: 520px;
       max-width: 100%;
@@ -334,6 +378,7 @@
       box-shadow: 0 10px 30px rgba(0,0,0,.2);
       overflow:hidden;
     }
+
     .modal-head{
       background:#f1f1f1;
       padding: 12px 14px;
@@ -342,13 +387,16 @@
       justify-content:space-between;
       font-weight:900;
     }
+
     .modal-body{
       padding: 14px;
       display:grid;
       grid-template-columns: 1fr 1fr;
       gap: 10px;
     }
+
     .modal-body .full{ grid-column: 1 / -1; }
+
     .field label{
       display:block;
       font-size: 11px;
@@ -356,6 +404,7 @@
       color:#111;
       margin-bottom: 6px;
     }
+
     .field input, .field textarea{
       width: 100%;
       padding: 10px 10px;
@@ -364,7 +413,9 @@
       outline:none;
       font-size: 13px;
     }
+
     .field textarea{ min-height: 86px; resize: vertical; }
+
     .modal-foot{
       padding: 12px 14px;
       display:flex;
@@ -372,6 +423,7 @@
       gap: 10px;
       border-top: 1px solid rgba(0,0,0,.08);
     }
+
     .btn{
       border:none;
       border-radius: 10px;
@@ -379,9 +431,11 @@
       font-weight: 900;
       cursor:pointer;
     }
+
     .btn.secondary{
       background: #e5e7eb;
     }
+
     .btn.primary{
       background: var(--orange);
     }
@@ -396,11 +450,23 @@
     @media (max-width: 980px){
       .stats{ grid-template-columns: repeat(2, minmax(0, 1fr)); }
     }
+
     @media (max-width: 640px){
       .shell{ grid-template-columns: 1fr; }
       .sidebar{ display:none; }
       .stats{ grid-template-columns: 1fr; }
       .modal-body{ grid-template-columns: 1fr; }
+
+      .toolbar{
+        flex-direction: column;
+        align-items: stretch;
+      }
+
+      .search-box,
+      .filter-box,
+      .btn-add{
+        width: 100%;
+      }
     }
   </style>
 </head>
@@ -426,10 +492,10 @@
           Table Management
         </a>
 
-     <a href="{{ route('admin.daily-sales-report') }}"
-   class="{{ request()->routeIs('admin.daily-sales-report') ? 'active' : '' }}">
-  Daily Sales Report
-</a>
+        <a href="{{ route('admin.daily-sales-report') }}"
+           class="{{ request()->routeIs('admin.daily-sales-report') ? 'active' : '' }}">
+          Daily Sales Report
+        </a>
       </nav>
 
       <div class="side-section-title" style="margin-top:18px;">Admin Management</div>
@@ -444,15 +510,15 @@
           Feedback Management
         </a>
 
-   <a href="{{ route('admin.inventory') }}"
-   class="{{ request()->routeIs('admin.inventory') ? 'active' : '' }}">
-  Inventory Management
-</a>
+        <a href="{{ route('admin.inventory') }}"
+           class="{{ request()->routeIs('admin.inventory') ? 'active' : '' }}">
+          Inventory Management
+        </a>
 
-<a href="{{ route('admin.sales-stock-reports') }}"
-   class="{{ request()->routeIs('admin.sales-stock-reports') ? 'active' : '' }}">
-  Sales and Stock Reports
-</a>
+        <a href="{{ route('admin.sales-stock-reports') }}"
+           class="{{ request()->routeIs('admin.sales-stock-reports') ? 'active' : '' }}">
+          Sales and Stock Reports
+        </a>
       </nav>
     </aside>
 
@@ -486,7 +552,7 @@
         <div class="stat">
           <div>
             <div class="label">Total Value</div>
-            <div class="value" id="totalValue">0</div>
+            <div class="value" id="totalValue">0.00</div>
           </div>
           <div class="icon">₱</div>
         </div>
@@ -503,6 +569,20 @@
       <section class="menu-panel">
         <div class="menu-panel-header">
           <div class="h-title">Menu Items</div>
+        </div>
+
+        <div class="toolbar">
+          <input
+            type="text"
+            id="searchInput"
+            class="search-box"
+            placeholder="Search by name, description, menu ID, or category..."
+          />
+
+          <select id="categoryFilter" class="filter-box">
+            <option value="">All Categories</option>
+          </select>
+
           <button class="btn-add" type="button" id="btnAdd">
             <span>＋</span> Add Item
           </button>
@@ -514,7 +594,6 @@
 
         <div class="notice" id="notice"></div>
       </section>
-
     </main>
   </div>
 
@@ -566,12 +645,14 @@
   </div>
 
   <script>
-    const API_BASE = '/api/menu'; // your API
+    const API_BASE = '/api/menu';
 
     const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
 
     const menuList = document.getElementById('menuList');
     const notice = document.getElementById('notice');
+    const searchInput = document.getElementById('searchInput');
+    const categoryFilter = document.getElementById('categoryFilter');
 
     const modalBackdrop = document.getElementById('modalBackdrop');
     const modalTitle = document.getElementById('modalTitle');
@@ -587,13 +668,15 @@
     const f_image = document.getElementById('f_image');
     const f_description = document.getElementById('f_description');
 
-    let mode = 'add'; // add | edit
+    let mode = 'add';
     let editingId = null;
+    let allMenuItems = [];
 
     function showNotice(msg){
       notice.style.display = 'block';
       notice.textContent = msg;
     }
+
     function hideNotice(){
       notice.style.display = 'none';
       notice.textContent = '';
@@ -625,7 +708,7 @@
       btnSave.textContent = 'Update';
 
       f_menu_id.value = item.menu_id || '';
-      f_menu_id.disabled = true; // do not change id on edit
+      f_menu_id.disabled = true;
 
       f_name.value = item.name || '';
       f_price.value = item.price ?? '';
@@ -646,6 +729,7 @@
     btnAdd.addEventListener('click', openModalAdd);
     btnCloseModal.addEventListener('click', closeModal);
     btnCancel.addEventListener('click', closeModal);
+
     modalBackdrop.addEventListener('click', (e) => {
       if (e.target === modalBackdrop) closeModal();
     });
@@ -665,7 +749,6 @@
     }
 
     function renderRow(item){
-      // IMPORTANT: uses menu_id not id
       const menu_id = item.menu_id ?? item.menuId ?? item.id;
 
       const div = document.createElement('div');
@@ -746,6 +829,65 @@
       document.getElementById('lastRefresh').textContent = d.toLocaleTimeString();
     }
 
+    function populateCategoryFilter(items){
+      const currentValue = categoryFilter.value;
+      const categories = [...new Set(
+        items
+          .map(item => (item.category || '').trim())
+          .filter(Boolean)
+      )].sort((a, b) => a.localeCompare(b));
+
+      categoryFilter.innerHTML = '<option value="">All Categories</option>';
+
+      categories.forEach(category => {
+        const option = document.createElement('option');
+        option.value = category;
+        option.textContent = category;
+        categoryFilter.appendChild(option);
+      });
+
+      if ([...categoryFilter.options].some(opt => opt.value === currentValue)) {
+        categoryFilter.value = currentValue;
+      }
+    }
+
+    function applyFilters(){
+      const keyword = searchInput.value.trim().toLowerCase();
+      const selectedCategory = categoryFilter.value.trim().toLowerCase();
+
+      const filtered = allMenuItems.filter(item => {
+        const menuId = String(item.menu_id ?? item.menuId ?? item.id ?? '').toLowerCase();
+        const name = String(item.name ?? '').toLowerCase();
+        const category = String(item.category ?? '').toLowerCase();
+        const description = String(item.description ?? '').toLowerCase();
+
+        const matchesSearch =
+          !keyword ||
+          menuId.includes(keyword) ||
+          name.includes(keyword) ||
+          category.includes(keyword) ||
+          description.includes(keyword);
+
+        const matchesCategory =
+          !selectedCategory || category === selectedCategory;
+
+        return matchesSearch && matchesCategory;
+      });
+
+      renderMenuList(filtered);
+    }
+
+    function renderMenuList(items){
+      menuList.innerHTML = '';
+
+      if (!Array.isArray(items) || items.length === 0){
+        menuList.innerHTML = '<div class="empty-state">No menu items match your search/filter.</div>';
+        return;
+      }
+
+      items.forEach(item => menuList.appendChild(renderRow(item)));
+    }
+
     async function apiFetch(url, options = {}){
       const headers = options.headers || {};
       headers['Accept'] = 'application/json';
@@ -767,17 +909,19 @@
         if (!res.ok){
           throw new Error(`GET ${API_BASE} failed (${res.status})`);
         }
-        const items = await res.json();
 
-        menuList.innerHTML = '';
-        if (!Array.isArray(items) || items.length === 0){
-          menuList.innerHTML = '<div style="padding:10px;color:#6b7280;">No menu items found.</div>';
-          updateStats([]);
+        const items = await res.json();
+        allMenuItems = Array.isArray(items) ? items : [];
+
+        populateCategoryFilter(allMenuItems);
+        updateStats(allMenuItems);
+
+        if (allMenuItems.length === 0){
+          menuList.innerHTML = '<div class="empty-state">No menu items found.</div>';
           return;
         }
 
-        items.forEach(item => menuList.appendChild(renderRow(item)));
-        updateStats(items);
+        applyFilters();
 
       } catch(err){
         menuList.innerHTML = '';
@@ -856,7 +1000,6 @@
       try{
         const payload = getFormPayload();
 
-        // basic validation
         if (!payload.menu_id) return showNotice('Menu ID is required.');
         if (!payload.name) return showNotice('Name is required.');
         if (!payload.category) return showNotice('Category is required.');
@@ -864,7 +1007,6 @@
         if (mode === 'add'){
           await createItem(payload);
         } else {
-          // do not send menu_id update when editing
           const { menu_id, ...rest } = payload;
           await updateItem(editingId, rest);
         }
@@ -877,7 +1019,9 @@
       }
     });
 
-    // initial load
+    searchInput.addEventListener('input', applyFilters);
+    categoryFilter.addEventListener('change', applyFilters);
+
     loadMenu();
   </script>
 </body>
