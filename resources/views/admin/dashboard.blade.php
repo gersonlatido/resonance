@@ -733,7 +733,7 @@
   <script>
     // ========= CONFIG =========
     const AUTO_REFRESH = true;
-    const REFRESH_MS = 5000; // 5 seconds
+    const REFRESH_MS = 3000; // 5 seconds
     // ==========================
 
     function toInt(x){ return parseInt((x || '0').toString().replace(/[^\d]/g,''), 10) || 0; }

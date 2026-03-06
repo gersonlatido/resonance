@@ -1,8 +1,6 @@
-
 @php
   $tables = $tables ?? collect(); // ✅ prevent undefined variable crash
 @endphp
-
 
 <!DOCTYPE html>
 <html lang="en">
@@ -13,12 +11,12 @@
 
   <style>
     :root{
-      --panel: #ffffff;         /* main white panel */
-      --sidebar: #a9a9a9;       /* left gray sidebar */
+      --panel: #ffffff;
+      --sidebar: #a9a9a9;
       --text: #222;
       --muted: #6b7280;
-      --orange: #f59e0b;        /* main accent */
-      --orange-2: #ffb300;      /* chip */
+      --orange: #f59e0b;
+      --orange-2: #ffb300;
       --card: #fff;
       --border: #e5e7eb;
       --shadow-soft: 0 6px 14px rgba(0,0,0,.10);
@@ -27,7 +25,6 @@
 
     * { box-sizing: border-box; }
 
-    /* ✅ Outer background removed */
     body{
       margin:0;
       font-family: 'Figtree', sans-serif;
@@ -35,7 +32,6 @@
       color: var(--text);
     }
 
-    /* ✅ Fullscreen layout (no outer margin/shadow) */
     .shell{
       width: 100%;
       min-height: 100vh;
@@ -73,6 +69,7 @@
       overflow:hidden;
       box-shadow: 0 2px 8px rgba(0,0,0,.08);
     }
+
     .logo-box img{
       width: 100%;
       height: 100%;
@@ -95,7 +92,6 @@
       margin: 14px 6px 8px;
       text-transform: uppercase;
       opacity: .85;
-
     }
 
     .nav{
@@ -116,6 +112,7 @@
       gap: 8px;
       transition: .15s ease;
     }
+
     .nav a:hover{ background: rgba(255, 184, 30, 0.25); }
 
     .nav a.active{
@@ -134,6 +131,7 @@
       position: relative;
       display: none;
     }
+
     .dot-icon::after{
       content:"";
       width: 6px;
@@ -174,6 +172,7 @@
       font-weight: 700;
       box-shadow: 0 4px 10px rgba(0,0,0,.12);
     }
+
     .logout-btn:hover{ filter: brightness(.97); }
 
     /* ====== Stat cards row ====== */
@@ -194,7 +193,6 @@
       align-items:center;
       justify-content:space-between;
       min-height: 54px;
-
     }
 
     .stat .label{
@@ -204,6 +202,7 @@
       text-transform: capitalize;
       margin-bottom: 2px;
     }
+
     .stat .value{
       font-size: 18px;
       font-weight: 800;
@@ -229,160 +228,196 @@
     .icon.cancelled { color: #ef4444; border-color: rgba(239,68,68,.4); }
     .icon.served { color: #f59e0b; }
 
-    /* ====== Orders board ====== */
-    .board{
-      display:grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 18px;
-      margin-top: 6px;
-    }
-
-    .order-panel{
+    /* ===== Table Management Room Layout ===== */
+    .tables-panel{
       border-radius: 12px;
       border: 2px solid rgba(245,158,11,.35);
       box-shadow: var(--shadow-soft);
       background: #fff;
       padding: 14px 14px 12px;
-      min-height: 360px;
-      position: relative;
+      margin-top: 6px;
     }
 
-    .chip{
-      display:inline-block;
-      background: var(--orange-2);
-      color:#111;
-      padding: 6px 12px;
-      border-radius: 999px;
+    .tables-title{
+      font-size: 18px;
       font-weight: 800;
-      font-size: 12px;
-      box-shadow: 0 2px 7px rgba(0,0,0,.10);
+      margin: 4px 0 10px;
+      color:#111;
     }
 
-    .panel-body{
-      margin-top: 10px;
-      background: #f5f5f5;
-      border-radius: 10px;
+    .room{
+      background: #f1f1f1;
+      border-radius: 12px;
       border: 1px solid rgba(0,0,0,.06);
-      height: 300px;
-      overflow:auto;
-      padding: 10px;
+      padding: 18px;
+      position: relative;
+      min-height: 330px;
+      overflow: hidden;
     }
 
-    .empty{
-      color: #6b7280;
-      font-size: 13px;
-      text-align:center;
-      margin-top: 28px;
+    .divider{
+      position:absolute;
+      width: 6px;
+      background: var(--orange);
+      border-radius: 6px;
+      opacity: .95;
     }
 
-    /* Responsive */
+    .divider.top-mid{ left: 36%; top: 54px; height: 80px; }
+    .divider.bottom-mid{ left: 36%; top: 210px; height: 140px; }
+
+    .tcard{
+      position:absolute;
+      background: #fff;
+      border: 2px solid var(--orange);
+      border-radius: 12px;
+      box-shadow: 0 4px 10px rgba(0,0,0,.12);
+      padding: 10px 10px 8px;
+      min-width: 92px;
+      min-height: 62px;
+      display:flex;
+      flex-direction:column;
+      justify-content:center;
+      align-items:center;
+      gap: 6px;
+      cursor: pointer;
+      user-select:none;
+      transition: transform .15s ease, box-shadow .15s ease;
+    }
+
+    .tcard:hover{
+      transform: translateY(-2px);
+      box-shadow: 0 8px 16px rgba(0,0,0,.14);
+    }
+
+    .tcard .tno{
+      position:absolute;
+      top: 6px;
+      left: 8px;
+      font-size: 12px;
+      color:#111;
+      opacity: .75;
+      font-weight: 800;
+    }
+
+    .tcard .tstatus{
+      font-size: 15px;
+      font-weight: 500;
+      color:#111;
+      text-align: center;
+    }
+
+    .tcard.unavailable{
+      border-color: #ef4444;
+    }
+
+    .shape-rect{ border-radius: 12px; }
+    .shape-wide{ border-radius: 12px; min-width: 140px; }
+    .shape-round{
+      width: 86px; height: 86px; min-width: 86px; min-height: 86px;
+      border-radius: 999px;
+      padding-top: 18px;
+    }
+    .shape-oval{
+      width: 96px; height: 132px; min-width: 96px; min-height: 132px;
+      border-radius: 999px;
+      padding-top: 18px;
+    }
+
     @media (max-width: 980px){
       .stats{ grid-template-columns: repeat(2, minmax(0, 1fr)); }
-      .board{ grid-template-columns: 1fr; }
+      .room{ overflow:auto; }
+      .room-inner{ position: relative; width: 900px; height: 360px; }
     }
+
     @media (max-width: 640px){
       .shell{ grid-template-columns: 1fr; }
       .sidebar{ display:none; }
       .stats{ grid-template-columns: 1fr; }
     }
 
-    /* ===== Table Management Room Layout ===== */
-.tables-panel{
-  border-radius: 12px;
-  border: 2px solid rgba(245,158,11,.35);
-  box-shadow: var(--shadow-soft);
-  background: #fff;
-  padding: 14px 14px 12px;
-  margin-top: 6px;
-}
+    /* ===== Modal ===== */
+    .confirm-overlay{
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,.45);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 9999;
+      padding: 16px;
+    }
 
-.tables-title{
-  font-size: 18px;
-  font-weight: 800;
-  margin: 4px 0 10px;
-  color:#111;
-}
+    .confirm-overlay.show{
+      display: flex;
+    }
 
-/* gray room */
-.room{
-  background: #f1f1f1;
-  border-radius: 12px;
-  border: 1px solid rgba(0,0,0,.06);
-  padding: 18px;
-  position: relative;
-  min-height: 330px;
-  overflow: hidden;
-}
+    .confirm-modal{
+      width: 100%;
+      max-width: 420px;
+      background: #fff;
+      border-radius: 16px;
+      padding: 22px 20px 18px;
+      box-shadow: 0 18px 40px rgba(0,0,0,.22);
+      animation: popIn .18s ease;
+    }
 
-/* yellow dividers (walls) */
-.divider{
-  position:absolute;
-  width: 6px;
-  background: var(--orange);
-  border-radius: 6px;
-  opacity: .95;
-}
-.divider.top-mid{ left: 36%; top: 54px; height: 80px; }
-.divider.bottom-mid{ left: 36%; top: 210px; height: 140px; }
+    @keyframes popIn{
+      from{
+        opacity: 0;
+        transform: scale(.96);
+      }
+      to{
+        opacity: 1;
+        transform: scale(1);
+      }
+    }
 
-/* table cards */
-.tcard{
-  position:absolute;
-  background: #fff;
-  border: 2px solid var(--orange);
-  border-radius: 12px;
-  box-shadow: 0 4px 10px rgba(0,0,0,.12);
-  padding: 10px 10px 8px;
-  min-width: 92px;
-  min-height: 62px;
-  display:flex;
-  flex-direction:column;
-  justify-content:center;
-  align-items:center;
-  gap: 6px;
-  cursor: pointer;
-  user-select:none;
-}
+    .confirm-title{
+      font-size: 20px;
+      font-weight: 800;
+      color: #111;
+      margin-bottom: 10px;
+    }
 
-.tcard .tno{
-  position:absolute;
-  top: 6px;
-  left: 8px;
-  font-size: 12px;
-  color:#111;
-  opacity: .75;
-  font-weight: 800;
-}
+    .confirm-text{
+      font-size: 15px;
+      color: #374151;
+      line-height: 1.5;
+      margin-bottom: 18px;
+    }
 
-.tcard .tstatus{
-  font-size: 15px;
-  font-weight: 500;
-  color:#111;
-}
+    .confirm-actions{
+      display: flex;
+      justify-content: flex-end;
+      gap: 10px;
+    }
 
-.tcard.unavailable{
-  border-color: #ef4444;
-}
+    .btn-cancel,
+    .btn-confirm{
+      border: none;
+      border-radius: 10px;
+      padding: 10px 16px;
+      font-weight: 700;
+      cursor: pointer;
+      font-size: 14px;
+    }
 
-/* shapes */
-.shape-rect{ border-radius: 12px; }
-.shape-wide{ border-radius: 12px; min-width: 140px; }
-.shape-round{
-  width: 86px; height: 86px; min-width: 86px; min-height: 86px;
-  border-radius: 999px;
-  padding-top: 18px;
-}
-.shape-oval{
-  width: 96px; height: 132px; min-width: 96px; min-height: 132px;
-  border-radius: 999px;
-  padding-top: 18px;
-}
+    .btn-cancel{
+      background: #e5e7eb;
+      color: #111827;
+    }
 
-/* responsive room: scroll if screen is small */
-@media (max-width: 980px){
-  .room{ overflow:auto; }
-  .room-inner{ position: relative; width: 900px; height: 360px; }
-}
+    .btn-confirm{
+      background: var(--orange);
+      color: #111;
+      box-shadow: 0 4px 10px rgba(0,0,0,.10);
+    }
+
+    .btn-cancel:hover,
+    .btn-confirm:hover{
+      filter: brightness(.97);
+    }
   </style>
 </head>
 
@@ -414,10 +449,10 @@
           Table Management
         </a>
 
-     <a href="{{ route('admin.daily-sales-report') }}"
-   class="{{ request()->routeIs('admin.daily-sales-report') ? 'active' : '' }}">
-  Daily Sales Report
-</a>
+        <a href="{{ route('admin.daily-sales-report') }}"
+           class="{{ request()->routeIs('admin.daily-sales-report') ? 'active' : '' }}">
+          Daily Sales Report
+        </a>
       </nav>
 
       <div class="side-section-title" style="margin-top:18px;">Admin Management</div>
@@ -432,15 +467,15 @@
           Feedback Management
         </a>
 
-   <a href="{{ route('admin.inventory') }}"
-   class="{{ request()->routeIs('admin.inventory') ? 'active' : '' }}">
-  Inventory Management
-</a>
+        <a href="{{ route('admin.inventory') }}"
+           class="{{ request()->routeIs('admin.inventory') ? 'active' : '' }}">
+          Inventory Management
+        </a>
 
-<a href="{{ route('admin.sales-stock-reports') }}"
-   class="{{ request()->routeIs('admin.sales-stock-reports') ? 'active' : '' }}">
-  Sales and Stock Reports
-</a>
+        <a href="{{ route('admin.sales-stock-reports') }}"
+           class="{{ request()->routeIs('admin.sales-stock-reports') ? 'active' : '' }}">
+          Sales and Stock Reports
+        </a>
       </nav>
     </aside>
 
@@ -449,7 +484,6 @@
       <div class="topbar">
         <div class="title">Table Management</div>
 
-        <!-- Laravel logout form -->
         <form id="logout-form" method="POST" action="{{ route('admin.logout') }}">
           @csrf
           <button class="logout-btn" type="submit">Log Out</button>
@@ -457,154 +491,235 @@
       </div>
 
       <!-- Stats -->
-   <section class="stats" aria-label="Order stats">
-  <div class="stat">
-    <div>
-      <div class="label">Active Orders</div>
-      <div class="value">{{ $activeCount ?? 0 }}</div>
-    </div>
-    <div class="icon active">A</div>
-  </div>
+      <section class="stats" aria-label="Order stats">
+        <div class="stat">
+          <div>
+            <div class="label">Active Orders</div>
+            <div class="value">{{ $activeCount ?? 0 }}</div>
+          </div>
+          <div class="icon active">A</div>
+        </div>
 
-  <div class="stat">
-    <div>
-      <div class="label">Pending Orders</div>
-      <div class="value">{{ $pendingCount ?? 0 }}</div>
-    </div>
-    <div class="icon pending">P</div>
-  </div>
+        <div class="stat">
+          <div>
+            <div class="label">Pending Orders</div>
+            <div class="value">{{ $pendingCount ?? 0 }}</div>
+          </div>
+          <div class="icon pending">P</div>
+        </div>
 
-  <div class="stat">
-    <div>
-      <div class="label">Cancelled Orders</div>
-      <div class="value">{{ $cancelledCount ?? 0 }}</div>
-    </div>
-    <div class="icon cancelled">C</div>
-  </div>
+        <div class="stat">
+          <div>
+            <div class="label">Cancelled Orders</div>
+            <div class="value">{{ $cancelledCount ?? 0 }}</div>
+          </div>
+          <div class="icon cancelled">C</div>
+        </div>
 
-  <div class="stat">
-    <div>
-      <div class="label">Order Served</div>
-      <div class="value">{{ $servedCount ?? 0 }}</div>
-    </div>
-    <div class="icon served">S</div>
-  </div>
-</section>
+        <div class="stat">
+          <div>
+            <div class="label">Order Served</div>
+            <div class="value">{{ $servedCount ?? 0 }}</div>
+          </div>
+          <div class="icon served">S</div>
+        </div>
+      </section>
 
       <!-- ===== Table Management Layout ===== -->
-<section class="tables-panel" aria-label="Table management">
-  <div class="tables-title">Tables</div>
+      <section class="tables-panel" aria-label="Table management">
+        <div class="tables-title">Tables</div>
 
-  <div class="room">
-    <!-- Dividers -->
-    <div class="divider top-mid"></div>
-    <div class="divider bottom-mid"></div>
+        <div class="room">
+          <div class="divider top-mid"></div>
+          <div class="divider bottom-mid"></div>
 
-    <div class="room-inner" style="position:relative; width:100%; height:330px;">
+          <div class="room-inner" style="position:relative; width:100%; height:330px;">
 
-      <!-- Left column: 9,8,7 -->
-      <div class="tcard shape-rect {{ $tableIsAvailable(9) ? '' : 'unavailable' }}" data-table="9" style="left: 18px; top: 22px;">
-        <div class="tno">9</div>
-        <div class="tstatus">{{ $tableIsAvailable(9) ? 'Available' : 'Unavailable' }}</div>
-      </div>
+            <!-- Left column: 9,8,7 -->
+            <div class="tcard shape-rect {{ $tableIsAvailable(9) ? '' : 'unavailable' }}" data-table="9" style="left: 18px; top: 22px;">
+              <div class="tno">9</div>
+              <div class="tstatus">{{ $tableIsAvailable(9) ? 'Available' : 'Unavailable' }}</div>
+            </div>
 
-      <div class="tcard shape-rect {{ $tableIsAvailable(8) ? '' : 'unavailable' }}" data-table="8" style="left: 18px; top: 110px;">
-        <div class="tno">8</div>
-        <div class="tstatus">{{ $tableIsAvailable(8) ? 'Available' : 'Unavailable' }}</div>
-      </div>
+            <div class="tcard shape-rect {{ $tableIsAvailable(8) ? '' : 'unavailable' }}" data-table="8" style="left: 18px; top: 110px;">
+              <div class="tno">8</div>
+              <div class="tstatus">{{ $tableIsAvailable(8) ? 'Available' : 'Unavailable' }}</div>
+            </div>
 
-      <div class="tcard shape-rect {{ $tableIsAvailable(7) ? '' : 'unavailable' }}" data-table="7" style="left: 18px; top: 198px;">
-        <div class="tno">7</div>
-        <div class="tstatus">{{ $tableIsAvailable(7) ? 'Available' : 'Unavailable' }}</div>
-      </div>
+            <div class="tcard shape-rect {{ $tableIsAvailable(7) ? '' : 'unavailable' }}" data-table="7" style="left: 18px; top: 198px;">
+              <div class="tno">7</div>
+              <div class="tstatus">{{ $tableIsAvailable(7) ? 'Available' : 'Unavailable' }}</div>
+            </div>
 
-      <!-- Top left: 10 -->
-      <div class="tcard shape-rect {{ $tableIsAvailable(10) ? '' : 'unavailable' }}" data-table="10" style="left: 165px; top: 22px;">
-        <div class="tno">10</div>
-        <div class="tstatus">{{ $tableIsAvailable(10) ? 'Available' : 'Unavailable' }}</div>
-      </div>
+            <!-- Top left: 10 -->
+            <div class="tcard shape-rect {{ $tableIsAvailable(10) ? '' : 'unavailable' }}" data-table="10" style="left: 165px; top: 22px;">
+              <div class="tno">10</div>
+              <div class="tstatus">{{ $tableIsAvailable(10) ? 'Available' : 'Unavailable' }}</div>
+            </div>
 
-      <!-- Center top: 4 and 3 -->
-      <div class="tcard shape-rect {{ $tableIsAvailable(4) ? '' : 'unavailable' }}" data-table="4" style="left: 380px; top: 22px;">
-        <div class="tno">4</div>
-        <div class="tstatus">{{ $tableIsAvailable(4) ? 'Available' : 'Unavailable' }}</div>
-      </div>
+            <!-- Center top: 4 and 3 -->
+            <div class="tcard shape-rect {{ $tableIsAvailable(4) ? '' : 'unavailable' }}" data-table="4" style="left: 380px; top: 22px;">
+              <div class="tno">4</div>
+              <div class="tstatus">{{ $tableIsAvailable(4) ? 'Available' : 'Unavailable' }}</div>
+            </div>
 
-      <div class="tcard shape-rect {{ $tableIsAvailable(3) ? '' : 'unavailable' }}" data-table="3" style="left: 495px; top: 22px;">
-        <div class="tno">3</div>
-        <div class="tstatus">{{ $tableIsAvailable(3) ? 'Available' : 'Unavailable' }}</div>
-      </div>
+            <div class="tcard shape-rect {{ $tableIsAvailable(3) ? '' : 'unavailable' }}" data-table="3" style="left: 495px; top: 22px;">
+              <div class="tno">3</div>
+              <div class="tstatus">{{ $tableIsAvailable(3) ? 'Available' : 'Unavailable' }}</div>
+            </div>
 
-      <!-- Bottom left: 6 (round) -->
-      <div class="tcard shape-round {{ $tableIsAvailable(6) ? '' : 'unavailable' }}" data-table="6" style="left: 200px; top: 240px;">
-        <div class="tno">6</div>
-        <div class="tstatus">{{ $tableIsAvailable(6) ? 'Available' : 'Unavailable' }}</div>
-      </div>
+            <!-- Bottom left: 6 (round) -->
+            <div class="tcard shape-round {{ $tableIsAvailable(6) ? '' : 'unavailable' }}" data-table="6" style="left: 200px; top: 240px;">
+              <div class="tno">6</div>
+              <div class="tstatus">{{ $tableIsAvailable(6) ? 'Available' : 'Unavailable' }}</div>
+            </div>
 
-      <!-- Bottom center: 5 (oval) -->
-      <div class="tcard shape-oval {{ $tableIsAvailable(5) ? '' : 'unavailable' }}" data-table="5" style="left: 420px; top: 196px;">
-        <div class="tno">5</div>
-        <div class="tstatus">{{ $tableIsAvailable(5) ? 'Available' : 'Unavailable' }}</div>
-      </div>
+            <!-- Bottom center: 5 (oval) -->
+            <div class="tcard shape-oval {{ $tableIsAvailable(5) ? '' : 'unavailable' }}" data-table="5" style="left: 420px; top: 196px;">
+              <div class="tno">5</div>
+              <div class="tstatus">{{ $tableIsAvailable(5) ? 'Available' : 'Unavailable' }}</div>
+            </div>
 
-      <!-- Right: 2 (wide) -->
-      <div class="tcard shape-wide {{ $tableIsAvailable(2) ? '' : 'unavailable' }}" data-table="2" style="right: 18px; top: 70px;">
-        <div class="tno">2</div>
-        <div class="tstatus">{{ $tableIsAvailable(2) ? 'Available' : 'Unavailable' }}</div>
-      </div>
+            <!-- Right: 2 (wide) -->
+            <div class="tcard shape-wide {{ $tableIsAvailable(2) ? '' : 'unavailable' }}" data-table="2" style="right: 18px; top: 70px;">
+              <div class="tno">2</div>
+              <div class="tstatus">{{ $tableIsAvailable(2) ? 'Available' : 'Unavailable' }}</div>
+            </div>
 
-      <!-- Right: 1 (wide) -->
-      <div class="tcard shape-wide {{ $tableIsAvailable(1) ? '' : 'unavailable' }}" data-table="1" style="right: 18px; top: 210px;">
-        <div class="tno">1</div>
-        <div class="tstatus">{{ $tableIsAvailable(1) ? 'Available' : 'Unavailable' }}</div>
-      </div>
+            <!-- Right: 1 (wide) -->
+            <div class="tcard shape-wide {{ $tableIsAvailable(1) ? '' : 'unavailable' }}" data-table="1" style="right: 18px; top: 210px;">
+              <div class="tno">1</div>
+              <div class="tstatus">{{ $tableIsAvailable(1) ? 'Available' : 'Unavailable' }}</div>
+            </div>
 
-    </div>
-  </div>
-</section>
+          </div>
+        </div>
+      </section>
 
     </main>
   </div>
 
-  <script>
-  const csrf = '{{ csrf_token() }}';
+  <!-- ===== Confirmation Modal ===== -->
+  <div class="confirm-overlay" id="confirmOverlay">
+    <div class="confirm-modal">
+      <div class="confirm-title">Confirm Table Status</div>
+      <div class="confirm-text" id="confirmText">
+        Do you confirm to set Table #1 to Available?
+      </div>
+      <div class="confirm-actions">
+        <button type="button" class="btn-cancel" id="cancelBtn">Cancel</button>
+        <button type="button" class="btn-confirm" id="confirmBtn">Confirm</button>
+      </div>
+    </div>
+  </div>
 
-  document.querySelectorAll('.tcard').forEach(card => {
-    card.addEventListener('click', async () => {
-      const tableNo = card.dataset.table;
+<script>
+const csrf = '{{ csrf_token() }}';
 
-      try {
-        const res = await fetch(`/admin/tables/${tableNo}/toggle`, {
-          method: 'POST',
-          headers: {
-            'X-CSRF-TOKEN': csrf,
-            'Accept': 'application/json'
-          }
-        });
+const confirmOverlay = document.getElementById('confirmOverlay');
+const confirmText = document.getElementById('confirmText');
+const confirmBtn = document.getElementById('confirmBtn');
+const cancelBtn = document.getElementById('cancelBtn');
 
-        const data = await res.json();
+let selectedCard = null;
+let autoRefreshTimer = null;
 
-        if (!res.ok) {
-          alert(data.error || 'Failed to update table');
-          return;
-        }
+/* ===== OPEN CONFIRM MODAL ===== */
+function openConfirmModal(card) {
+  selectedCard = card;
 
-        const statusEl = card.querySelector('.tstatus');
+  const tableNo = card.dataset.table;
+  const isUnavailable = card.classList.contains('unavailable');
+  const nextStatus = isUnavailable ? 'Available' : 'Unavailable';
 
-        if (data.is_available) {
-          card.classList.remove('unavailable');
-          statusEl.textContent = 'Available';
-        } else {
-          card.classList.add('unavailable');
-          statusEl.textContent = 'Unavailable';
-        }
+  confirmText.textContent = `Do you confirm to set Table #${tableNo} to ${nextStatus}?`;
+  confirmOverlay.classList.add('show');
+}
 
-      } catch (e) {
-        console.error(e);
-        alert('Network error');
+/* ===== CLOSE MODAL ===== */
+function closeConfirmModal() {
+  confirmOverlay.classList.remove('show');
+  selectedCard = null;
+}
+
+/* ===== TOGGLE TABLE ===== */
+async function toggleTable(card) {
+  const tableNo = card.dataset.table;
+
+  try {
+    const res = await fetch(`/admin/tables/${tableNo}/toggle`, {
+      method: 'POST',
+      headers: {
+        'X-CSRF-TOKEN': csrf,
+        'Accept': 'application/json',
+        'X-Requested-With': 'XMLHttpRequest'
       }
     });
+
+    if (!res.ok) {
+      alert('Failed to update table');
+      return;
+    }
+
+    window.location.reload();
+
+  } catch (error) {
+    console.error(error);
+    alert('Network error');
+  }
+}
+
+/* ===== CLICK TABLE ===== */
+document.querySelectorAll('.tcard').forEach(card => {
+  card.addEventListener('click', () => {
+    openConfirmModal(card);
   });
-  </script>
+});
+
+/* ===== CONFIRM BUTTON ===== */
+confirmBtn.addEventListener('click', async () => {
+  if (!selectedCard) return;
+
+  const card = selectedCard;
+  closeConfirmModal();
+  await toggleTable(card);
+});
+
+/* ===== CANCEL BUTTON ===== */
+cancelBtn.addEventListener('click', closeConfirmModal);
+
+/* ===== CLICK OUTSIDE MODAL ===== */
+confirmOverlay.addEventListener('click', (e) => {
+  if (e.target === confirmOverlay) {
+    closeConfirmModal();
+  }
+});
+
+/* ===== ESC KEY CLOSE ===== */
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape' && confirmOverlay.classList.contains('show')) {
+    closeConfirmModal();
+  }
+});
+
+/* ===== AUTO REFRESH =====
+   This makes the page refresh every 3 seconds so table status updates
+   when customer payment already changes the table in the database.
+*/
+function startAutoRefresh() {
+  if (autoRefreshTimer) clearInterval(autoRefreshTimer);
+
+  autoRefreshTimer = setInterval(() => {
+    const modalOpen = confirmOverlay.classList.contains('show');
+    const pageHidden = document.hidden;
+
+    if (!modalOpen && !pageHidden) {
+      window.location.reload();
+    }
+  }, 3000);
+}
+
+startAutoRefresh();
+</script>
 </body>
 </html>
