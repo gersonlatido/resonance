@@ -14,56 +14,62 @@ class TableController extends Controller
         [3, 4],
     ];
 
-  public function enter(Request $request, int $table)
-{
-    if ($table < 1 || $table > 10) abort(404);
+    public function enter(Request $request, int $table)
+    {
+        if ($table < 1 || $table > 10) {
+            abort(404);
+        }
 
-    // ✅ BLOCK IMMEDIATELY if scanned table is unavailable
-    $scannedRow = Table::where('number', $table)->first();
-    if ($scannedRow && !$scannedRow->is_available) {
-        return redirect('/')->with('error', "Table {$table} is unavailable.");
-    }
+        // ✅ BLOCK IMMEDIATELY if scanned table is unavailable
+        $scannedRow = Table::where('number', $table)->first();
 
-    /**
-     * ✅ Show loading screen for valid tables
-     * Redirect back to same URL with ?go=1 after 3 seconds
-     */
-    if (!$request->boolean('go')) {
-        $redirectUrl = route('table.enter', ['table' => $table]) . '?go=1';
+        if ($scannedRow && !$scannedRow->is_available) {
+            return view('table-unavailable', [
+                'table' => (int) $table,
+            ]);
+        }
 
-        return view('table-loading', [
-            'table' => (int) $table,
-            'redirectUrl' => $redirectUrl,
+        /**
+         * ✅ Show loading screen for valid tables
+         * Redirect back to same URL with ?go=1 after 3 seconds
+         */
+        if (!$request->boolean('go')) {
+            $redirectUrl = route('table.enter', ['table' => $table]) . '?go=1';
+
+            return view('table-loading', [
+                'table' => (int) $table,
+                'redirectUrl' => $redirectUrl,
+            ]);
+        }
+
+        // Find share group
+        $group = $this->findGroup($table);
+
+        // Not shareable → old behavior
+        if (!$group) {
+            session([
+                'table_number'  => (int) $table,
+                'table_numbers' => [(int) $table],
+                'table_label'   => 'Table ' . (int) $table,
+            ]);
+
+            return redirect('/');
+        }
+
+        // Share group → show choose-table
+        $tables = Table::whereIn('number', $group)->get()->keyBy('number');
+
+        $availability = [];
+        foreach ($group as $n) {
+            $availability[$n] = isset($tables[$n]) ? (bool) $tables[$n]->is_available : true;
+        }
+
+        return view('choose-table', [
+            'scanned'      => (int) $table,
+            'group'        => $group,
+            'availability' => $availability,
         ]);
     }
-
-    // Find share group
-    $group = $this->findGroup($table);
-
-    // Not shareable → old behavior (solo tables: 1,2,5,6,10 etc)
-    if (!$group) {
-        session([
-            'table_number'  => (int) $table,
-            'table_numbers' => [(int) $table],
-            'table_label'   => 'Table ' . (int) $table,
-        ]);
-        return redirect('/');
-    }
-
-    // Share group → show choose-table
-    $tables = Table::whereIn('number', $group)->get()->keyBy('number');
-
-    $availability = [];
-    foreach ($group as $n) {
-        $availability[$n] = isset($tables[$n]) ? (bool) $tables[$n]->is_available : true;
-    }
-
-    return view('choose-table', [
-        'scanned'      => (int) $table,
-        'group'        => $group,
-        'availability' => $availability,
-    ]);
-}
 
     public function select(Request $request)
     {
@@ -87,32 +93,34 @@ class TableController extends Controller
                 'table_numbers' => [$scanned],
                 'table_label'   => 'Table ' . $scanned,
             ]);
+
             return redirect('/');
         }
 
         // Pull availability from DB (so no cheating)
         $tables = Table::whereIn('number', $group)->get()->keyBy('number');
-        $isAvail = fn(int $n) => isset($tables[$n]) ? (bool) $tables[$n]->is_available : true;
+        $isAvail = fn (int $n) => isset($tables[$n]) ? (bool) $tables[$n]->is_available : true;
 
-        // ✅ scanned must be available (since you said they cannot scan unavailable)
+        // ✅ scanned must be available
         if (!$isAvail($scanned)) {
-            return back()->with('error', "Table {$scanned} is unavailable.");
+            return view('table-unavailable', [
+                'table' => $scanned,
+            ]);
         }
 
         // SOLO
         if ($mode === 'solo') {
-            // ✅ IMPORTANT: do NOT mark unavailable here (only after payment)
             session([
                 'table_number'  => $scanned,
                 'table_numbers' => [$scanned],
                 'table_label'   => 'Table ' . $scanned,
             ]);
+
             return redirect('/');
         }
 
         // SHARED (multi select)
-        // remove scanned if somehow included
-        $partners = array_values(array_filter($partners, fn($n) => $n !== $scanned));
+        $partners = array_values(array_filter($partners, fn ($n) => $n !== $scanned));
 
         if (count($partners) < 1) {
             return back()->with('error', 'Please pick at least one table to share with.');
@@ -123,12 +131,12 @@ class TableController extends Controller
             if (!in_array($p, $group, true)) {
                 return back()->with('error', "Table {$p} is not in your share group.");
             }
+
             if (!$isAvail($p)) {
                 return back()->with('error', "Table {$p} is unavailable. Choose another.");
             }
         }
 
-        // ✅ IMPORTANT: do NOT mark unavailable here (only after payment)
         $tablesChosen = array_merge([$scanned], $partners);
         sort($tablesChosen);
 
@@ -143,16 +151,14 @@ class TableController extends Controller
 
     /**
      * ✅ Customer clicks "Done Eating" to set table(s) available again.
-     * - Supports shared tables via session('table_numbers')
-     * - Safe: requires a paid order in the session (order_code) OR any paid order for that table
      */
     public function doneEating(Request $request)
     {
-        // get chosen tables (shared) or fallback to single
         $tables = session('table_numbers');
+
         if (!is_array($tables) || count($tables) === 0) {
             $single = session('table_number');
-            $tables = $single ? [(int)$single] : [];
+            $tables = $single ? [(int) $single] : [];
         }
 
         if (count($tables) === 0) {
@@ -162,18 +168,15 @@ class TableController extends Controller
             ], 400);
         }
 
-        // ✅ Safety check: must have a paid order (prefer session order_code)
         $orderCode = session('order_code');
-
         $hasPaid = false;
 
         if ($orderCode) {
-            $hasPaid = Order::where('order_code', (string)$orderCode)
+            $hasPaid = Order::where('order_code', (string) $orderCode)
                 ->where('payment_status', 'paid')
                 ->exists();
         }
 
-        // fallback: check any paid order for those tables
         if (!$hasPaid) {
             $hasPaid = Order::whereIn('table_number', array_map('intval', $tables))
                 ->where('payment_status', 'paid')
@@ -187,7 +190,6 @@ class TableController extends Controller
             ], 403);
         }
 
-        // ✅ mark all tables available
         Table::whereIn('number', array_map('intval', $tables))
             ->update(['is_available' => true]);
 
@@ -201,8 +203,11 @@ class TableController extends Controller
     private function findGroup(int $table): ?array
     {
         foreach ($this->shareGroups as $g) {
-            if (in_array($table, $g, true)) return $g;
+            if (in_array($table, $g, true)) {
+                return $g;
+            }
         }
+
         return null;
     }
 }
