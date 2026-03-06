@@ -7,7 +7,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Admin Order Management</title>
+  <title>Table Management</title>
 
   <style>
     :root{
@@ -451,7 +451,7 @@
 
         <a href="{{ route('admin.daily-sales-report') }}"
            class="{{ request()->routeIs('admin.daily-sales-report') ? 'active' : '' }}">
-          Daily Sales Report
+         Sales Report
         </a>
       </nav>
 
@@ -474,7 +474,7 @@
 
         <a href="{{ route('admin.sales-stock-reports') }}"
            class="{{ request()->routeIs('admin.sales-stock-reports') ? 'active' : '' }}">
-          Sales and Stock Reports
+         Stock Reports
         </a>
       </nav>
     </aside>

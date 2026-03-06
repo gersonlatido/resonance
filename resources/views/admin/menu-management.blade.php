@@ -494,7 +494,7 @@
 
         <a href="{{ route('admin.daily-sales-report') }}"
            class="{{ request()->routeIs('admin.daily-sales-report') ? 'active' : '' }}">
-          Daily Sales Report
+          Sales Report
         </a>
       </nav>
 
@@ -517,7 +517,7 @@
 
         <a href="{{ route('admin.sales-stock-reports') }}"
            class="{{ request()->routeIs('admin.sales-stock-reports') ? 'active' : '' }}">
-          Sales and Stock Reports
+          Stock Reports
         </a>
       </nav>
     </aside>

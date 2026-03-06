@@ -266,7 +266,7 @@
     <nav class="nav">
       <a href="{{ route('admin.dashboard') }}" class="{{ request()->routeIs('admin.dashboard') ? 'active' : '' }}">Order Management</a>
       <a href="{{ route('admin.table-management') }}" class="{{ request()->routeIs('admin.table-management') ? 'active' : '' }}">Table Management</a>
-      <a href="{{ route('admin.daily-sales-report') }}" class="{{ request()->routeIs('admin.daily-sales-report') ? 'active' : '' }}">Daily Sales Report</a>
+      <a href="{{ route('admin.daily-sales-report') }}" class="{{ request()->routeIs('admin.daily-sales-report') ? 'active' : '' }}">Sales Report</a>
     </nav>
 
     <div class="side-section-title" style="margin-top:18px;">Admin Management</div>

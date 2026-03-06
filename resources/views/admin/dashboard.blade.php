@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <meta name="csrf-token" content="{{ csrf_token() }}">
-  <title>Admin Order Management</title>
+  <title>Order Management</title>
 
   <style>
     :root{
@@ -372,7 +372,7 @@
            class="{{ request()->routeIs('admin.table-management') ? 'active' : '' }}">Table Management</a>
 
         <a href="{{ route('admin.daily-sales-report') }}"
-           class="{{ request()->routeIs('admin.daily-sales-report') ? 'active' : '' }}">Daily Sales Report</a>
+           class="{{ request()->routeIs('admin.daily-sales-report') ? 'active' : '' }}">Sales Report</a>
       </nav>
 
       <div class="side-section-title" style="margin-top:18px;">Admin Management</div>
@@ -387,7 +387,7 @@
            class="{{ request()->routeIs('admin.inventory') ? 'active' : '' }}">Inventory Management</a>
 
         <a href="{{ route('admin.sales-stock-reports') }}"
-           class="{{ request()->routeIs('admin.sales-stock-reports') ? 'active' : '' }}">Sales and Stock Reports</a>
+           class="{{ request()->routeIs('admin.sales-stock-reports') ? 'active' : '' }}">Stock Reports</a>
       </nav>
     </aside>
 
