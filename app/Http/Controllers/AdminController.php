@@ -13,16 +13,12 @@ class AdminController extends Controller
     // Admin dashboard page
     public function index()
     {
-        // ✅ Detect which status column exists (prevents mismatch issues)
         $statusCol = $this->detectStatusColumn() ?? 'status';
 
-        // ✅ Load orders (same logic as you had)
-     $orders = Order::with('items')
-    ->orderBy('created_at', 'asc') // FIRST COME FIRST SERVE
-    ->get();
+        $orders = Order::with('items')
+            ->orderBy('created_at', 'asc')
+            ->get();
 
-        // ✅ Counts for dashboard cards
-        // "Active" = preparing or serving (adjust easily later)
         $activeCount = Order::where('payment_status', 'paid')
             ->whereIn($statusCol, ['preparing', 'serving'])
             ->count();
@@ -49,20 +45,19 @@ class AdminController extends Controller
     }
 
     /**
-     * ✅ SALES REPORT PAGE (Daily/Weekly/Monthly/Yearly)
-     * Adds:
-     * - $chartLabels / $chartValues
-     * - $topItems (best sellers)
+     * SALES REPORT PAGE
      */
     public function dailySalesReport(Request $request)
     {
         $period = $request->query('period', 'daily');
         $selectedDate = $request->query('date');
-        $day = $selectedDate ? Carbon::parse($selectedDate) : Carbon::today();
 
-        [$start, $end, $rangeLabel] = $this->getRangeByPeriod($period, $day);
+        $fromDate = $request->query('from');
+        $toDate = $request->query('to');
 
-        // ✅ include items so we can compute best sellers safely
+        [$start, $end, $rangeLabel, $filterMode, $selectedDateValue, $fromValue, $toValue] =
+            $this->resolveSalesDateRange($period, $selectedDate, $fromDate, $toDate);
+
         $paidOrders = Order::with('items')
             ->where('payment_status', 'paid')
             ->whereBetween('created_at', [$start, $end])
@@ -73,13 +68,15 @@ class AdminController extends Controller
         $paidCount  = (int) $paidOrders->count();
         $avgOrder   = $paidCount > 0 ? ($totalSales / $paidCount) : 0;
 
-        // ✅ chart series + best sellers
-        [$chartLabels, $chartValues] = $this->buildSalesSeries($paidOrders, $period, $start, $end);
+        [$chartLabels, $chartValues] = $this->buildSalesSeries($paidOrders, $period, $start, $end, $filterMode);
         $topItems = $this->computeTopItems($paidOrders, 5);
 
         return view('admin.daily-sales-report', [
             'period'       => $period,
-            'selectedDate' => $day->toDateString(),
+            'selectedDate' => $selectedDateValue,
+            'from'         => $fromValue,
+            'to'           => $toValue,
+            'filterMode'   => $filterMode,
             'rangeLabel'   => $rangeLabel,
 
             'paidOrders'   => $paidOrders,
@@ -94,15 +91,18 @@ class AdminController extends Controller
     }
 
     /**
-     * ✅ PRINT VIEW (Save as PDF)
+     * PRINT VIEW
      */
     public function printSalesReport(Request $request)
     {
         $period = $request->query('period', 'daily');
         $selectedDate = $request->query('date');
-        $day = $selectedDate ? Carbon::parse($selectedDate) : Carbon::today();
 
-        [$start, $end, $rangeLabel] = $this->getRangeByPeriod($period, $day);
+        $fromDate = $request->query('from');
+        $toDate = $request->query('to');
+
+        [$start, $end, $rangeLabel, $filterMode, $selectedDateValue, $fromValue, $toValue] =
+            $this->resolveSalesDateRange($period, $selectedDate, $fromDate, $toDate);
 
         $paidOrders = Order::with('items')
             ->where('payment_status', 'paid')
@@ -114,35 +114,42 @@ class AdminController extends Controller
         $paidCount  = (int) $paidOrders->count();
         $avgOrder   = $paidCount > 0 ? ($totalSales / $paidCount) : 0;
 
-        [$chartLabels, $chartValues] = $this->buildSalesSeries($paidOrders, $period, $start, $end);
+        [$chartLabels, $chartValues] = $this->buildSalesSeries($paidOrders, $period, $start, $end, $filterMode);
         $topItems = $this->computeTopItems($paidOrders, 10);
 
         return view('admin.reports.sales-report-print', [
-            'period'      => $period,
-            'rangeLabel'  => $rangeLabel,
-            'generatedAt' => Carbon::now()->format('Y-m-d h:i A'),
+            'period'       => $period,
+            'selectedDate' => $selectedDateValue,
+            'from'         => $fromValue,
+            'to'           => $toValue,
+            'filterMode'   => $filterMode,
+            'rangeLabel'   => $rangeLabel,
+            'generatedAt'  => Carbon::now()->format('Y-m-d h:i A'),
 
-            'paidOrders'  => $paidOrders,
-            'totalSales'  => $totalSales,
-            'paidCount'   => $paidCount,
-            'avgOrder'    => $avgOrder,
+            'paidOrders'   => $paidOrders,
+            'totalSales'   => $totalSales,
+            'paidCount'    => $paidCount,
+            'avgOrder'     => $avgOrder,
 
-            'chartLabels' => $chartLabels,
-            'chartValues' => $chartValues,
-            'topItems'    => $topItems,
+            'chartLabels'  => $chartLabels,
+            'chartValues'  => $chartValues,
+            'topItems'     => $topItems,
         ]);
     }
 
     /**
-     * ✅ CSV DOWNLOAD (Excel-friendly)
+     * CSV DOWNLOAD
      */
     public function exportSalesReportCsv(Request $request)
     {
         $period = $request->query('period', 'daily');
         $selectedDate = $request->query('date');
-        $day = $selectedDate ? Carbon::parse($selectedDate) : Carbon::today();
 
-        [$start, $end, $rangeLabel] = $this->getRangeByPeriod($period, $day);
+        $fromDate = $request->query('from');
+        $toDate = $request->query('to');
+
+        [$start, $end, $rangeLabel, $filterMode] =
+            $this->resolveSalesDateRange($period, $selectedDate, $fromDate, $toDate);
 
         $paidOrders = Order::with('items')
             ->where('payment_status', 'paid')
@@ -154,10 +161,10 @@ class AdminController extends Controller
         $paidCount  = (int) $paidOrders->count();
         $avgOrder   = $paidCount > 0 ? ($totalSales / $paidCount) : 0;
 
-        [$chartLabels, $chartValues] = $this->buildSalesSeries($paidOrders, $period, $start, $end);
+        [$chartLabels, $chartValues] = $this->buildSalesSeries($paidOrders, $period, $start, $end, $filterMode);
         $topItems = $this->computeTopItems($paidOrders, 10);
 
-        $filename = "sales_report_{$period}_" . $start->format('Ymd') . "_to_" . $end->format('Ymd') . ".csv";
+        $filename = "sales_report_" . $start->format('Ymd') . "_to_" . $end->format('Ymd') . ".csv";
 
         $headers = [
             'Content-Type'        => 'text/csv; charset=UTF-8',
@@ -171,7 +178,6 @@ class AdminController extends Controller
         ) {
             $out = fopen('php://output', 'w');
 
-            // ✅ UTF-8 BOM so Excel opens ₱ correctly
             fprintf($out, chr(0xEF).chr(0xBB).chr(0xBF));
 
             fputcsv($out, ['99 SILOG CAFE']);
@@ -236,15 +242,18 @@ class AdminController extends Controller
     }
 
     /**
-     * ✅ XLS DOWNLOAD (HTML-as-Excel)
+     * XLS DOWNLOAD
      */
     public function exportSalesReportXls(Request $request)
     {
         $period = $request->query('period', 'daily');
         $selectedDate = $request->query('date');
-        $day = $selectedDate ? Carbon::parse($selectedDate) : Carbon::today();
 
-        [$start, $end, $rangeLabel] = $this->getRangeByPeriod($period, $day);
+        $fromDate = $request->query('from');
+        $toDate = $request->query('to');
+
+        [$start, $end, $rangeLabel, $filterMode, $selectedDateValue, $fromValue, $toValue] =
+            $this->resolveSalesDateRange($period, $selectedDate, $fromDate, $toDate);
 
         $paidOrders = Order::where('payment_status', 'paid')
             ->whereBetween('created_at', [$start, $end])
@@ -255,19 +264,23 @@ class AdminController extends Controller
         $paidCount  = (int) $paidOrders->count();
         $avgOrder   = $paidCount > 0 ? ($totalSales / $paidCount) : 0;
 
-        $filename = "sales_report_{$period}_" . $start->format('Ymd') . "_to_" . $end->format('Ymd') . ".xls";
+        $filename = "sales_report_" . $start->format('Ymd') . "_to_" . $end->format('Ymd') . ".xls";
 
         $html = view('admin.reports.sales-report-excel', [
-            'period'      => $period,
-            'rangeLabel'  => $rangeLabel,
-            'start'       => $start,
-            'end'         => $end,
-            'generatedAt' => Carbon::now()->format('Y-m-d h:i A'),
+            'period'       => $period,
+            'selectedDate' => $selectedDateValue,
+            'from'         => $fromValue,
+            'to'           => $toValue,
+            'filterMode'   => $filterMode,
+            'rangeLabel'   => $rangeLabel,
+            'start'        => $start,
+            'end'          => $end,
+            'generatedAt'  => Carbon::now()->format('Y-m-d h:i A'),
 
-            'paidOrders'  => $paidOrders,
-            'totalSales'  => $totalSales,
-            'paidCount'   => $paidCount,
-            'avgOrder'    => $avgOrder,
+            'paidOrders'   => $paidOrders,
+            'totalSales'   => $totalSales,
+            'paidCount'    => $paidCount,
+            'avgOrder'     => $avgOrder,
         ])->render();
 
         return response($html, 200, [
@@ -278,15 +291,57 @@ class AdminController extends Controller
     }
 
     /**
-     * ✅ Helper: compute date range by period
+     * Resolve period/date or custom from/to
+     */
+    private function resolveSalesDateRange(string $period, ?string $selectedDate, ?string $fromDate, ?string $toDate): array
+    {
+        $hasFromTo = !empty($fromDate) && !empty($toDate);
+
+        if ($hasFromTo) {
+            $from = Carbon::parse($fromDate)->startOfDay();
+            $to = Carbon::parse($toDate)->endOfDay();
+
+            if ($from->gt($to)) {
+                [$from, $to] = [$to->copy()->startOfDay(), $from->copy()->endOfDay()];
+            }
+
+            $rangeLabel = 'Custom Range (' . $from->format('M d, Y') . ' - ' . $to->format('M d, Y') . ')';
+
+            return [
+                $from,
+                $to,
+                $rangeLabel,
+                'range',
+                $selectedDate ?: Carbon::today()->toDateString(),
+                $from->toDateString(),
+                $to->toDateString(),
+            ];
+        }
+
+        $day = $selectedDate ? Carbon::parse($selectedDate) : Carbon::today();
+        [$start, $end, $rangeLabel] = $this->getRangeByPeriod($period, $day);
+
+        return [
+            $start,
+            $end,
+            $rangeLabel,
+            'period',
+            $day->toDateString(),
+            $fromDate,
+            $toDate,
+        ];
+    }
+
+    /**
+     * Helper: compute date range by period
      */
     private function getRangeByPeriod(string $period, Carbon $day): array
     {
         $period = strtolower($period);
 
         if ($period === 'weekly') {
-            $start = $day->copy()->startOfWeek(Carbon::MONDAY)->startOfDay();
-            $end   = $day->copy()->endOfWeek(Carbon::MONDAY)->endOfDay();
+            $start = $day->copy()->startOfDay();
+            $end   = $day->copy()->addDays(6)->endOfDay();
             $label = "Weekly (" . $start->format('M d, Y') . " - " . $end->format('M d, Y') . ")";
             return [$start, $end, $label];
         }
@@ -312,24 +367,112 @@ class AdminController extends Controller
     }
 
     /**
-     * ✅ Build chart series (labels + values)
+     * Build chart series
      */
-    private function buildSalesSeries($orders, string $period, Carbon $start, Carbon $end): array
+    private function buildSalesSeries($orders, string $period, Carbon $start, Carbon $end, string $filterMode = 'period'): array
     {
+        if ($filterMode === 'range') {
+            $labels = [];
+            $values = [];
+            $map = [];
+
+            $cursor = $start->copy()->startOfDay();
+            $last = $end->copy()->startOfDay();
+
+            while ($cursor->lte($last)) {
+                $key = $cursor->toDateString();
+                $map[$key] = 0.0;
+                $labels[] = $cursor->format('M d');
+                $cursor->addDay();
+            }
+
+            foreach ($orders as $o) {
+                $key = optional($o->created_at)->toDateString();
+                if (isset($map[$key])) {
+                    $map[$key] += (float) $o->total;
+                }
+            }
+
+            $cursor = $start->copy()->startOfDay();
+            while ($cursor->lte($last)) {
+                $values[] = (float) $map[$cursor->toDateString()];
+                $cursor->addDay();
+            }
+
+            return [$labels, $values];
+        }
+
         $period = strtolower($period);
 
         $labels = [];
         $values = [];
 
         if ($period === 'daily') {
-            for ($h = 0; $h < 24; $h++) {
-                $labels[] = str_pad((string)$h, 2, '0', STR_PAD_LEFT) . ':00';
+            for ($h = 10; $h <= 22; $h++) {
+                $labels[] = Carbon::createFromTime($h, 0)->format('g A');
                 $values[] = 0.0;
             }
 
             foreach ($orders as $o) {
-                $hour = (int) optional($o->created_at)->format('H');
-                $values[$hour] += (float) $o->total;
+                $hour = (int) optional($o->created_at)->format('G');
+
+                if ($hour >= 10 && $hour <= 22) {
+                    $values[$hour - 10] += (float) $o->total;
+                }
+            }
+
+            return [$labels, $values];
+        }
+
+        if ($period === 'weekly') {
+            $cursor = $start->copy()->startOfDay();
+            $map = [];
+
+            while ($cursor->lte($end)) {
+                $key = $cursor->toDateString();
+                $map[$key] = 0.0;
+                $labels[] = $cursor->format('D • M d');
+                $cursor->addDay();
+            }
+
+            foreach ($orders as $o) {
+                $key = optional($o->created_at)->toDateString();
+                if (isset($map[$key])) {
+                    $map[$key] += (float) $o->total;
+                }
+            }
+
+            $cursor = $start->copy()->startOfDay();
+            while ($cursor->lte($end)) {
+                $values[] = (float) $map[$cursor->toDateString()];
+                $cursor->addDay();
+            }
+
+            return [$labels, $values];
+        }
+
+        if ($period === 'monthly') {
+            $cursor = $start->copy()->startOfDay();
+            $map = [];
+
+            while ($cursor->lte($end)) {
+                $key = $cursor->toDateString();
+                $map[$key] = 0.0;
+                $labels[] = $cursor->format('M d');
+                $cursor->addDay();
+            }
+
+            foreach ($orders as $o) {
+                $key = optional($o->created_at)->toDateString();
+                if (isset($map[$key])) {
+                    $map[$key] += (float) $o->total;
+                }
+            }
+
+            $cursor = $start->copy()->startOfDay();
+            while ($cursor->lte($end)) {
+                $values[] = (float) $map[$cursor->toDateString()];
+                $cursor->addDay();
             }
 
             return [$labels, $values];
@@ -375,7 +518,7 @@ class AdminController extends Controller
     }
 
     /**
-     * ✅ Best sellers from Order->items safely
+     * Best sellers from Order->items safely
      */
     private function computeTopItems($orders, int $limit = 5): array
     {
@@ -398,13 +541,14 @@ class AdminController extends Controller
         $top = [];
         foreach ($counts as $name => $qty) {
             $top[] = ['name' => $name, 'qty' => $qty];
-            if (count($top) >= $limit) break;
+            if (count($top) >= $limit) {
+                break;
+            }
         }
 
         return $top;
     }
 
-    // ✅ Detect status column safely
     private function detectStatusColumn(): ?string
     {
         $candidates = ['status', 'order_status', 'tracking_status'];
@@ -417,34 +561,33 @@ class AdminController extends Controller
 
         return null;
     }
-public function tableManagement()
-{
-    $tables = Table::orderBy('number')->get()->keyBy('number');
 
-    // Detect correct status column
-    $statusCol = $this->detectStatusColumn() ?? 'status';
+    public function tableManagement()
+    {
+        $tables = Table::orderBy('number')->get()->keyBy('number');
 
- $orders = Order::orderBy('created_at', 'asc')->get();
+        $statusCol = $this->detectStatusColumn() ?? 'status';
 
-    // Normalize status
-    foreach ($orders as $o) {
-        $raw = $o->{$statusCol} ?? $o->status ?? '';
-        $o->status = strtolower(trim((string) $raw));
+        $orders = Order::orderBy('created_at', 'asc')->get();
+
+        foreach ($orders as $o) {
+            $raw = $o->{$statusCol} ?? $o->status ?? '';
+            $o->status = strtolower(trim((string) $raw));
+        }
+
+        $activeCount    = $orders->whereIn('status', ['preparing', 'serving'])->count();
+        $pendingCount   = $orders->where('status', 'pending')->count();
+        $cancelledCount = $orders->where('status', 'cancelled')->count();
+        $servedCount    = $orders->where('status', 'served')->count();
+
+        return view('admin.table-management', compact(
+            'tables',
+            'activeCount',
+            'pendingCount',
+            'cancelledCount',
+            'servedCount'
+        ));
     }
-
-    $activeCount    = $orders->whereIn('status', ['preparing', 'serving'])->count();
-    $pendingCount   = $orders->where('status', 'pending')->count();
-    $cancelledCount = $orders->where('status', 'cancelled')->count();
-    $servedCount    = $orders->where('status', 'served')->count();
-
-    return view('admin.table-management', compact(
-        'tables',
-        'activeCount',
-        'pendingCount',
-        'cancelledCount',
-        'servedCount'
-    ));
-}
 
     public function toggleTable(Request $request, $number)
     {

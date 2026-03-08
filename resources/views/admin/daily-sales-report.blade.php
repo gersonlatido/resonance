@@ -28,7 +28,6 @@
       color: var(--text);
     }
 
-    /* Layout */
     .shell{
       width: 100%;
       min-height: 100vh;
@@ -36,7 +35,6 @@
       grid-template-columns: 240px 1fr;
     }
 
-    /* Sidebar */
     .sidebar{
       background: var(--sidebar);
       padding: 18px 14px;
@@ -107,7 +105,6 @@
       box-shadow: 0 6px 14px rgba(0,0,0,.12);
     }
 
-    /* Main content */
     .content{
       padding: 22px 24px;
       background: #ffffff;
@@ -146,7 +143,6 @@
     }
     .logout-btn:hover{ filter: brightness(.97); }
 
-    /* Cards */
     .stats{
       display:grid;
       grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -180,7 +176,6 @@
       line-height: 1;
     }
 
-    /* Filter */
     .filter{
       background:#fff;
       border: 1px solid rgba(0,0,0,.06);
@@ -188,7 +183,7 @@
       box-shadow: var(--shadow-soft);
       padding: 12px 14px;
       display:flex;
-      align-items:center;
+      align-items:flex-start;
       justify-content:space-between;
       gap: 12px;
       flex-wrap:wrap;
@@ -197,7 +192,7 @@
 
     .filter form{
       display:flex;
-      align-items:center;
+      align-items:flex-end;
       gap: 10px;
       flex-wrap:wrap;
     }
@@ -206,9 +201,18 @@
       font-size: 12px;
       font-weight: 800;
       color: var(--muted);
+      display:block;
+      margin-bottom: 6px;
     }
 
-    input[type="date"]{
+    .field-group{
+      display:flex;
+      flex-direction:column;
+      min-width: 150px;
+    }
+
+    input[type="date"],
+    select{
       padding: 9px 10px;
       border-radius: 12px;
       border: 1px solid rgba(0,0,0,.14);
@@ -218,21 +222,33 @@
       background:#fff;
     }
 
-   .btn{
-  padding: 10px 16px;
-  background: #f59e0b;
-  border-radius: 12px;
-  text-decoration: none;
-  color: #111;
-  font-weight: 900;
-  border: none;
-  display:inline-block;
-}
-.btn:hover{
-  opacity: 0.9;
-}
+    .btn{
+      padding: 10px 16px;
+      background: #f59e0b;
+      border-radius: 12px;
+      text-decoration: none;
+      color: #111;
+      font-weight: 900;
+      border: none;
+      display:inline-block;
+      cursor:pointer;
+    }
+    .btn:hover{
+      opacity: 0.9;
+    }
 
-    /* Table */
+    .btn.secondary{
+      background:#fff;
+      border:1px solid rgba(0,0,0,.12);
+    }
+
+    .actions-row{
+      display:flex;
+      gap:10px;
+      flex-wrap:wrap;
+      align-items:center;
+    }
+
     .table-card{
       background: #fff;
       border: 1px solid rgba(0,0,0,.06);
@@ -278,7 +294,6 @@
       color: var(--orange-2);
     }
 
-    /* Responsive */
     @media (max-width: 1100px){
       .stats{ grid-template-columns: repeat(2, minmax(0, 1fr)); }
     }
@@ -286,6 +301,7 @@
       .shell{ grid-template-columns: 1fr; }
       .sidebar{ display:none; }
       .stats{ grid-template-columns: 1fr; }
+      .field-group{ min-width: 100%; }
     }
   </style>
 </head>
@@ -293,7 +309,6 @@
 <body>
   <div class="shell">
 
-    <!-- Sidebar -->
     <aside class="sidebar">
       <div class="brand">
         <div class="logo-box">
@@ -343,14 +358,12 @@
       </nav>
     </aside>
 
-    <!-- Main -->
     <main class="content">
 
-      <!-- Header -->
       <div class="header">
         <div class="header-left">
           <h1 class="title">Daily Sales Report</h1>
-          <div class="subtitle">Shows paid orders (Xendit) for the selected date</div>
+          <div class="subtitle">Shows paid orders (Xendit) for the selected period or custom date range</div>
         </div>
 
         <form id="logout-form" method="POST" action="{{ route('admin.logout') }}">
@@ -359,47 +372,79 @@
         </form>
       </div>
 
-      <!-- Filter -->
-   <div class="filter">
-  <div class="muted">
-    <strong style="color:#111;">{{ $rangeLabel ?? ('Daily (' . $selectedDate . ')') }}</strong>
-    <div style="margin-top:4px;">Selected Date: <strong style="color:#111;">{{ $selectedDate }}</strong></div>
-  </div>
+      <div class="filter">
+        <div class="muted">
+          <strong style="color:#111;">{{ $rangeLabel ?? ('Daily (' . $selectedDate . ')') }}</strong>
+          @if(($filterMode ?? 'period') === 'range')
+            <div style="margin-top:4px;">
+              From: <strong style="color:#111;">{{ $from }}</strong>
+              &nbsp;|&nbsp;
+              To: <strong style="color:#111;">{{ $to }}</strong>
+            </div>
+          @else
+            <div style="margin-top:4px;">
+              Selected Date: <strong style="color:#111;">{{ $selectedDate }}</strong>
+            </div>
+          @endif
+        </div>
 
-  <form method="GET" action="{{ route('admin.daily-sales-report') }}">
-    <label for="period">Period</label>
-    <select id="period" name="period" style="padding:9px 10px;border-radius:12px;border:1px solid rgba(0,0,0,.14);font-weight:800;font-size:12.5px;">
-      <option value="daily"  {{ ($period ?? 'daily') === 'daily' ? 'selected' : '' }}>Daily</option>
-      <option value="weekly" {{ ($period ?? 'daily') === 'weekly' ? 'selected' : '' }}>Weekly</option>
-      <option value="monthly"{{ ($period ?? 'daily') === 'monthly' ? 'selected' : '' }}>Monthly</option>
-      <option value="yearly" {{ ($period ?? 'daily') === 'yearly' ? 'selected' : '' }}>Yearly</option>
-    </select>
+        <form method="GET" action="{{ route('admin.daily-sales-report') }}">
+          <div class="field-group">
+            <label for="period">Period</label>
+            <select id="period" name="period">
+              <option value="daily"  {{ ($period ?? 'daily') === 'daily' ? 'selected' : '' }}>Daily</option>
+              <option value="weekly" {{ ($period ?? 'daily') === 'weekly' ? 'selected' : '' }}>Weekly</option>
+              <option value="monthly" {{ ($period ?? 'daily') === 'monthly' ? 'selected' : '' }}>Monthly</option>
+              <option value="yearly" {{ ($period ?? 'daily') === 'yearly' ? 'selected' : '' }}>Yearly</option>
+            </select>
+          </div>
 
-    <label for="date">Pick date</label>
-    <input id="date" type="date" name="date" value="{{ $selectedDate }}">
+          <div class="field-group">
+            <label for="date">Pick date</label>
+            <input id="date" type="date" name="date" value="{{ $selectedDate }}">
+          </div>
 
-    <button class="btn" type="submit">Apply</button>
+          <div class="field-group">
+            <label for="from">From</label>
+            <input id="from" type="date" name="from" value="{{ $from ?? '' }}">
+          </div>
 
-    <!-- ✅ PDF (no package): open print view then user saves PDF -->
-   <div style="display:flex; gap:10px; flex-wrap:wrap;">
+          <div class="field-group">
+            <label for="to">To</label>
+            <input id="to" type="date" name="to" value="{{ $to ?? '' }}">
+          </div>
 
-    <!-- ✅ Download PDF -->
-    <a class="btn"
-       href="{{ route('admin.sales-report.print', ['period' => $period, 'date' => $selectedDate]) }}">
-        Download PDF
-    </a>
+          <div class="actions-row">
+            <button class="btn" type="submit">Apply</button>
 
-    <!-- ✅ Download Styled Excel -->
-    <a class="btn"
-       href="{{ route('admin.sales-report.export.xls', ['period' => $period, 'date' => $selectedDate]) }}">
-        Download Excel
-    </a>
+            <a class="btn secondary"
+               href="{{ route('admin.daily-sales-report') }}">
+              Reset
+            </a>
 
-</div>
-  </form>
-</div>
+            <a class="btn"
+               href="{{ route('admin.sales-report.print', [
+                  'period' => $period,
+                  'date' => $selectedDate,
+                  'from' => $from ?? null,
+                  'to' => $to ?? null
+               ]) }}">
+              Download PDF
+            </a>
 
-      <!-- Stats -->
+            <a class="btn"
+               href="{{ route('admin.sales-report.export.xls', [
+                  'period' => $period,
+                  'date' => $selectedDate,
+                  'from' => $from ?? null,
+                  'to' => $to ?? null
+               ]) }}">
+              Download Excel
+            </a>
+          </div>
+        </form>
+      </div>
+
       <section class="stats" aria-label="Sales stats">
         <div class="stat">
           <div>
@@ -423,7 +468,6 @@
         </div>
       </section>
 
-      <!-- Table -->
       <section class="table-card">
         <div class="table-card-header">
           <div>Paid Orders List</div>
@@ -448,12 +492,12 @@
                   <td class="muted">Table {{ $order->table_number }}</td>
                   <td class="money">₱{{ number_format((float)$order->total, 2) }}</td>
                   <td class="muted">{{ ucfirst($order->status) }}</td>
-                  <td class="muted">{{ optional($order->created_at)->format('h:i A') }}</td>
+                  <td class="muted">{{ optional($order->created_at)->format('Y-m-d h:i A') }}</td>
                 </tr>
               @empty
                 <tr>
                   <td colspan="5" class="muted" style="text-align:center; padding: 18px;">
-                    No paid orders found for this date.
+                    No paid orders found for this selected range.
                   </td>
                 </tr>
               @endforelse
@@ -464,5 +508,32 @@
 
     </main>
   </div>
+
+  <script>
+    const fromInput = document.getElementById('from');
+    const toInput = document.getElementById('to');
+    const dateInput = document.getElementById('date');
+
+    if (fromInput && toInput && dateInput) {
+      fromInput.addEventListener('change', function () {
+        if (this.value) {
+          dateInput.value = '';
+        }
+      });
+
+      toInput.addEventListener('change', function () {
+        if (this.value) {
+          dateInput.value = '';
+        }
+      });
+
+      dateInput.addEventListener('change', function () {
+        if (this.value) {
+          fromInput.value = '';
+          toInput.value = '';
+        }
+      });
+    }
+  </script>
 </body>
 </html>
