@@ -14,18 +14,25 @@ class InventoryController extends Controller
     {
         $q = trim((string) $request->query('q', ''));
         $mode = (string) $request->query('mode', 'ingredient'); // ingredient | menu
+        $status = trim((string) $request->query('status', ''));
 
-        // ✅ NEW: movement date filter (YYYY-MM-DD)
+        // movement date filter (YYYY-MM-DD)
         $movementDate = trim((string) $request->query('movement_date', ''));
 
-        // ✅ Dashboard stats (fast)
+        // Dashboard stats
         $total = Ingredient::count();
+
         $outOfStock = Ingredient::where('stock_qty', '<=', 0)->count();
+
         $lowStock = Ingredient::where('stock_qty', '>', 0)
             ->whereColumn('stock_qty', '<=', 'reorder_level')
             ->count();
 
-        // ✅ Recent movements (NOW PAGINATED + FILTERABLE BY DATE)
+        $overstock = Ingredient::whereColumn('stock_qty', '>', 'overstock_level')
+            ->where('overstock_level', '>', 0)
+            ->count();
+
+        // Recent movements
         $movementsQuery = StockMovement::with('ingredient')->latest();
 
         if ($movementDate !== '') {
@@ -36,11 +43,11 @@ class InventoryController extends Controller
             ->paginate(10, ['*'], 'move_page')
             ->withQueryString();
 
-        // ✅ Variables for view
+        // Variables for view
         $ingredients = null;
         $menuItems = null;
 
-        // ✅ Low stock alerts (paginated, separate page name to avoid conflict)
+        // Low stock alerts (ingredient mode only)
         $lowItems = null;
         if ($mode === 'ingredient') {
             $lowItems = Ingredient::query()
@@ -52,7 +59,7 @@ class InventoryController extends Controller
                 ->paginate(10, ['*'], 'low_page')
                 ->withQueryString();
         } else {
-            $lowItems = collect(); // not used in menu mode
+            $lowItems = collect();
         }
 
         if ($mode === 'menu') {
@@ -69,7 +76,26 @@ class InventoryController extends Controller
                 ->withQueryString();
         } else {
             $ingredients = Ingredient::query()
-                ->when($q !== '', fn ($query) => $query->where('name', 'like', "%{$q}%"))
+                ->when($q !== '', function ($query) use ($q) {
+                    $query->where('name', 'like', "%{$q}%");
+                })
+                ->when($status !== '', function ($query) use ($status) {
+                    if ($status === 'healthy') {
+                        $query->whereColumn('stock_qty', '>', 'reorder_level')
+                              ->where(function ($qq) {
+                                  $qq->where('overstock_level', '<=', 0)
+                                     ->orWhereColumn('stock_qty', '<=', 'overstock_level');
+                              });
+                    } elseif ($status === 'low') {
+                        $query->where('stock_qty', '>', 0)
+                              ->whereColumn('stock_qty', '<=', 'reorder_level');
+                    } elseif ($status === 'out') {
+                        $query->where('stock_qty', '<=', 0);
+                    } elseif ($status === 'overstock') {
+                        $query->where('overstock_level', '>', 0)
+                              ->whereColumn('stock_qty', '>', 'overstock_level');
+                    }
+                })
                 ->orderBy('name')
                 ->paginate(10, ['*'], 'ing_page')
                 ->withQueryString();
@@ -78,12 +104,14 @@ class InventoryController extends Controller
         return view('admin.inventory', compact(
             'mode',
             'q',
+            'status',
             'movementDate',
             'ingredients',
             'menuItems',
             'total',
             'lowStock',
             'outOfStock',
+            'overstock',
             'lowItems',
             'recentMovements'
         ));
@@ -96,11 +124,28 @@ class InventoryController extends Controller
             'unit' => 'required|in:g,ml,pcs',
             'stock_qty' => 'required|numeric|min:0',
             'reorder_level' => 'required|numeric|min:0',
+            'overstock_level' => 'required|numeric|min:0|gte:reorder_level',
         ]);
 
         Ingredient::create($data);
 
         return redirect()->route('admin.inventory')->with('success', 'Ingredient added ✅');
+    }
+
+    public function updateIngredient(Request $request, Ingredient $ingredient)
+    {
+        $data = $request->validate([
+            'name' => 'required|string|unique:ingredients,name,' . $ingredient->id,
+            'unit' => 'required|in:g,ml,pcs',
+            'reorder_level' => 'required|numeric|min:0',
+            'overstock_level' => 'required|numeric|min:0|gte:reorder_level',
+        ]);
+
+        $ingredient->update($data);
+
+        $this->recomputeMenusForIngredient($ingredient->id);
+
+        return redirect()->route('admin.inventory')->with('success', 'Ingredient updated ✅');
     }
 
     public function stockIn(Request $request, Ingredient $ingredient)
@@ -174,10 +219,13 @@ class InventoryController extends Controller
 
         foreach ($recipes as $r) {
             $ing = $r->ingredient;
-            if (!$ing) { $available = false; break; }
+            if (!$ing) {
+                $available = false;
+                break;
+            }
 
-            $need   = (float) $r->qty_needed;
-            $stock  = (float) $ing->stock_qty;
+            $need = (float) $r->qty_needed;
+            $stock = (float) $ing->stock_qty;
             $reorder = (float) $ing->reorder_level;
 
             if ($stock <= 0 || $stock <= $reorder || $stock < $need) {

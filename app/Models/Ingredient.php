@@ -6,7 +6,13 @@ use Illuminate\Database\Eloquent\Model;
 
 class Ingredient extends Model
 {
-    protected $fillable = ['name','unit','stock_qty','reorder_level'];
+    protected $fillable = [
+        'name',
+        'unit',
+        'stock_qty',
+        'reorder_level',
+        'overstock_level',
+    ];
 
     public function recipes()
     {
@@ -18,4 +24,3 @@ class Ingredient extends Model
         return $this->hasMany(\App\Models\StockMovement::class);
     }
 }
-

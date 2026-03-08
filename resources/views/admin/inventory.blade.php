@@ -21,6 +21,7 @@
       --good:#16a34a;
       --warn:#f59e0b;
       --bad:#ef4444;
+      --over:#2563eb;
     }
     *{ box-sizing:border-box; }
     body{
@@ -87,7 +88,6 @@
       box-shadow:0 4px 10px rgba(0,0,0,.12);
     }
 
-    /* Header actions */
     .actions{
       display:flex;gap:10px;align-items:center;flex-wrap:wrap;
       margin:10px 0 14px;
@@ -116,10 +116,9 @@
     .btn.primary{ background:var(--orange); }
     .btn:hover{ filter:brightness(.98); }
 
-    /* Stats */
     .stats{
       display:grid;
-      grid-template-columns:repeat(3, minmax(0,1fr));
+      grid-template-columns:repeat(4, minmax(0,1fr));
       gap:14px;
       margin:12px 0 16px;
     }
@@ -138,6 +137,7 @@
     .dot.good{ background:var(--good); box-shadow:0 0 0 6px rgba(22,163,74,.10); }
     .dot.warn{ background:var(--warn); box-shadow:0 0 0 6px rgba(245,158,11,.12); }
     .dot.bad{ background:var(--bad); box-shadow:0 0 0 6px rgba(239,68,68,.10); }
+    .dot.over{ background:var(--over); box-shadow:0 0 0 6px rgba(37,99,235,.12); }
 
     .grid{
       display:grid;
@@ -174,6 +174,7 @@
     .badge.good{ color:var(--good);border-color:rgba(22,163,74,.25); }
     .badge.warn{ color:var(--warn);border-color:rgba(245,158,11,.28); }
     .badge.bad{ color:var(--bad);border-color:rgba(239,68,68,.28); }
+    .badge.over{ color:var(--over);border-color:rgba(37,99,235,.28); }
 
     .row-actions{
       display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end;
@@ -188,6 +189,15 @@
       border:1px solid rgba(0,0,0,.10);
       background:#fff;cursor:pointer;
       font-size:12px;font-weight:900;
+    }
+    .edit-btn{
+      padding:7px 10px;border-radius:12px;
+      border:1px solid rgba(0,0,0,.10);
+      background:rgba(245,158,11,.12);
+      cursor:pointer;
+      font-size:12px;
+      font-weight:900;
+      white-space:nowrap;
     }
 
     .movement{
@@ -204,13 +214,11 @@
     .qty.out{ color:var(--bad); }
     .empty{ color:var(--muted);font-weight:800;font-size:13px;text-align:center;padding:18px 0; }
 
-    /* Menu result cards inside table */
     .menu-title{ font-weight:900; }
     .menu-sub{ font-size:12px; color:var(--muted); font-weight:800; margin-top:4px; }
     .ing-list{ margin:8px 0 0; padding-left:18px; }
     .ing-list li{ margin:6px 0; }
 
-    /* ✅ Pagination styles */
     .pager-wrap{
       padding:12px 14px;
       border-top:1px solid rgba(0,0,0,.06);
@@ -258,7 +266,6 @@
       pointer-events:none;
     }
 
-    /* ✅ Movement date filter mini form */
     .mini-filter{
       display:flex;
       gap:8px;
@@ -292,7 +299,6 @@
     }
     .tiny-btn.primary{ background:var(--orange); }
 
-    /* Modal */
     .modal-backdrop{
       position:fixed;inset:0;background:rgba(0,0,0,.45);
       display:none;align-items:center;justify-content:center;padding:18px;z-index:9999;
@@ -339,11 +345,11 @@
 @php
   $mode = $mode ?? 'ingredient';
   $q = $q ?? '';
+  $status = $status ?? '';
   $movementDate = $movementDate ?? '';
 @endphp
 
 <div class="shell">
-  <!-- Sidebar -->
   <aside class="sidebar">
     <div class="brand">
       <div class="logo-box">
@@ -373,7 +379,6 @@
     </nav>
   </aside>
 
-  <!-- Content -->
   <main class="content">
     <div class="topbar">
       <div class="title">Inventory Management</div>
@@ -383,7 +388,6 @@
       </form>
     </div>
 
-    {{-- Flash messages --}}
     @if(session('success'))
       <div style="margin:10px 0; padding:10px 12px; border-radius:14px; background:rgba(22,163,74,.12); border:1px solid rgba(22,163,74,.25); font-weight:800;">
         {{ session('success') }}
@@ -403,7 +407,6 @@
       </div>
     @endif
 
-    <!-- ✅ Server-side search form -->
     <form class="actions" method="GET" action="{{ route('admin.inventory') }}">
       <input id="searchInput" name="q" class="input" type="text"
              placeholder="{{ $mode === 'menu' ? 'Search menu item…' : 'Search ingredient…' }}"
@@ -414,15 +417,15 @@
         <option value="menu" {{ $mode === 'menu' ? 'selected' : '' }}>Menu Item (show ingredients)</option>
       </select>
 
-      {{-- keep movement date in URL when searching --}}
       <input type="hidden" name="movement_date" value="{{ $movementDate }}">
 
       @if($mode === 'ingredient')
-        <select id="statusFilter" class="select">
-          <option value="all">All Status</option>
-          <option value="good">Healthy</option>
-          <option value="warn">Low Stock</option>
-          <option value="bad">Out of Stock</option>
+        <select id="statusFilter" name="status" class="select">
+          <option value="" {{ $status === '' ? 'selected' : '' }}>All Status</option>
+          <option value="healthy" {{ $status === 'healthy' ? 'selected' : '' }}>Healthy</option>
+          <option value="low" {{ $status === 'low' ? 'selected' : '' }}>Low Stock</option>
+          <option value="out" {{ $status === 'out' ? 'selected' : '' }}>Out of Stock</option>
+          <option value="overstock" {{ $status === 'overstock' ? 'selected' : '' }}>Overstock</option>
         </select>
 
         <button class="btn primary" type="button" id="openModalBtn">+ Add Ingredient</button>
@@ -453,10 +456,16 @@
         </div>
         <div class="dot bad"></div>
       </div>
+      <div class="stat">
+        <div>
+          <div class="label">Overstock</div>
+          <div class="value">{{ $overstock ?? 0 }}</div>
+        </div>
+        <div class="dot over"></div>
+      </div>
     </section>
 
     <section class="grid">
-      <!-- Left -->
       <div class="panel">
         <div class="panel-head">
           <div>
@@ -559,6 +568,7 @@
                 <th>Ingredient</th>
                 <th>Stock</th>
                 <th>Reorder</th>
+                <th>Overstock</th>
                 <th>Status</th>
                 <th style="text-align:right;">Restock</th>
               </tr>
@@ -566,16 +576,20 @@
               <tbody id="lowStockBody">
               @forelse($lowItems as $i)
                 @php
-                  $status = ($i->stock_qty ?? 0) <= 0 ? 'bad' : ((($i->stock_qty ?? 0) <= ($i->reorder_level ?? 0)) ? 'warn' : 'good');
+                  $hasOverstockLevel = ($i->overstock_level ?? 0) > 0;
+                  $isOverstock = $hasOverstockLevel && (($i->stock_qty ?? 0) > ($i->overstock_level ?? 0));
+                  $statusKey = ($i->stock_qty ?? 0) <= 0 ? 'bad' : ((($i->stock_qty ?? 0) <= ($i->reorder_level ?? 0)) ? 'warn' : ($isOverstock ? 'over' : 'good'));
                 @endphp
-                <tr data-name="{{ strtolower($i->name) }}" data-status="{{ $status }}">
+                <tr data-name="{{ strtolower($i->name) }}" data-status="{{ $statusKey }}">
                   <td><strong>{{ $i->name }}</strong></td>
                   <td>{{ number_format($i->stock_qty,2) }} {{ $i->unit }}</td>
                   <td>{{ number_format($i->reorder_level,2) }} {{ $i->unit }}</td>
+                  <td>{{ number_format($i->overstock_level ?? 0,2) }} {{ $i->unit }}</td>
                   <td>
-                    @if($status==='bad') <span class="badge bad">Out</span> @endif
-                    @if($status==='warn') <span class="badge warn">Low</span> @endif
-                    @if($status==='good') <span class="badge good">Healthy</span> @endif
+                    @if($statusKey === 'bad') <span class="badge bad">Out</span> @endif
+                    @if($statusKey === 'warn') <span class="badge warn">Low</span> @endif
+                    @if($statusKey === 'good') <span class="badge good">Healthy</span> @endif
+                    @if($statusKey === 'over') <span class="badge over">Overstock</span> @endif
                   </td>
                   <td style="text-align:right;">
                     <form method="POST" action="{{ route('admin.inventory.stockin', $i->id) }}" style="display:flex; gap:6px; justify-content:flex-end;">
@@ -586,14 +600,13 @@
                   </td>
                 </tr>
               @empty
-                <tr><td colspan="5" class="empty">No low stock items 🎉</td></tr>
+                <tr><td colspan="6" class="empty">No low stock items 🎉</td></tr>
               @endforelse
               </tbody>
             </table>
           @endif
         </div>
 
-        {{-- ✅ PAGINATION for MENU mode --}}
         @if($mode === 'menu' && $menuItems instanceof \Illuminate\Pagination\LengthAwarePaginator)
           <div class="pager-wrap">
             <div class="pager-info">
@@ -618,7 +631,6 @@
           </div>
         @endif
 
-        {{-- ✅ PAGINATION for LOW STOCK ALERTS --}}
         @if($mode === 'ingredient' && $lowItems instanceof \Illuminate\Pagination\LengthAwarePaginator)
           <div class="pager-wrap">
             <div class="pager-info">
@@ -659,6 +671,7 @@
                 <th>Unit</th>
                 <th>Stock</th>
                 <th>Reorder</th>
+                <th>Overstock</th>
                 <th>Status</th>
                 <th style="text-align:right;">Action</th>
               </tr>
@@ -666,20 +679,36 @@
               <tbody id="allBody">
               @forelse($ingredients as $i)
                 @php
-                  $status = ($i->stock_qty ?? 0) <= 0 ? 'bad' : ((($i->stock_qty ?? 0) <= ($i->reorder_level ?? 0)) ? 'warn' : 'good');
+                  $hasOverstockLevel = ($i->overstock_level ?? 0) > 0;
+                  $isOverstock = $hasOverstockLevel && (($i->stock_qty ?? 0) > ($i->overstock_level ?? 0));
+                  $statusKey = ($i->stock_qty ?? 0) <= 0 ? 'bad' : ((($i->stock_qty ?? 0) <= ($i->reorder_level ?? 0)) ? 'warn' : ($isOverstock ? 'over' : 'good'));
                 @endphp
-                <tr data-name="{{ strtolower($i->name) }}" data-status="{{ $status }}">
+                <tr data-name="{{ strtolower($i->name) }}" data-status="{{ $statusKey }}">
                   <td><strong>{{ $i->name }}</strong></td>
                   <td>{{ $i->unit }}</td>
                   <td>{{ number_format($i->stock_qty,2) }}</td>
                   <td>{{ number_format($i->reorder_level,2) }}</td>
+                  <td>{{ number_format($i->overstock_level ?? 0,2) }}</td>
                   <td>
-                    @if($status==='bad') <span class="badge bad">Out</span> @endif
-                    @if($status==='warn') <span class="badge warn">Low</span> @endif
-                    @if($status==='good') <span class="badge good">Healthy</span> @endif
+                    @if($statusKey === 'bad') <span class="badge bad">Out</span> @endif
+                    @if($statusKey === 'warn') <span class="badge warn">Low</span> @endif
+                    @if($statusKey === 'good') <span class="badge good">Healthy</span> @endif
+                    @if($statusKey === 'over') <span class="badge over">Overstock</span> @endif
                   </td>
                   <td style="text-align:right;">
                     <div class="row-actions">
+                      <button
+                        type="button"
+                        class="edit-btn editIngredientBtn"
+                        data-id="{{ $i->id }}"
+                        data-name="{{ $i->name }}"
+                        data-unit="{{ $i->unit }}"
+                        data-reorder="{{ $i->reorder_level }}"
+                        data-overstock="{{ $i->overstock_level ?? 0 }}"
+                      >
+                        Edit
+                      </button>
+
                       <form method="POST" action="{{ route('admin.inventory.stockin', $i->id) }}" style="display:flex; gap:6px; align-items:center;">
                         @csrf
                         <input class="mini-input" name="qty" type="number" step="0.01" placeholder="+qty" required />
@@ -695,13 +724,12 @@
                   </td>
                 </tr>
               @empty
-                <tr><td colspan="6" class="empty">No ingredients yet.</td></tr>
+                <tr><td colspan="7" class="empty">No ingredients yet.</td></tr>
               @endforelse
               </tbody>
             </table>
           </div>
 
-          {{-- ✅ PAGINATION for ALL INGREDIENTS --}}
           @if($ingredients instanceof \Illuminate\Pagination\LengthAwarePaginator)
             <div class="pager-wrap">
               <div class="pager-info">
@@ -728,7 +756,6 @@
         @endif
       </div>
 
-      <!-- Right -->
       <aside class="panel">
         <div class="panel-head" style="flex-direction:column; align-items:flex-start;">
           <div style="display:flex; width:100%; align-items:center; justify-content:space-between; gap:10px;">
@@ -738,10 +765,10 @@
             </div>
           </div>
 
-          {{-- ✅ Date filter form for movements --}}
           <form class="mini-filter" method="GET" action="{{ route('admin.inventory') }}">
             <input type="hidden" name="mode" value="{{ $mode }}">
             <input type="hidden" name="q" value="{{ $q }}">
+            <input type="hidden" name="status" value="{{ $status }}">
             <input type="hidden" name="low_page" value="{{ request('low_page') }}">
             <input type="hidden" name="ing_page" value="{{ request('ing_page') }}">
             <input type="hidden" name="menu_page" value="{{ request('menu_page') }}">
@@ -750,7 +777,7 @@
 
             <button class="tiny-btn primary" type="submit">Filter</button>
 
-            <a class="tiny-btn" href="{{ route('admin.inventory', ['mode' => $mode, 'q' => $q]) }}">Clear</a>
+            <a class="tiny-btn" href="{{ route('admin.inventory', ['mode' => $mode, 'q' => $q, 'status' => $status]) }}">Clear</a>
           </form>
         </div>
 
@@ -777,7 +804,6 @@
           @endforelse
         </div>
 
-        {{-- ✅ PAGINATION for MOVEMENTS --}}
         @if($recentMovements instanceof \Illuminate\Pagination\LengthAwarePaginator)
           <div class="pager-wrap">
             <div class="pager-info">
@@ -807,7 +833,6 @@
 </div>
 
 @if($mode === 'ingredient')
-  <!-- Modal -->
   <div class="modal-backdrop" id="modalBackdrop">
     <div class="modal">
       <div class="modal-head">
@@ -833,17 +858,65 @@
             </div>
             <div>
               <label>Starting Stock</label>
-              <input class="field" name="stock_qty" type="number" step="0.01" required />
+              <input class="field" name="stock_qty" type="number" step="0.01" min="0" required />
             </div>
             <div>
               <label>Reorder Level</label>
-              <input class="field" name="reorder_level" type="number" step="0.01" required />
+              <input class="field" name="reorder_level" type="number" step="0.01" min="0" required />
+            </div>
+            <div class="full">
+              <label>Overstock Level</label>
+              <input class="field" name="overstock_level" type="number" step="0.01" min="0" required />
             </div>
           </div>
 
           <div class="modal-foot">
             <button class="btn" type="button" id="closeModalBtn2">Cancel</button>
             <button class="btn primary" type="submit">Save</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal-backdrop" id="editModalBackdrop">
+    <div class="modal">
+      <div class="modal-head">
+        <strong>Edit Ingredient</strong>
+        <button class="btn" id="closeEditModalBtn" type="button">Close</button>
+      </div>
+
+      <div class="modal-body">
+        <form method="POST" id="editIngredientForm">
+          @csrf
+          @method('PUT')
+
+          <div class="form-grid">
+            <div class="full">
+              <label>Ingredient Name</label>
+              <input class="field" id="edit_name" name="name" type="text" required />
+            </div>
+            <div>
+              <label>Unit</label>
+              <select class="field" id="edit_unit" name="unit" required>
+                <option value="g">g</option>
+                <option value="ml">ml</option>
+                <option value="pcs">pcs</option>
+              </select>
+            </div>
+            <div>
+              <label>Reorder Level</label>
+              <input class="field" id="edit_reorder_level" name="reorder_level" type="number" step="0.01" min="0" required />
+            </div>
+            <div class="full">
+              <label>Overstock Level</label>
+              <input class="field" id="edit_overstock_level" name="overstock_level" type="number" step="0.01" min="0" required />
+            </div>
+          </div>
+
+          <div class="modal-foot">
+            <button class="btn" type="button" id="closeEditModalBtn2">Cancel</button>
+            <button class="btn primary" type="submit">Update</button>
           </div>
         </form>
       </div>
@@ -857,34 +930,58 @@
   const closeBtn = document.getElementById("closeModalBtn");
   const closeBtn2 = document.getElementById("closeModalBtn2");
 
+  const editModal = document.getElementById("editModalBackdrop");
+  const closeEditBtn = document.getElementById("closeEditModalBtn");
+  const closeEditBtn2 = document.getElementById("closeEditModalBtn2");
+  const editForm = document.getElementById("editIngredientForm");
+  const modeSelect = document.getElementById("modeSelect");
+  const statusFilter = document.getElementById("statusFilter");
+
   if (modal && openBtn && closeBtn && closeBtn2) {
     openBtn.addEventListener("click", () => modal.style.display = "flex");
     closeBtn.addEventListener("click", () => modal.style.display = "none");
     closeBtn2.addEventListener("click", () => modal.style.display = "none");
-    modal.addEventListener("click", (e) => { if(e.target === modal) modal.style.display = "none"; });
-  }
-
-  // Front-end filter (current page only)
-  const statusFilter = document.getElementById('statusFilter');
-  const searchInput = document.getElementById('searchInput');
-
-  function applyFilters(){
-    if (!statusFilter) return;
-    const q = (searchInput.value || '').trim().toLowerCase();
-    const f = statusFilter.value;
-    const rows = document.querySelectorAll('#allBody tr, #lowStockBody tr');
-    rows.forEach(row=>{
-      const name = row.getAttribute('data-name') || '';
-      const status = row.getAttribute('data-status') || 'good';
-      const okSearch = name.includes(q);
-      const okFilter = (f==='all') ? true : (status===f);
-      row.style.display = (okSearch && okFilter) ? '' : 'none';
+    modal.addEventListener("click", (e) => {
+      if (e.target === modal) modal.style.display = "none";
     });
   }
 
-  if (statusFilter && searchInput) {
-    searchInput.addEventListener('input', applyFilters);
-    statusFilter.addEventListener('change', applyFilters);
+  if (editModal && closeEditBtn && closeEditBtn2) {
+    closeEditBtn.addEventListener("click", () => editModal.style.display = "none");
+    closeEditBtn2.addEventListener("click", () => editModal.style.display = "none");
+    editModal.addEventListener("click", (e) => {
+      if (e.target === editModal) editModal.style.display = "none";
+    });
+  }
+
+  document.querySelectorAll(".editIngredientBtn").forEach((btn) => {
+    btn.addEventListener("click", function () {
+      const id = this.dataset.id;
+      const name = this.dataset.name;
+      const unit = this.dataset.unit;
+      const reorder = this.dataset.reorder;
+      const overstock = this.dataset.overstock;
+
+      document.getElementById("edit_name").value = name;
+      document.getElementById("edit_unit").value = unit;
+      document.getElementById("edit_reorder_level").value = reorder;
+      document.getElementById("edit_overstock_level").value = overstock;
+
+      editForm.action = `/admin/inventory/ingredients/${id}`;
+      editModal.style.display = "flex";
+    });
+  });
+
+  if (modeSelect) {
+    modeSelect.addEventListener("change", function () {
+      this.form.submit();
+    });
+  }
+
+  if (statusFilter) {
+    statusFilter.addEventListener("change", function () {
+      this.form.submit();
+    });
   }
 </script>
 </body>

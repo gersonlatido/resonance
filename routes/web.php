@@ -14,16 +14,13 @@ use App\Http\Controllers\PaymentSuccessController;
 use App\Http\Controllers\PaymentReceiptController;
 use App\Http\Controllers\PaymentController;
 use App\Http\Controllers\InventoryController;
-
-// ✅ ADD THIS (new controller for Sales & Stock Reports)
 use App\Http\Controllers\SalesStockReportController;
 
 /*
-|---------------------------------------------------------------------------
+|--------------------------------------------------------------------------
 | QR ENTRY
-|---------------------------------------------------------------------------
+|--------------------------------------------------------------------------
 */
-
 
 Route::get('/t/{table}', [TableController::class, 'enter'])
     ->whereNumber('table')
@@ -33,9 +30,9 @@ Route::post('/t/select', [TableController::class, 'select'])
     ->name('table.select');
 
 /*
-|---------------------------------------------------------------------------
+|--------------------------------------------------------------------------
 | CUSTOMER PAGES
-|---------------------------------------------------------------------------
+|--------------------------------------------------------------------------
 */
 Route::get('/', fn() => view('home'));
 
@@ -50,62 +47,62 @@ Route::get('/snacks-menu', [MenuController::class, 'snacks'])->name('menu.snacks
 Route::get('/menu', fn() => response()->json(MenuItem::all()));
 
 Route::view('/order-summary', 'order-summary')->name('order.summary');
-Route::post('/done-eating', [TableController::class, 'doneEating'])
-    ->name('table.done_eating');
+Route::post('/done-eating', [TableController::class, 'doneEating'])->name('table.done_eating');
 
 /*
-|---------------------------------------------------------------------------
+|--------------------------------------------------------------------------
 | PAYMENT FLOW (XENDIT)
-|---------------------------------------------------------------------------
+|--------------------------------------------------------------------------
 */
 Route::get('/payment', [PaymentController::class, 'show'])->name('payment.show');
 Route::post('/payment/initiate', [PaymentController::class, 'initiate']);
 
-/* AFTER XENDIT REDIRECT */
 Route::get('/payment-success', [PaymentSuccessController::class, 'show'])
     ->name('payment.success');
 
-/* RECEIPT PAGE */
 Route::get('/payment-receipt/{order_code?}', [PaymentReceiptController::class, 'show'])
     ->name('payment.receipt');
 
-/* ✅ BACKWARD COMPATIBILITY FOR OLD TYPO URL */
 Route::get('/payment-receit', function () {
     $orderCode = session('order_code');
-    if (!$orderCode) return redirect('/');
+    if (!$orderCode) {
+        return redirect('/');
+    }
+
     return redirect()->route('payment.receipt', ['order_code' => $orderCode]);
 });
 
 Route::get('/payment-cancelled', fn () => view('payment-cancelled'));
 
 /*
-|---------------------------------------------------------------------------
+|--------------------------------------------------------------------------
 | FEEDBACK
-|---------------------------------------------------------------------------
+|--------------------------------------------------------------------------
 */
 Route::get('/feedback', function () {
     $table = session('table_number');
+
     if (!$table) {
         return redirect('/')->with('error', 'No table found for feedback.');
     }
+
     return view('feedback', ['table' => (int) $table]);
 })->name('feedback.form');
 
 Route::post('/feedback', [FeedbackController::class, 'store'])->name('feedback.store');
 
 /*
-|---------------------------------------------------------------------------
+|--------------------------------------------------------------------------
 | TRACK ORDER (SESSION-BASED)
-|---------------------------------------------------------------------------
+|--------------------------------------------------------------------------
 */
 Route::get('/track-order', function () {
-
     $orderCode = session('order_code');
 
     if (!$orderCode) {
         return view('track-order', [
             'order' => null,
-            'status' => 'Order not found'
+            'status' => 'Order not found',
         ]);
     }
 
@@ -114,7 +111,7 @@ Route::get('/track-order', function () {
     if (!$order) {
         return view('track-order', [
             'order' => null,
-            'status' => 'Order not found'
+            'status' => 'Order not found',
         ]);
     }
 
@@ -123,23 +120,21 @@ Route::get('/track-order', function () {
         'status' => $order->status,
         'eta' => $order->eta_minutes,
     ]);
-
 })->name('track.order');
-Route::post('/done-eating', [TableController::class, 'doneEating'])->name('table.done_eating');
 
 /*
-|---------------------------------------------------------------------------
+|--------------------------------------------------------------------------
 | ADMIN AUTH
-|---------------------------------------------------------------------------
+|--------------------------------------------------------------------------
 */
 Route::get('admin/login', [AuthController::class, 'showAdminLoginForm'])->name('admin.login');
 Route::post('admin/login', [AuthController::class, 'adminLogin']);
 Route::post('admin/logout', [AuthController::class, 'logout'])->name('admin.logout');
 
 /*
-|---------------------------------------------------------------------------
+|--------------------------------------------------------------------------
 | ADMIN (PROTECTED)
-|---------------------------------------------------------------------------
+|--------------------------------------------------------------------------
 */
 Route::middleware(['auth', 'admin'])->group(function () {
 
@@ -153,7 +148,7 @@ Route::middleware(['auth', 'admin'])->group(function () {
 
     /*
     |-----------------------------------------------------------------------
-    | DAILY SALES REPORT ✅
+    | DAILY SALES REPORT
     |-----------------------------------------------------------------------
     */
     Route::get('/admin/daily-sales-report', [AdminController::class, 'dailySalesReport'])
@@ -161,12 +156,17 @@ Route::middleware(['auth', 'admin'])->group(function () {
 
     /*
     |-----------------------------------------------------------------------
-    | SALES & STOCK REPORTS ✅ (NEW PAGE)
+    | SALES & STOCK REPORTS
     |-----------------------------------------------------------------------
     */
-      Route::get('/admin/sales-stock-reports', [SalesStockReportController::class, 'index'])
-    ->name('admin.sales-stock-reports');
-     
+    Route::get('/admin/sales-stock-reports', [SalesStockReportController::class, 'index'])
+        ->name('admin.sales-stock-reports');
+
+    Route::get('/admin/sales-stock-reports/print', [SalesStockReportController::class, 'print'])
+        ->name('admin.sales-stock-reports.print');
+
+    Route::get('/admin/sales-stock-reports/export/csv', [SalesStockReportController::class, 'exportCsv'])
+        ->name('admin.sales-stock-reports.export.csv');
 
     /*
     |-----------------------------------------------------------------------
@@ -175,6 +175,11 @@ Route::middleware(['auth', 'admin'])->group(function () {
     */
     Route::get('/admin/inventory', [InventoryController::class, 'index'])->name('admin.inventory');
     Route::post('/admin/inventory/ingredients', [InventoryController::class, 'storeIngredient'])->name('admin.inventory.ingredients.store');
+
+    // ✅ NEW: edit/update ingredient
+    Route::put('/admin/inventory/ingredients/{ingredient}', [InventoryController::class, 'updateIngredient'])
+        ->name('admin.inventory.ingredients.update');
+
     Route::post('/admin/inventory/{ingredient}/stock-in', [InventoryController::class, 'stockIn'])->name('admin.inventory.stockin');
     Route::post('/admin/inventory/{ingredient}/stock-out', [InventoryController::class, 'stockOut'])->name('admin.inventory.stockout');
 
@@ -213,12 +218,11 @@ Route::middleware(['auth', 'admin'])->group(function () {
 });
 
 /*
-|---------------------------------------------------------------------------
+|--------------------------------------------------------------------------
 | ORDER STATUS UPDATE (PUBLIC/INTERNAL)
-|---------------------------------------------------------------------------
+|--------------------------------------------------------------------------
 */
 Route::post('/orders/mark-paid', [OrderController::class, 'markPaid']);
-
 
 /*
 |--------------------------------------------------------------------------
@@ -236,17 +240,3 @@ Route::middleware(['auth', 'admin'])
 Route::middleware(['auth', 'admin'])
     ->get('/admin/sales-report/export/xls', [AdminController::class, 'exportSalesReportXls'])
     ->name('admin.sales-report.export.xls');
-
-
-    // SALES & STOCK REPORTS
-// Sales & Stock Reports (page)
-Route::get('/admin/sales-stock-reports', [SalesStockReportController::class, 'index'])
-    ->name('admin.sales-stock-reports');
-
-// ✅ PRINT/PDF VIEW (combined / sales / stock)
-Route::get('/admin/sales-stock-reports/print', [SalesStockReportController::class, 'print'])
-    ->name('admin.sales-stock-reports.print');
-
-// ✅ CSV EXPORT (combined / sales / stock)
-Route::get('/admin/sales-stock-reports/export/csv', [SalesStockReportController::class, 'exportCsv'])
-    ->name('admin.sales-stock-reports.export.csv');
