@@ -15,7 +15,7 @@ class Recipe extends Model
         'menu_id',
         'ingredient_id',
         'qty_needed',
-        'unit', // optional if you later add this column
+        'unit', 
     ];
 
     /**
