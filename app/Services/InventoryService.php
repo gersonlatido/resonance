@@ -6,6 +6,7 @@ use App\Models\Order;
 use App\Models\Recipe;
 use App\Models\Ingredient;
 use App\Models\StockMovement;
+use App\Models\MenuItem;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 
@@ -15,16 +16,13 @@ class InventoryService
     {
         DB::transaction(function () use ($order) {
 
-            // lock order
             $order = Order::where('id', $order->id)->lockForUpdate()->firstOrFail();
 
-            // already deducted
             if ($order->inventory_deducted_at) {
                 Log::info('[INV] skip already deducted', ['order_code' => $order->order_code]);
                 return;
             }
 
-            // must be paid
             if (($order->payment_status ?? null) !== 'paid') {
                 Log::info('[INV] skip not paid', [
                     'order_code' => $order->order_code,
@@ -35,19 +33,18 @@ class InventoryService
 
             $order->load('items');
 
-            // Ingredient PK name (usually id)
             $ingredientPk = (new Ingredient())->getKeyName();
 
-            $deductMap = []; // [ingredient_id => qty_to_deduct]
+            $deductMap = [];
             $menusMatched = [];
 
             foreach ($order->items as $item) {
+
                 $menuId = (string) ($item->menu_id ?? '');
                 $qtyOrdered = (int) ($item->qty ?? 1);
 
                 if ($menuId === '' || $qtyOrdered < 1) continue;
 
-                // ✅ recipes: menu_id + ingredient_id + qty_needed
                 $recipes = Recipe::where('menu_id', $menuId)->get();
 
                 if ($recipes->isEmpty()) {
@@ -61,21 +58,21 @@ class InventoryService
                 $menusMatched[] = $menuId;
 
                 foreach ($recipes as $r) {
+
                     $ingredientId = $r->ingredient_id ?? null;
                     $perItemQty   = (float) ($r->qty_needed ?? 0);
 
                     if (!$ingredientId || $perItemQty <= 0) continue;
 
                     $need = $perItemQty * $qtyOrdered;
+
                     $deductMap[$ingredientId] = ($deductMap[$ingredientId] ?? 0) + $need;
                 }
             }
 
             if (empty($deductMap)) {
-                Log::error('[INV] deductMap EMPTY (no matched recipes or qty_needed=0)', [
+                Log::error('[INV] deductMap EMPTY', [
                     'order_code' => $order->order_code,
-                    'items_count' => $order->items->count(),
-                    'menus_matched' => $menusMatched,
                 ]);
                 return;
             }
@@ -87,18 +84,10 @@ class InventoryService
                 ->get()
                 ->keyBy($ingredientPk);
 
-            if ($ingredients->isEmpty()) {
-                Log::error('[INV] NO INGREDIENTS MATCHED', [
-                    'order_code' => $order->order_code,
-                    'ingredient_pk' => $ingredientPk,
-                    'ingredient_ids_from_recipes' => $ingredientIds,
-                ]);
-                return;
-            }
-
-            // ✅ validate stock using stock_qty
             foreach ($deductMap as $ingredientId => $need) {
+
                 $ing = $ingredients->get($ingredientId);
+
                 if (!$ing) {
                     throw new \Exception("Ingredient not found: {$ingredientId}");
                 }
@@ -110,8 +99,8 @@ class InventoryService
                 }
             }
 
-            // ✅ apply deduction using stock_qty + log stock_movements.qty
             foreach ($deductMap as $ingredientId => $need) {
+
                 $ing = $ingredients->get($ingredientId);
 
                 $ing->stock_qty = (float) $ing->stock_qty - (float) $need;
@@ -125,13 +114,62 @@ class InventoryService
                 ]);
             }
 
+            // ✅ IMPORTANT: recompute menu availability
+            $this->recomputeMenus(array_unique($menusMatched));
+
             $order->update(['inventory_deducted_at' => now()]);
 
             Log::info('[INV] deduction SUCCESS', [
                 'order_code' => $order->order_code,
-                'deduct_count' => count($deductMap),
-                'menus_matched' => array_values(array_unique($menusMatched)),
+                'menus_recomputed' => array_values(array_unique($menusMatched)),
             ]);
         });
+    }
+
+
+    /**
+     * Recalculate menu availability after ingredient changes
+     */
+    private function recomputeMenus(array $menuIds): void
+    {
+        foreach ($menuIds as $menuId) {
+
+            $menu = MenuItem::where('menu_id', $menuId)->first();
+
+            if (!$menu) continue;
+
+            $recipes = Recipe::with('ingredient')
+                ->where('menu_id', $menuId)
+                ->get();
+
+            $available = true;
+
+            foreach ($recipes as $recipe) {
+
+                $ingredient = $recipe->ingredient;
+
+                if (!$ingredient) {
+                    $available = false;
+                    break;
+                }
+
+                $need    = (float) ($recipe->qty_needed ?? 0);
+                $stock   = (float) ($ingredient->stock_qty ?? 0);
+                $reorder = (float) ($ingredient->reorder_level ?? 0);
+
+                $isOutOfStock = $stock <= 0;
+                $isLowStock   = $stock <= $reorder;
+                $notEnough    = $stock < $need;
+
+                if ($isOutOfStock || $isLowStock || $notEnough) {
+                    $available = false;
+                    break;
+                }
+            }
+
+            $menu->update([
+                'is_available' => $available ? 1 : 0
+            ]);
+        }
     }
 }
