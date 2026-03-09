@@ -120,7 +120,8 @@
     }
 
     .content{
-      padding:24px 26px;
+      padding:24px 22px;
+      min-width:0;
     }
 
     .topbar{
@@ -221,6 +222,7 @@
       align-items:center;
       justify-content:space-between;
       min-height:92px;
+      min-width:0;
     }
 
     .stat .label{
@@ -252,8 +254,8 @@
 
     .grid{
       display:grid;
-      grid-template-columns:minmax(0,1.55fr) minmax(330px,.9fr);
-      gap:16px;
+      grid-template-columns:minmax(0,2.1fr) minmax(260px,.72fr);
+      gap:14px;
       align-items:start;
     }
 
@@ -263,6 +265,7 @@
       border-radius:18px;
       box-shadow:var(--shadow-card);
       overflow:hidden;
+      min-width:0;
     }
 
     .panel-head{
@@ -290,7 +293,8 @@
     }
 
     .panel-body{
-      padding:16px;
+      padding:14px;
+      overflow-x:hidden;
     }
 
     table{
@@ -301,11 +305,10 @@
     }
 
     th, td{
-      padding:12px 10px;
+      padding:11px 8px;
       border-bottom:1px solid rgba(0,0,0,.06);
       text-align:left;
-      vertical-align:top;
-      word-wrap:break-word;
+      vertical-align:middle;
     }
 
     th{
@@ -313,10 +316,67 @@
       font-size:12px;
       font-weight:900;
       background:#fff;
+      white-space:normal;
+      line-height:1.3;
+    }
+
+    td{
+      overflow-wrap:break-word;
+      word-break:break-word;
+      line-height:1.35;
     }
 
     tbody tr:hover{
       background:#fffaf0;
+    }
+
+    .ingredient-name,
+    .menu-title,
+    .ingredient-cell strong{
+      display:block;
+      font-weight:800;
+      line-height:1.35;
+      word-break:break-word;
+      overflow-wrap:break-word;
+    }
+
+    .ingredient-col{
+      width:20%;
+    }
+
+    .unit-col{
+      width:8%;
+    }
+
+    .stock-col,
+    .reorder-col,
+    .overstock-col{
+      width:12%;
+    }
+
+    .status-col{
+      width:12%;
+    }
+
+    .actions-col{
+      width:24%;
+    }
+
+    .ingredient-cell{
+      min-width:0;
+    }
+
+    .num-cell{
+      white-space:normal;
+      text-align:left;
+    }
+
+    .unit-cell{
+      white-space:nowrap;
+    }
+
+    .status-cell{
+      white-space:nowrap;
     }
 
     .badge{
@@ -330,8 +390,8 @@
       font-weight:900;
       background:#fff;
       white-space:nowrap;
-      position: relative;
-      right: 20px;
+      position:static;
+      max-width:100%;
     }
 
     .badge.good{
@@ -359,59 +419,62 @@
     }
 
     .col-action{
-      width:240px;
+      width:auto;
+      min-width:0;
     }
 
     .row-actions{
       display:flex;
       flex-direction:column;
       gap:6px;
-      width:155px;
+      width:100%;
+      max-width:145px;
       margin-left:auto;
     }
 
     .inline-stock-form{
-    display:grid;
-    grid-template-columns:1fr 72px;
-    gap:6px;
-    width:100%;
+      display:grid;
+      grid-template-columns:1fr 66px;
+      gap:6px;
+      width:100%;
     }
 
     .mini-input{
-       width:60px;
-  padding:6px 6px;
-  border-radius:10px;
-  border:1px solid rgba(0,0,0,.12);
-  font-size:12px;
-  font-weight:800;
-  text-align:center;
-  outline:none;
-  background:#fff;
+      width:100%;
+      min-width:0;
+      padding:6px 6px;
+      border-radius:10px;
+      border:1px solid rgba(0,0,0,.12);
+      font-size:11px;
+      font-weight:800;
+      text-align:center;
+      outline:none;
+      background:#fff;
     }
 
     .link-btn{
-   width:72px;
-  padding:7px 8px;
-  border-radius:10px;
-  border:1px solid rgba(0,0,0,.10);
-  background:#fff;
-  cursor:pointer;
-  font-size:12px;
-  font-weight:900;
-  white-space:nowrap;
-  color:#111827;
+      width:100%;
+      padding:6px 6px;
+      border-radius:10px;
+      border:1px solid rgba(0,0,0,.10);
+      background:#fff;
+      cursor:pointer;
+      font-size:11px;
+      font-weight:900;
+      white-space:nowrap;
+      color:#111827;
     }
 
     .edit-btn{
-     width:100%;
-     padding:8px 8px;
+      width:100%;
+      padding:7px 8px;
       border-radius:10px;
-     border:1px solid rgba(245,158,11,.30);
-     background:rgba(245,158,11,.12);
+      border:1px solid rgba(245,158,11,.30);
+      background:rgba(245,158,11,.12);
       cursor:pointer;
-      font-size:12px;
-     font-weight:900;
-     text-align:center;
+      font-size:11px;
+      font-weight:900;
+      text-align:center;
       color:#111827;
     }
 
@@ -430,6 +493,8 @@
       font-weight:900;
       font-size:13px;
       color:#111827;
+      line-height:1.35;
+      word-break:break-word;
     }
 
     .movement .meta{
@@ -438,6 +503,7 @@
       font-weight:700;
       margin-top:4px;
       line-height:1.35;
+      word-break:break-word;
     }
 
     .qty{
@@ -458,10 +524,29 @@
       padding:22px 0;
     }
 
-    .menu-title{ font-weight:900; color:#111827; }
-    .menu-sub{ font-size:12px; color:var(--muted); font-weight:800; margin-top:4px; }
-    .ing-list{ margin:8px 0 0; padding-left:18px; }
-    .ing-list li{ margin:7px 0; }
+    .menu-title{
+      font-weight:900;
+      color:#111827;
+    }
+
+    .menu-sub{
+      font-size:12px;
+      color:var(--muted);
+      font-weight:800;
+      margin-top:4px;
+      word-break:break-word;
+    }
+
+    .ing-list{
+      margin:8px 0 0;
+      padding-left:18px;
+    }
+
+    .ing-list li{
+      margin:7px 0;
+      line-height:1.5;
+      word-break:break-word;
+    }
 
     .pager-wrap{
       padding:12px 16px;
@@ -532,6 +617,7 @@
       font-size:12px;
       font-weight:800;
       outline:none;
+      max-width:100%;
     }
 
     .tiny-btn{
@@ -621,8 +707,16 @@
       gap:10px;
     }
 
+    @media (max-width:1280px){
+      .grid{
+        grid-template-columns:minmax(0,1.8fr) minmax(240px,.7fr);
+      }
+    }
+
     @media (max-width:1200px){
       .grid{ grid-template-columns:1fr; }
+      .panel-body{ overflow-x:auto; }
+      table{ min-width:760px; }
     }
 
     @media (max-width:1100px){
@@ -641,24 +735,20 @@
       }
 
       th, td{
-        padding:10px 6px;
-      }
-
-      .col-action{
-        width:180px;
+        padding:10px 8px;
       }
 
       .row-actions{
-      display:flex;
-      flex-direction:column;
-       gap:6px;
-      width:170px;
-      margin-left:auto;
+        max-width:135px;
       }
 
       .link-btn,
       .edit-btn{
         font-size:11px;
+      }
+
+      .panel-body{
+        padding:12px;
       }
     }
 
@@ -843,7 +933,7 @@
                 @endphp
 
                 <tr>
-                  <td>
+                  <td class="ingredient-cell">
                     <div class="menu-title">{{ $item->name }}</div>
                     <div class="menu-sub">ID: {{ $item->menu_id }}</div>
                   </td>
@@ -884,7 +974,7 @@
                     @endif
                   </td>
 
-                  <td>
+                  <td class="status-cell">
                     @if($menuOk)
                       <span class="badge good">AVAILABLE</span>
                     @else
@@ -902,12 +992,12 @@
             <table>
               <thead>
               <tr>
-                <th>Ingredient</th>
-                <th>Stock</th>
-                <th>Reorder</th>
-                <th>Overstock</th>
-                <th>Status</th>
-                <th style="text-align:right;">Restock</th>
+                <th class="ingredient-col">Ingredient</th>
+                <th class="stock-col">Stock</th>
+                <th class="reorder-col">Reorder</th>
+                <th class="overstock-col">Overstock</th>
+                <th class="status-col">Status</th>
+                <th class="actions-col" style="text-align:right;">Restock</th>
               </tr>
               </thead>
               <tbody id="lowStockBody">
@@ -918,18 +1008,18 @@
                   $statusKey = ($i->stock_qty ?? 0) <= 0 ? 'bad' : ((($i->stock_qty ?? 0) <= ($i->reorder_level ?? 0)) ? 'warn' : ($isOverstock ? 'over' : 'good'));
                 @endphp
                 <tr data-name="{{ strtolower($i->name) }}" data-status="{{ $statusKey }}">
-                  <td><strong>{{ $i->name }}</strong></td>
-                  <td>{{ number_format($i->stock_qty,2) }} {{ $i->unit }}</td>
-                  <td>{{ number_format($i->reorder_level,2) }} {{ $i->unit }}</td>
-                  <td>{{ number_format($i->overstock_level ?? 0,2) }} {{ $i->unit }}</td>
-                  <td>
+                  <td class="ingredient-cell"><strong class="ingredient-name">{{ $i->name }}</strong></td>
+                  <td class="num-cell">{{ number_format($i->stock_qty,2) }} {{ $i->unit }}</td>
+                  <td class="num-cell">{{ number_format($i->reorder_level,2) }} {{ $i->unit }}</td>
+                  <td class="num-cell">{{ number_format($i->overstock_level ?? 0,2) }} {{ $i->unit }}</td>
+                  <td class="status-cell">
                     @if($statusKey === 'bad') <span class="badge bad">Out</span> @endif
                     @if($statusKey === 'warn') <span class="badge warn">Low</span> @endif
                     @if($statusKey === 'good') <span class="badge good">Healthy</span> @endif
                     @if($statusKey === 'over') <span class="badge over">Overstock</span> @endif
                   </td>
                   <td style="text-align:right;">
-                    <form method="POST" action="{{ route('admin.inventory.stockin', $i->id) }}" class="inline-stock-form" style="justify-content:flex-end; max-width:180px; margin-left:auto;">
+                    <form method="POST" action="{{ route('admin.inventory.stockin', $i->id) }}" class="inline-stock-form" style="max-width:138px; margin-left:auto;">
                       @csrf
                       <input class="mini-input" name="qty" type="number" step="0.01" placeholder="+qty" required />
                       <button class="link-btn" type="submit">Restock</button>
@@ -1004,13 +1094,13 @@
             <table>
               <thead>
               <tr>
-                <th>Ingredient</th>
-                <th>Unit</th>
-                <th>Stock</th>
-                <th>Reorder</th>
-                <th>Overstock</th>
-                <th>Status</th>
-                <th class="col-action" style="text-align:center;">Actions</th>
+                <th class="ingredient-col">Ingredient</th>
+                <th class="unit-col">Unit</th>
+                <th class="stock-col">Stock</th>
+                <th class="reorder-col">Reorder</th>
+                <th class="overstock-col">Overstock</th>
+                <th class="status-col">Status</th>
+                <th class="actions-col" style="text-align:center;">Actions</th>
               </tr>
               </thead>
               <tbody id="allBody">
@@ -1021,12 +1111,12 @@
                   $statusKey = ($i->stock_qty ?? 0) <= 0 ? 'bad' : ((($i->stock_qty ?? 0) <= ($i->reorder_level ?? 0)) ? 'warn' : ($isOverstock ? 'over' : 'good'));
                 @endphp
                 <tr data-name="{{ strtolower($i->name) }}" data-status="{{ $statusKey }}">
-                  <td><strong>{{ $i->name }}</strong></td>
-                  <td>{{ $i->unit }}</td>
-                  <td>{{ number_format($i->stock_qty,2) }}</td>
-                  <td>{{ number_format($i->reorder_level,2) }}</td>
-                  <td>{{ number_format($i->overstock_level ?? 0,2) }}</td>
-                  <td>
+                  <td class="ingredient-cell"><strong class="ingredient-name">{{ $i->name }}</strong></td>
+                  <td class="unit-cell">{{ $i->unit }}</td>
+                  <td class="num-cell">{{ number_format($i->stock_qty,2) }}</td>
+                  <td class="num-cell">{{ number_format($i->reorder_level,2) }}</td>
+                  <td class="num-cell">{{ number_format($i->overstock_level ?? 0,2) }}</td>
+                  <td class="status-cell">
                     @if($statusKey === 'bad') <span class="badge bad">Out</span> @endif
                     @if($statusKey === 'warn') <span class="badge warn">Low</span> @endif
                     @if($statusKey === 'good') <span class="badge good">Healthy</span> @endif
