@@ -15,13 +15,13 @@ use App\Http\Controllers\PaymentReceiptController;
 use App\Http\Controllers\PaymentController;
 use App\Http\Controllers\InventoryController;
 use App\Http\Controllers\SalesStockReportController;
+use App\Http\Controllers\UserManagementController;
 
 /*
 |--------------------------------------------------------------------------
 | QR ENTRY
 |--------------------------------------------------------------------------
 */
-
 Route::get('/t/{table}', [TableController::class, 'enter'])
     ->whereNumber('table')
     ->name('table.enter');
@@ -65,6 +65,7 @@ Route::get('/payment-receipt/{order_code?}', [PaymentReceiptController::class, '
 
 Route::get('/payment-receit', function () {
     $orderCode = session('order_code');
+
     if (!$orderCode) {
         return redirect('/');
     }
@@ -133,14 +134,14 @@ Route::post('admin/logout', [AuthController::class, 'logout'])->name('admin.logo
 
 /*
 |--------------------------------------------------------------------------
-| ADMIN (PROTECTED)
+| SHARED STAFF ROUTES (ADMIN + CASHIER)
 |--------------------------------------------------------------------------
 */
-Route::middleware(['auth', 'admin'])->group(function () {
+Route::middleware(['auth', 'role:admin,cashier'])->group(function () {
 
     /*
     |-----------------------------------------------------------------------
-    | ADMIN DASHBOARD
+    | DASHBOARD / ORDER MANAGEMENT
     |-----------------------------------------------------------------------
     */
     Route::get('admin/dashboard', [AdminController::class, 'index'])->name('admin.dashboard');
@@ -153,6 +154,47 @@ Route::middleware(['auth', 'admin'])->group(function () {
     */
     Route::get('/admin/daily-sales-report', [AdminController::class, 'dailySalesReport'])
         ->name('admin.daily-sales-report');
+
+    /*
+    |-----------------------------------------------------------------------
+    | SALES REPORT EXPORT
+    |-----------------------------------------------------------------------
+    */
+    Route::get('/admin/sales-report/export/csv', [AdminController::class, 'exportSalesReportCsv'])
+        ->name('admin.sales-report.export.csv');
+
+    Route::get('/admin/sales-report/print', [AdminController::class, 'printSalesReport'])
+        ->name('admin.sales-report.print');
+
+    Route::get('/admin/sales-report/export/xls', [AdminController::class, 'exportSalesReportXls'])
+        ->name('admin.sales-report.export.xls');
+
+    /*
+    |-----------------------------------------------------------------------
+    | TABLE MANAGEMENT
+    |-----------------------------------------------------------------------
+    */
+    Route::get('/admin/table-management', [AdminController::class, 'tableManagement'])
+        ->name('admin.table-management');
+
+    Route::post('/admin/tables/{number}/toggle', [AdminController::class, 'toggleTable'])
+        ->name('admin.tables.toggle');
+
+    /*
+    |-----------------------------------------------------------------------
+    | ORDER API
+    |-----------------------------------------------------------------------
+    */
+    Route::get('/admin/api/orders', [AdminOrderApiController::class, 'index']);
+    Route::put('/admin/api/orders/{order_code}', [OrderController::class, 'updateStatus']);
+});
+
+/*
+|--------------------------------------------------------------------------
+| ADMIN-ONLY ROUTES
+|--------------------------------------------------------------------------
+*/
+Route::middleware(['auth', 'role:admin'])->group(function () {
 
     /*
     |-----------------------------------------------------------------------
@@ -174,49 +216,51 @@ Route::middleware(['auth', 'admin'])->group(function () {
     |-----------------------------------------------------------------------
     */
     Route::get('/admin/inventory', [InventoryController::class, 'index'])->name('admin.inventory');
-    Route::post('/admin/inventory/ingredients', [InventoryController::class, 'storeIngredient'])->name('admin.inventory.ingredients.store');
+
+    Route::post('/admin/inventory/ingredients', [InventoryController::class, 'storeIngredient'])
+        ->name('admin.inventory.ingredients.store');
 
     Route::put('/admin/inventory/ingredients/{ingredient}', [InventoryController::class, 'updateIngredient'])
         ->name('admin.inventory.ingredients.update');
 
-    Route::post('/admin/inventory/{ingredient}/stock-in', [InventoryController::class, 'stockIn'])->name('admin.inventory.stockin');
-    Route::post('/admin/inventory/{ingredient}/stock-out', [InventoryController::class, 'stockOut'])->name('admin.inventory.stockout');
+    Route::post('/admin/inventory/{ingredient}/stock-in', [InventoryController::class, 'stockIn'])
+        ->name('admin.inventory.stockin');
+
+    Route::post('/admin/inventory/{ingredient}/stock-out', [InventoryController::class, 'stockOut'])
+        ->name('admin.inventory.stockout');
 
     Route::get('/admin/inventory/recompute-all', [InventoryController::class, 'recomputeAll'])
         ->name('admin.inventory.recompute-all');
 
     /*
     |-----------------------------------------------------------------------
-    | TABLE MANAGEMENT
+    | MENU MANAGEMENT
     |-----------------------------------------------------------------------
     */
-    Route::get('/admin/table-management', [AdminController::class, 'tableManagement'])->name('admin.table-management');
-    Route::post('/admin/tables/{number}/toggle', [AdminController::class, 'toggleTable'])->name('admin.tables.toggle');
+    Route::get('/admin/menu-management', fn () => view('admin.menu-management'))
+        ->name('admin.menu-management');
 
     /*
     |-----------------------------------------------------------------------
-    | ADMIN MENU MANAGEMENT (VIEW)
+    | USER MANAGEMENT
     |-----------------------------------------------------------------------
     */
-    Route::get('/admin/menu-management', fn() => view('admin.menu-management'))->name('admin.menu-management');
+    Route::get('/admin/users', [UserManagementController::class, 'index'])->name('admin.users.index');
+    Route::get('/admin/users/create', [UserManagementController::class, 'create'])->name('admin.users.create');
+    Route::post('/admin/users', [UserManagementController::class, 'store'])->name('admin.users.store');
+    Route::get('/admin/users/{employee_id}/edit', [UserManagementController::class, 'edit'])->name('admin.users.edit');
+    Route::put('/admin/users/{employee_id}', [UserManagementController::class, 'update'])->name('admin.users.update');
+    Route::delete('/admin/users/{employee_id}', [UserManagementController::class, 'destroy'])->name('admin.users.destroy');
 
     /*
     |-----------------------------------------------------------------------
-    | ADMIN FEEDBACK ROUTES
+    | FEEDBACK MANAGEMENT
     |-----------------------------------------------------------------------
     */
     Route::prefix('admin')->name('admin.')->group(function () {
         Route::get('/feedbacks', [AdminFeedbackController::class, 'index'])->name('feedbacks');
         Route::patch('/feedbacks/{id}/review', [AdminFeedbackController::class, 'markReviewed'])->name('feedback.review');
     });
-
-    /*
-    |-----------------------------------------------------------------------
-    | ADMIN API
-    |-----------------------------------------------------------------------
-    */
-    Route::get('/admin/api/orders', [AdminOrderApiController::class, 'index']);
-    Route::put('/admin/api/orders/{order_code}', [OrderController::class, 'updateStatus']);
 });
 
 /*
@@ -225,24 +269,6 @@ Route::middleware(['auth', 'admin'])->group(function () {
 |--------------------------------------------------------------------------
 */
 Route::post('/orders/mark-paid', [OrderController::class, 'markPaid']);
-
-/*
-|--------------------------------------------------------------------------
-| SALES REPORT EXPORT (NO PACKAGES)
-|--------------------------------------------------------------------------
-*/
-Route::middleware(['auth', 'admin'])
-    ->get('/admin/sales-report/export/csv', [AdminController::class, 'exportSalesReportCsv'])
-    ->name('admin.sales-report.export.csv');
-
-Route::middleware(['auth', 'admin'])
-    ->get('/admin/sales-report/print', [AdminController::class, 'printSalesReport'])
-    ->name('admin.sales-report.print');
-
-Route::middleware(['auth', 'admin'])
-    ->get('/admin/sales-report/export/xls', [AdminController::class, 'exportSalesReportXls'])
-    ->name('admin.sales-report.export.xls');
-
 
 //     Route::get('/recompute-menus', function () {
 

@@ -426,6 +426,10 @@
     $tableIsAvailable = function(int $n) use ($tables) {
         return isset($tables[$n]) ? (bool) $tables[$n]->is_available : true;
     };
+
+    $userPosition = strtolower(auth()->user()->position ?? '');
+    $isAdmin = $userPosition === 'admin';
+    $isCashier = $userPosition === 'cashier';
   @endphp
 
   <div class="shell">
@@ -437,46 +441,55 @@
         </div>
       </div>
 
-      <div class="side-section-title">Cashier Transaction</div>
-      <nav class="nav">
-        <a href="{{ route('admin.dashboard') }}"
-           class="{{ request()->routeIs('admin.dashboard') ? 'active' : '' }}">
-          Order Management
-        </a>
+      @if($isAdmin || $isCashier)
+        <div class="side-section-title">Cashier Transaction</div>
+        <nav class="nav">
+          <a href="{{ route('admin.dashboard') }}"
+             class="{{ request()->routeIs('admin.dashboard') ? 'active' : '' }}">
+            Order Management
+          </a>
 
-        <a href="{{ route('admin.table-management') }}"
-           class="{{ request()->routeIs('admin.table-management') ? 'active' : '' }}">
-          Table Management
-        </a>
+          <a href="{{ route('admin.table-management') }}"
+             class="{{ request()->routeIs('admin.table-management') ? 'active' : '' }}">
+            Table Management
+          </a>
 
-        <a href="{{ route('admin.daily-sales-report') }}"
-           class="{{ request()->routeIs('admin.daily-sales-report') ? 'active' : '' }}">
-         Sales Report
-        </a>
-      </nav>
+          <a href="{{ route('admin.daily-sales-report') }}"
+             class="{{ request()->routeIs('admin.daily-sales-report') ? 'active' : '' }}">
+            Sales Report
+          </a>
+        </nav>
+      @endif
 
-      <div class="side-section-title" style="margin-top:18px;">Admin Management</div>
-      <nav class="nav">
-        <a href="{{ route('admin.menu-management') }}"
-           class="{{ request()->routeIs('admin.menu-management') ? 'active' : '' }}">
-          Menu Management
-        </a>
+      @if($isAdmin)
+        <div class="side-section-title" style="margin-top:18px;">Admin Management</div>
+        <nav class="nav">
+          <a href="{{ route('admin.menu-management') }}"
+             class="{{ request()->routeIs('admin.menu-management') ? 'active' : '' }}">
+            Menu Management
+          </a>
 
-        <a href="{{ route('admin.feedbacks') }}"
-           class="{{ request()->routeIs('admin.feedbacks') ? 'active' : '' }}">
-          Feedback Management
-        </a>
+          <a href="{{ route('admin.feedbacks') }}"
+             class="{{ request()->routeIs('admin.feedbacks') ? 'active' : '' }}">
+            Feedback Management
+          </a>
 
-        <a href="{{ route('admin.inventory') }}"
-           class="{{ request()->routeIs('admin.inventory') ? 'active' : '' }}">
-          Inventory Management
-        </a>
+          <a href="{{ route('admin.inventory') }}"
+             class="{{ request()->routeIs('admin.inventory') ? 'active' : '' }}">
+            Inventory Management
+          </a>
 
-        <a href="{{ route('admin.sales-stock-reports') }}"
-           class="{{ request()->routeIs('admin.sales-stock-reports') ? 'active' : '' }}">
-         Stock Reports
-        </a>
-      </nav>
+          <a href="{{ route('admin.sales-stock-reports') }}"
+             class="{{ request()->routeIs('admin.sales-stock-reports') ? 'active' : '' }}">
+            Stock Reports
+          </a>
+
+          <a href="{{ route('admin.users.index') }}"
+             class="{{ request()->routeIs('admin.users.*') ? 'active' : '' }}">
+            User Management
+          </a>
+        </nav>
+      @endif
     </aside>
 
     <!-- ===== Main content ===== -->
@@ -615,6 +628,7 @@
 
 <script>
 const csrf = '{{ csrf_token() }}';
+const isAdmin = @json($isAdmin);
 
 const confirmOverlay = document.getElementById('confirmOverlay');
 const confirmText = document.getElementById('confirmText');
@@ -626,6 +640,8 @@ let autoRefreshTimer = null;
 
 /* ===== OPEN CONFIRM MODAL ===== */
 function openConfirmModal(card) {
+  if (!isAdmin) return;
+
   selectedCard = card;
 
   const tableNo = card.dataset.table;
@@ -644,6 +660,8 @@ function closeConfirmModal() {
 
 /* ===== TOGGLE TABLE ===== */
 async function toggleTable(card) {
+  if (!isAdmin) return;
+
   const tableNo = card.dataset.table;
 
   try {
@@ -674,6 +692,10 @@ document.querySelectorAll('.tcard').forEach(card => {
   card.addEventListener('click', () => {
     openConfirmModal(card);
   });
+
+  if (!isAdmin) {
+    card.style.cursor = 'default';
+  }
 });
 
 /* ===== CONFIRM BUTTON ===== */
@@ -702,10 +724,7 @@ document.addEventListener('keydown', (e) => {
   }
 });
 
-/* ===== AUTO REFRESH =====
-   This makes the page refresh every 3 seconds so table status updates
-   when customer payment already changes the table in the database.
-*/
+/* ===== AUTO REFRESH ===== */
 function startAutoRefresh() {
   if (autoRefreshTimer) clearInterval(autoRefreshTimer);
 

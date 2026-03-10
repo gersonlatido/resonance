@@ -6,15 +6,18 @@ use Closure;
 use Illuminate\Http\Request;
 use Symfony\Component\HttpFoundation\Response;
 
-class AdminMiddleware
+class RoleMiddleware
 {
-    public function handle(Request $request, Closure $next): Response
+    public function handle(Request $request, Closure $next, ...$roles): Response
     {
         if (!auth()->check()) {
             return redirect()->route('admin.login');
         }
 
-        if (strtolower(auth()->user()->position) !== 'admin') {
+        $userRole = strtolower((string) (auth()->user()->position ?? ''));
+        $allowedRoles = array_map(fn ($role) => strtolower(trim($role)), $roles);
+
+        if (!in_array($userRole, $allowedRoles, true)) {
             return redirect('/')->with('error', 'Unauthorized access.');
         }
 

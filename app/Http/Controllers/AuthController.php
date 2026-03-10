@@ -1,4 +1,5 @@
 <?php
+
 namespace App\Http\Controllers;
 
 use App\Models\User;
@@ -8,43 +9,50 @@ use Illuminate\Support\Facades\Hash;
 
 class AuthController extends Controller
 {
-    // Show the admin login form
+    // Show login form
     public function showAdminLoginForm()
     {
-        return view('admin.login');  // Admin login view
+        return view('admin.login');
     }
 
-    // Handle admin login
+    // Handle login for admin and cashier
     public function adminLogin(Request $request)
     {
-        // Validate the login form
         $request->validate([
             'username' => 'required|string',
             'password' => 'required|string',
         ]);
 
-        // Find the user by username
         $user = User::where('username', $request->username)->first();
 
-        // Check if user exists and password is correct, and if the user is an admin
-        if ($user && Hash::check($request->password, $user->password) && $user->position === 'Admin') {
-            Auth::login($user); // Log the user in
-            return redirect()->route('admin.dashboard'); // Redirect to admin dashboard
+        if (!$user || !Hash::check($request->password, $user->password)) {
+            return back()->withErrors([
+                'username' => 'Invalid username or password.',
+            ])->withInput($request->only('username'));
         }
 
-        // If login fails, return back with errors
-        return back()->withErrors(['username' => 'Invalid username or password.']);
+        $position = strtolower((string) ($user->position ?? ''));
+
+        if (!in_array($position, ['admin', 'cashier'], true)) {
+            return back()->withErrors([
+                'username' => 'Your account is not allowed to access the staff panel.',
+            ])->withInput($request->only('username'));
+        }
+
+        Auth::login($user);
+        $request->session()->regenerate();
+
+        return redirect()->route('admin.dashboard');
     }
 
-    // Admin logout
+    // Logout
     public function logout(Request $request)
-{
-    Auth::guard('admin')->logout();  // Log out the admin
-    $request->session()->invalidate();  // Invalidate the session
-    $request->session()->regenerateToken();  // Regenerate CSRF token
+    {
+        Auth::logout();
 
-    // Redirect to the admin login page after logout
-    return redirect()->route('admin.login');
-}
+        $request->session()->invalidate();
+        $request->session()->regenerateToken();
 
+        return redirect()->route('admin.login');
+    }
 }

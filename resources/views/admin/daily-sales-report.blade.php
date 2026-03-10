@@ -307,6 +307,12 @@
 </head>
 
 <body>
+  @php
+    $userPosition = strtolower(auth()->user()->position ?? '');
+    $isAdmin = $userPosition === 'admin';
+    $isCashier = $userPosition === 'cashier';
+  @endphp
+
   <div class="shell">
 
     <aside class="sidebar">
@@ -316,46 +322,55 @@
         </div>
       </div>
 
-      <div class="side-section-title">Cashier Transaction</div>
-      <nav class="nav">
-        <a href="{{ route('admin.dashboard') }}"
-           class="{{ request()->routeIs('admin.dashboard') ? 'active' : '' }}">
-          Order Management
-        </a>
+      @if($isAdmin || $isCashier)
+        <div class="side-section-title">Cashier Transaction</div>
+        <nav class="nav">
+          <a href="{{ route('admin.dashboard') }}"
+             class="{{ request()->routeIs('admin.dashboard') ? 'active' : '' }}">
+            Order Management
+          </a>
 
-        <a href="{{ route('admin.table-management') }}"
-           class="{{ request()->routeIs('admin.table-management') ? 'active' : '' }}">
-          Table Management
-        </a>
+          <a href="{{ route('admin.table-management') }}"
+             class="{{ request()->routeIs('admin.table-management') ? 'active' : '' }}">
+            Table Management
+          </a>
 
-        <a href="{{ route('admin.daily-sales-report') }}"
-           class="{{ request()->routeIs('admin.daily-sales-report') ? 'active' : '' }}">
-           Sales Report
-        </a>
-      </nav>
+          <a href="{{ route('admin.daily-sales-report') }}"
+             class="{{ request()->routeIs('admin.daily-sales-report') ? 'active' : '' }}">
+            Sales Report
+          </a>
+        </nav>
+      @endif
 
-      <div class="side-section-title" style="margin-top:18px;">Admin Management</div>
-      <nav class="nav">
-        <a href="{{ route('admin.menu-management') }}"
-           class="{{ request()->routeIs('admin.menu-management') ? 'active' : '' }}">
-          Menu Management
-        </a>
+      @if($isAdmin)
+        <div class="side-section-title" style="margin-top:18px;">Admin Management</div>
+        <nav class="nav">
+          <a href="{{ route('admin.menu-management') }}"
+             class="{{ request()->routeIs('admin.menu-management') ? 'active' : '' }}">
+            Menu Management
+          </a>
 
-        <a href="{{ route('admin.feedbacks') }}"
-           class="{{ request()->routeIs('admin.feedbacks') ? 'active' : '' }}">
-          Feedback Management
-        </a>
+          <a href="{{ route('admin.feedbacks') }}"
+             class="{{ request()->routeIs('admin.feedbacks') ? 'active' : '' }}">
+            Feedback Management
+          </a>
 
-        <a href="{{ route('admin.inventory') }}"
-           class="{{ request()->routeIs('admin.inventory') ? 'active' : '' }}">
-          Inventory Management
-        </a>
+          <a href="{{ route('admin.inventory') }}"
+             class="{{ request()->routeIs('admin.inventory') ? 'active' : '' }}">
+            Inventory Management
+          </a>
 
-         <a href="{{ route('admin.sales-stock-reports') }}"
-            class="{{ request()->routeIs('admin.sales-stock-reports') ? 'active' : '' }}">
+          <a href="{{ route('admin.sales-stock-reports') }}"
+             class="{{ request()->routeIs('admin.sales-stock-reports') ? 'active' : '' }}">
             Stock Reports
-         </a>
-      </nav>
+          </a>
+
+          <a href="{{ route('admin.users.index') }}"
+             class="{{ request()->routeIs('admin.users.*') ? 'active' : '' }}">
+            User Management
+          </a>
+        </nav>
+      @endif
     </aside>
 
     <main class="content">
@@ -422,25 +437,25 @@
               Reset
             </a>
 
-            <a class="btn"
-               href="{{ route('admin.sales-report.print', [
-                  'period' => $period,
-                  'date' => $selectedDate,
-                  'from' => $from ?? null,
-                  'to' => $to ?? null
-               ]) }}">
-              Download PDF
-            </a>
+           @if($isAdmin || $isCashier)
+  <a class="btn" href="{{ route('admin.sales-report.print', [
+     'period' => $period,
+     'date' => $selectedDate,
+     'from' => $from ?? null,
+     'to' => $to ?? null
+  ]) }}">
+    Download PDF
+  </a>
 
-            <a class="btn"
-               href="{{ route('admin.sales-report.export.xls', [
-                  'period' => $period,
-                  'date' => $selectedDate,
-                  'from' => $from ?? null,
-                  'to' => $to ?? null
-               ]) }}">
-              Download Excel
-            </a>
+  <a class="btn" href="{{ route('admin.sales-report.export.xls', [
+     'period' => $period,
+     'date' => $selectedDate,
+     'from' => $from ?? null,
+     'to' => $to ?? null
+  ]) }}">
+    Download Excel
+  </a>
+@endif
           </div>
         </form>
       </div>
