@@ -6,6 +6,27 @@
     <meta http-equiv="X-UA-Compatible" content="ie=edge">
     <link rel="stylesheet" href="{{ asset('css/app.css') }}">
     <title>Document</title>
+
+    <style>
+      .back-icon{
+        position: fixed;
+            top: 16px;
+            left: 16px;
+            background: #ffffff;
+            border: 1px solid rgba(0,0,0,0.08);
+            color: #f7b413;
+            font-size: 15px;
+            font-weight: 700;
+            cursor: pointer;
+            z-index: 1000;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 10px 14px;
+            border-radius: 999px;
+            box-shadow: 0 6px 18px rgba(0,0,0,0.08);
+      }
+    </style>
 </head>
 <body class="feedback-body">
 

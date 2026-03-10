@@ -40,14 +40,25 @@
 
         /* Back button style */
         .back-btn {
-            font-size: 1.2rem;
-            background-color: transparent;
-            border: none;
+          
+            position: fixed;
+            top: 16px;
+            left: 16px;
+            background: #ffffff;
+            border: 1px solid rgba(0,0,0,0.08);
+            color: #f7b413;
+            font-size: 15px;
+            font-weight: 700;
             cursor: pointer;
-            color: #F7B413;
-            margin-bottom: 20px;
-            display: inline-block;
+            z-index: 1000;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 10px 14px;
+            border-radius: 999px;
+            box-shadow: 0 6px 18px rgba(0,0,0,0.08);
         }
+        
 
         .summary-items {
             margin-bottom: 20px;
