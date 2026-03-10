@@ -386,7 +386,7 @@
       padding:5px 10px;
       border-radius:999px;
       border:1px solid rgba(0,0,0,.08);
-      font-size:12px;
+      font-size:10px;
       font-weight:900;
       background:#fff;
       white-space:nowrap;
@@ -914,23 +914,40 @@
               <tbody>
               @forelse($menuItems as $item)
                 @php
-                  $recipes = $item->recipes ?? collect();
-                  $menuOk = true;
+  $recipes = $item->recipes ?? collect();
+  $menuOk = true;
+  $menuLowStock = false;
+  $menuCanMake = null;
+  $canMakeList = [];
 
-                  foreach ($recipes as $r) {
-                    $ing = $r->ingredient ?? null;
-                    if (!$ing) { $menuOk = false; break; }
+  foreach ($recipes as $r) {
+    $ing = $r->ingredient ?? null;
 
-                    $need = (float) ($r->qty_needed ?? 0);
-                    $stock = (float) ($ing->stock_qty ?? 0);
-                    $reorder = (float) ($ing->reorder_level ?? 0);
+    if (!$ing) {
+      $menuOk = false;
+      $canMakeList[] = 0;
+      continue;
+    }
 
-                    if ($stock <= 0 || $stock <= $reorder || ($need > 0 && $stock < $need)) {
-                      $menuOk = false;
-                      break;
-                    }
-                  }
-                @endphp
+    $need = (float) ($r->qty_needed ?? 0);
+    $stock = (float) ($ing->stock_qty ?? 0);
+    $reorder = (float) ($ing->reorder_level ?? 0);
+
+    if ($need > 0) {
+      $canMakeList[] = (int) floor($stock / $need);
+    }
+
+    if ($stock <= 0 || ($need > 0 && $stock < $need)) {
+      $menuOk = false;
+    }
+
+    if ($stock > 0 && $stock <= $reorder) {
+      $menuLowStock = true;
+    }
+  }
+
+  $menuCanMake = count($canMakeList) ? min($canMakeList) : 0;
+@endphp
 
                 <tr>
                   <td class="ingredient-cell">
@@ -943,14 +960,18 @@
                       <ul class="ing-list">
                         @foreach($recipes as $r)
                           @php
-                            $ing = $r->ingredient ?? null;
-                            $ingName = $ing->name ?? 'Unknown';
-                            $need = (float) ($r->qty_needed ?? 0);
-                            $unit = $r->unit ?? ($ing->unit ?? '');
-                            $stock = (float) ($ing->stock_qty ?? 0);
-                            $reorder = (float) ($ing->reorder_level ?? 0);
-                            $insufficient = ($stock <= 0) || ($stock <= $reorder) || ($need > 0 && $stock < $need);
-                            $canMake = $need > 0 ? (int) floor($stock / $need) : 0;
+                       
+  $ing = $r->ingredient ?? null;
+  $ingName = $ing->name ?? 'Unknown';
+  $need = (float) ($r->qty_needed ?? 0);
+  $unit = $r->unit ?? ($ing->unit ?? '');
+  $stock = (float) ($ing->stock_qty ?? 0);
+  $reorder = (float) ($ing->reorder_level ?? 0);
+  $canMake = $need > 0 ? (int) floor($stock / $need) : 0;
+
+  $hardInsufficient = ($stock <= 0) || ($need > 0 && $stock < $need);
+  $lowWarning = ($stock > 0 && $stock <= $reorder);
+@endphp
                           @endphp
 
                           <li>
@@ -961,11 +982,13 @@
                               | reorder: {{ number_format($reorder,2) }}
                               | can make: {{ $canMake }}
                             </span>
-                            @if($insufficient)
-                              <span class="badge bad" style="margin-left:8px;">INSUFFICIENT</span>
-                            @else
-                              <span class="badge good" style="margin-left:8px;">OK</span>
-                            @endif
+                           @if($hardInsufficient)
+  <span class="badge bad" style="margin-left:8px;">INSUFFICIENT</span>
+@elseif($lowWarning)
+  <span class="badge warn" style="margin-left:8px;">LOW STOCK</span>
+@else
+  <span class="badge good" style="margin-left:8px;">OK</span>
+@endif
                           </li>
                         @endforeach
                       </ul>
@@ -974,13 +997,21 @@
                     @endif
                   </td>
 
-                  <td class="status-cell">
-                    @if($menuOk)
-                      <span class="badge good">AVAILABLE</span>
-                    @else
-                      <span class="badge bad">UNAVAILABLE</span>
-                    @endif
-                  </td>
+                 <td class="status-cell">
+  @if($menuOk)
+    @if($menuLowStock)
+      <span class="badge warn">AVAILABLE • </br> LOW STOCK</span>
+    @else
+      <span class="badge good">AVAILABLE</span>
+    @endif
+
+    <div style="margin-top:6px; font-size:12px; font-weight:800; color:var(--muted);">
+      Can make: {{ $menuCanMake }}
+    </div>
+  @else
+    <span class="badge bad">UNAVAILABLE</span>
+  @endif
+</td>
                 </tr>
               @empty
                 <tr><td colspan="3" class="empty">No menu items found.</td></tr>

@@ -7,12 +7,11 @@ use Illuminate\Http\Request;
 
 class MenuController extends Controller
 {
-    // ===== Customer menu pages =====
-
     public function breakfast()
     {
         $items = MenuItem::where('category', 'All Day Breakfast')
             ->where('is_available', 1)
+            ->orderBy('name')
             ->get();
 
         return view('all-day-breakfast-menu', compact('items'));
@@ -22,6 +21,7 @@ class MenuController extends Controller
     {
         $items = MenuItem::where('category', 'main-courses')
             ->where('is_available', 1)
+            ->orderBy('name')
             ->get();
 
         return view('main-courses-menu', compact('items'));
@@ -31,6 +31,7 @@ class MenuController extends Controller
     {
         $items = MenuItem::where('category', 'pasta')
             ->where('is_available', 1)
+            ->orderBy('name')
             ->get();
 
         return view('pasta-menu', compact('items'));
@@ -40,6 +41,7 @@ class MenuController extends Controller
     {
         $items = MenuItem::where('category', 'chicken-wings')
             ->where('is_available', 1)
+            ->orderBy('name')
             ->get();
 
         return view('chicken-menu', compact('items'));
@@ -50,9 +52,10 @@ class MenuController extends Controller
         $items = MenuItem::whereIn('category', [
                 'frappuccino',
                 'coffee-based',
-                'milk-based'
+                'milk-based',
             ])
             ->where('is_available', 1)
+            ->orderBy('name')
             ->get();
 
         return view('drinks-menu', compact('items'));
@@ -62,6 +65,7 @@ class MenuController extends Controller
     {
         $items = MenuItem::where('category', 'overload-premium')
             ->where('is_available', 1)
+            ->orderBy('name')
             ->get();
 
         return view('pizza-menu', compact('items'));
@@ -71,16 +75,18 @@ class MenuController extends Controller
     {
         $items = MenuItem::where('category', 'snacks')
             ->where('is_available', 1)
+            ->orderBy('name')
             ->get();
 
         return view('snacks-menu', compact('items'));
     }
 
-    // ===== API =====
-  public function index()
-{
-    return response()->json(MenuItem::orderBy('created_at', 'desc')->get());
-}
+    public function index()
+    {
+        return response()->json(
+            MenuItem::orderBy('created_at', 'desc')->get()
+        );
+    }
 
     public function store(Request $request)
     {
@@ -92,6 +98,8 @@ class MenuController extends Controller
             'price' => 'required|numeric',
             'category' => 'required|string',
         ]);
+
+        $data['is_available'] = $data['is_available'] ?? 1;
 
         $item = MenuItem::create($data);
 
@@ -108,6 +116,7 @@ class MenuController extends Controller
             'description' => 'sometimes|nullable|string',
             'price' => 'sometimes|required|numeric',
             'category' => 'sometimes|required|string',
+            'is_available' => 'sometimes|boolean',
         ]);
 
         $item->update($data);

@@ -191,7 +191,7 @@ class InventoryController extends Controller
         return back()->with('success', 'Stock deducted ✅');
     }
 
-    public function recomputeAllMenusAvailability(): void
+    public function recomputeAll()
     {
         $menuIds = Recipe::query()
             ->pluck('menu_id')
@@ -201,6 +201,8 @@ class InventoryController extends Controller
         foreach ($menuIds as $menuId) {
             $this->recomputeOneMenuAvailability((string) $menuId);
         }
+
+        return back()->with('success', 'All menu availability recomputed ✅');
     }
 
     private function recomputeMenusForIngredient(int $ingredientId): void
@@ -215,49 +217,58 @@ class InventoryController extends Controller
         }
     }
 
-    private function recomputeOneMenuAvailability(string $menuId): void
-    {
-        $menu = MenuItem::where('menu_id', $menuId)->first();
+private function recomputeOneMenuAvailability(string $menuId): void
+{
+    $menu = MenuItem::where('menu_id', $menuId)->first();
 
-        if (!$menu) {
-            return;
-        }
-
-        $recipes = Recipe::with('ingredient')
-            ->where('menu_id', $menuId)
-            ->get();
-
-        if ($recipes->isEmpty()) {
-            $menu->update(['is_available' => 0]);
-            return;
-        }
-
-        $available = true;
-
-        foreach ($recipes as $recipe) {
-            $ingredient = $recipe->ingredient;
-
-            if (!$ingredient) {
-                $available = false;
-                break;
-            }
-
-            $need = (float) ($recipe->qty_needed ?? 0);
-            $stock = (float) ($ingredient->stock_qty ?? 0);
-            $reorder = (float) ($ingredient->reorder_level ?? 0);
-
-            $isOutOfStock = $stock <= 0;
-            $isLowStock = $stock <= $reorder;
-            $notEnoughForRecipe = $need > 0 && $stock < $need;
-
-            if ($isOutOfStock || $isLowStock || $notEnoughForRecipe) {
-                $available = false;
-                break;
-            }
-        }
-
-        $menu->update([
-            'is_available' => $available ? 1 : 0,
-        ]);
+    if (!$menu) {
+        return;
     }
+
+    $recipes = Recipe::with('ingredient')
+        ->where('menu_id', $menuId)
+        ->get();
+
+    if ($recipes->isEmpty()) {
+        $menu->update([
+            'is_available' => 0,
+            'available_servings' => 0,
+        ]);
+        return;
+    }
+
+    $servingsPossible = [];
+    $available = true;
+
+    foreach ($recipes as $recipe) {
+        $ingredient = $recipe->ingredient;
+
+        if (!$ingredient) {
+            $available = false;
+            $servingsPossible[] = 0;
+            continue;
+        }
+
+        $need = (float) ($recipe->qty_needed ?? 0);
+        $stock = (float) ($ingredient->stock_qty ?? 0);
+
+        if ($need > 0) {
+            $servingsPossible[] = floor($stock / $need);
+        }
+
+        // Available as long as one full serving can still be made
+        if ($stock <= 0 || ($need > 0 && $stock < $need)) {
+            $available = false;
+        }
+    }
+
+    $availableServings = count($servingsPossible) > 0 ? min($servingsPossible) : 0;
+
+    $menu->update([
+        'available_servings' => $available ? $availableServings : 0,
+        'is_available' => $available ? 1 : 0,
+    ]);
+}
+
+
 }

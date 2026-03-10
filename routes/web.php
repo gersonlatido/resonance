@@ -176,12 +176,14 @@ Route::middleware(['auth', 'admin'])->group(function () {
     Route::get('/admin/inventory', [InventoryController::class, 'index'])->name('admin.inventory');
     Route::post('/admin/inventory/ingredients', [InventoryController::class, 'storeIngredient'])->name('admin.inventory.ingredients.store');
 
-    // ✅ NEW: edit/update ingredient
     Route::put('/admin/inventory/ingredients/{ingredient}', [InventoryController::class, 'updateIngredient'])
         ->name('admin.inventory.ingredients.update');
 
     Route::post('/admin/inventory/{ingredient}/stock-in', [InventoryController::class, 'stockIn'])->name('admin.inventory.stockin');
     Route::post('/admin/inventory/{ingredient}/stock-out', [InventoryController::class, 'stockOut'])->name('admin.inventory.stockout');
+
+    Route::get('/admin/inventory/recompute-all', [InventoryController::class, 'recomputeAll'])
+        ->name('admin.inventory.recompute-all');
 
     /*
     |-----------------------------------------------------------------------
@@ -240,3 +242,41 @@ Route::middleware(['auth', 'admin'])
 Route::middleware(['auth', 'admin'])
     ->get('/admin/sales-report/export/xls', [AdminController::class, 'exportSalesReportXls'])
     ->name('admin.sales-report.export.xls');
+
+
+//     Route::get('/recompute-menus', function () {
+
+//     $menus = \App\Models\MenuItem::pluck('menu_id');
+
+//     foreach ($menus as $menuId) {
+
+//         $recipes = \App\Models\Recipe::with('ingredient')
+//             ->where('menu_id', $menuId)
+//             ->get();
+
+//         $servings = [];
+
+//         foreach ($recipes as $recipe) {
+
+//             $ingredient = $recipe->ingredient;
+
+//             if (!$ingredient) continue;
+
+//             $need  = (float)$recipe->qty_needed;
+//             $stock = (float)$ingredient->stock_qty;
+
+//             if ($need <= 0) continue;
+
+//             $servings[] = floor($stock / $need);
+//         }
+
+//         $available = count($servings) ? min($servings) : 0;
+
+//         \App\Models\MenuItem::where('menu_id',$menuId)->update([
+//             'available_servings' => $available,
+//             'is_available' => $available > 0 ? 1 : 0
+//         ]);
+//     }
+
+//     return "Menus recomputed!";
+// });

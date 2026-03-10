@@ -1298,4 +1298,14 @@ body{ overflow-x: hidden; }
   .fp-scroll-btn{ width: 32px; height: 32px; font-size: 20px; }
 }
 
+.stock-badge-ok{
+  background:#e8f7ec;
+  color:#15803d;
+}
+
+.stock-badge-low{
+  background:#fff7d6;
+  color:#b45309;
+}
+
 } /* end @media */

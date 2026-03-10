@@ -6,7 +6,6 @@ document.addEventListener('DOMContentLoaded', function () {
   const categoryContainer = document.querySelector('.category-container');
   const closeBtn = document.querySelector('.category-close');
 
-  // ✅ create overlay for categories
   let categoryOverlay = document.querySelector('.category-overlay');
   if (!categoryOverlay) {
     categoryOverlay = document.createElement('div');
@@ -30,46 +29,42 @@ document.addEventListener('DOMContentLoaded', function () {
 });
 
 // ===============================
-// ✅ QR SPLASH LOADER (Logo + dots)
-// ✅ Works only if #qrSplash exists in the page
+// ✅ QR SPLASH LOADER
 // ===============================
 (function () {
-  const splash = document.getElementById("qrSplash");
+  const splash = document.getElementById('qrSplash');
   if (!splash) return;
 
-  // ✅ Show once per tab session (prevents annoying splash on every navigation)
   try {
-    const shown = sessionStorage.getItem("qrSplashShown");
-    if (shown === "1") {
-      splash.classList.add("is-hidden");
+    const shown = sessionStorage.getItem('qrSplashShown');
+    if (shown === '1') {
+      splash.classList.add('is-hidden');
       return;
     }
-    sessionStorage.setItem("qrSplashShown", "1");
+    sessionStorage.setItem('qrSplashShown', '1');
   } catch (e) {}
 
   const MIN_MS = 900;
 
-  window.addEventListener("load", () => {
+  window.addEventListener('load', () => {
     setTimeout(() => {
-      splash.classList.add("is-hidden");
+      splash.classList.add('is-hidden');
       setTimeout(() => splash.remove(), 450);
     }, MIN_MS);
   });
 })();
 
 // ===============================
-// ✅ TABLE NUMBER (QR -> session -> localStorage)
+// ✅ TABLE NUMBER
 // ===============================
 function syncTableNumber() {
   const serverTableEl = document.getElementById('serverTableNumber');
   const tableFromServer = serverTableEl?.dataset?.table;
 
-  // If session has table_number, store to localStorage
   if (tableFromServer) {
     localStorage.setItem('table_number', tableFromServer);
   }
 
-  // Always display from localStorage if available
   const savedTable = localStorage.getItem('table_number');
   const tableNumberSpan = document.getElementById('tableNumber');
   if (tableNumberSpan) {
@@ -78,56 +73,60 @@ function syncTableNumber() {
 }
 
 // ===============================
-// 🛒 CART SYSTEM (LOCALSTORAGE)
+// 🛒 CART SYSTEM
 // ===============================
 document.addEventListener('DOMContentLoaded', () => {
   syncTableNumber();
 
-  // ===============================
-  // ✅ MENU DATA (FROM API) - FIXED
-  // ===============================
   let menuItems = [];
 
-  // normalize so "main-courses", "Main Courses", "Main-Courses" match
   function normalizeCategory(str) {
     return String(str || '')
       .toLowerCase()
       .replace(/&/g, 'and')
-      .replace(/[^a-z0-9]+/g, '-')   // spaces -> -
-      .replace(/^-+|-+$/g, '');      // trim -
+      .replace(/[^a-z0-9]+/g, '-')
+      .replace(/^-+|-+$/g, '');
   }
 
-  // ✅ IMPORTANT: Make image path safe everywhere (menu + cart)
   function resolveImagePath(img) {
     const s = String(img || '').trim();
-    if (!s) return '';                    // no image
-    if (s.startsWith('http')) return s;   // full URL
-    if (s.startsWith('//')) return s;     // protocol-relative URL
-    if (s.startsWith('/')) return s;      // already absolute like /images/x.png or /storage/x.png
-
-    // If DB stores "images/xxx.png"
+    if (!s) return '';
+    if (s.startsWith('http')) return s;
+    if (s.startsWith('//')) return s;
+    if (s.startsWith('/')) return s;
     if (s.startsWith('images/')) return `/${s}`;
-    // If DB stores "storage/xxx.png"
     if (s.startsWith('storage/')) return `/${s}`;
-
-    // Default: you store in public/images/
     return `/images/${s}`;
-
-    // If you actually store in storage/app/public/, use this instead:
-    // return `/storage/${s}`;
   }
 
+  function isProductAvailable(product) {
+    return Number(product.is_available ?? 1) === 1;
+  }
+
+function getStockBadgeHtml(product) {
+  const servings = Number(product.available_servings ?? 0);
+
+  if (!isProductAvailable(product)) {
+    return '<div class="stock-badge">Out of stock</div>';
+  }
+
+  if (servings <= 5 && servings > 0) {
+    return `<div class="stock-badge stock-badge-low">Only ${servings} left</div>`;
+  }
+
+  return ''; // do not show anything if more than 5
+}
   function displayProducts(categoryKey, containerSelector) {
     const container = document.querySelector(containerSelector);
     if (!container) return;
 
     const key = normalizeCategory(categoryKey);
-
-    // ✅ match by normalized category
-    const filtered = menuItems.filter(item => normalizeCategory(item.category) === key);
+    const filtered = menuItems.filter(
+      item => normalizeCategory(item.category) === key
+    );
 
     container.innerHTML = filtered.map(product => {
-      const available = Number(product.is_available ?? 1) === 1;
+      const available = isProductAvailable(product);
 
       return `
         <div class="menu-item ${available ? '' : 'is-unavailable'}">
@@ -151,31 +150,31 @@ document.addEventListener('DOMContentLoaded', () => {
               </button>
             </div>
 
-            ${available ? '' : '<div class="stock-badge">Out of stock</div>'}
+            ${getStockBadgeHtml(product)}
           </div>
         </div>
       `;
     }).join('');
 
-    // ✅ attach click once (no double listeners)
     container.querySelectorAll('.add-to-cart-btn').forEach(btn => {
       btn.addEventListener('click', function () {
         const productId = this.dataset.id;
-        const productToAdd = menuItems.find(p => String(p.menu_id) === String(productId));
+        const productToAdd = menuItems.find(
+          p => String(p.menu_id) === String(productId)
+        );
+
         if (!productToAdd) return;
 
-        // ✅ block if unavailable
-        if (Number(productToAdd.is_available ?? 1) !== 1) {
+        if (!isProductAvailable(productToAdd)) {
           alert('Sorry, this item is currently out of stock.');
           return;
         }
 
         addToCart(productToAdd);
 
-        // "Added" state
         if (this.classList.contains('added')) return;
-        const originalText = this.textContent;
 
+        const originalText = this.textContent;
         this.textContent = 'Added';
         this.classList.add('added');
         this.disabled = true;
@@ -191,18 +190,18 @@ document.addEventListener('DOMContentLoaded', () => {
 
   function renderAllCategories() {
     const categories = {
-      "all-day-breakfast": ".all-day-breakfast-container",
-      "main-courses": ".main-courses-container",
-      "pasta": ".pasta-container",
-      "unlimited-premium": ".unlimited-premium-container",
-      "chicken-wings": ".chicken-wings-container",
-      "chicken-chops": ".chicken-chops-container",
-      "overload-premium": ".overload-container",
-      "solo-mini": ".solo-mini-container",
-      "frappuccino": ".frappuccino-container",
-      "coffee-based": ".coffee-based-container",
-      "milk-based": ".milk-based-container",
-      "snacks": ".snacks-container"
+      'all-day-breakfast': '.all-day-breakfast-container',
+      'main-courses': '.main-courses-container',
+      'pasta': '.pasta-container',
+      'unlimited-premium': '.unlimited-premium-container',
+      'chicken-wings': '.chicken-wings-container',
+      'chicken-chops': '.chicken-chops-container',
+      'overload-premium': '.overload-container',
+      'solo-mini': '.solo-mini-container',
+      'frappuccino': '.frappuccino-container',
+      'coffee-based': '.coffee-based-container',
+      'milk-based': '.milk-based-container',
+      'snacks': '.snacks-container'
     };
 
     for (const [cat, selector] of Object.entries(categories)) {
@@ -210,18 +209,14 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   }
 
-  // ✅ Fetch from API (no cache so DB updates show instantly)
   fetch('/api/menu', { cache: 'no-store' })
-    .then(res => res.ok ? res.json() : Promise.reject('Failed to fetch menu'))
+    .then(res => (res.ok ? res.json() : Promise.reject('Failed to fetch menu')))
     .then(data => {
       menuItems = Array.isArray(data) ? data : [];
       renderAllCategories();
     })
     .catch(err => console.error('Menu API error:', err));
 
-  // ===============================
-  // CART SYSTEM
-  // ===============================
   const cartBtn = document.querySelector('.cart-btn');
   const cartContainer = document.querySelector('.cart-container');
   const cartOverlay = document.querySelector('.cart-overlay');
@@ -236,7 +231,6 @@ document.addEventListener('DOMContentLoaded', () => {
     const badge = document.querySelector('.cart-badge');
     if (!badge) return;
 
-    // total qty (so if item qty=3 it shows 3)
     const count = cart.reduce((sum, item) => sum + Number(item.qty || 0), 0);
 
     if (count > 0) {
@@ -250,7 +244,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   function saveCart() {
     localStorage.setItem('cart', JSON.stringify(cart));
-    updateCartBadge(); // ✅ keep badge synced always
+    updateCartBadge();
   }
 
   function openCart() {
@@ -267,16 +261,15 @@ document.addEventListener('DOMContentLoaded', () => {
   cartClose?.addEventListener('click', closeCart);
   cartOverlay?.addEventListener('click', closeCart);
 
-  // ✅ fallback image if missing
-  function fallbackImgTag(name) {
-    // optional: point to your placeholder in public/images/
-    return `/images/sample-item.png`;
+  function fallbackImgTag() {
+    return '/images/sample-item.png';
   }
 
   function renderCart() {
     if (!cartItemsContainer) return;
 
     cartItemsContainer.innerHTML = '';
+
     if (cart.length === 0) {
       cartItemsContainer.innerHTML = '<p>Your cart is empty</p>';
       if (cartTotalEl) cartTotalEl.textContent = '₱0.00';
@@ -291,12 +284,12 @@ document.addEventListener('DOMContentLoaded', () => {
       const qty = Number(item.qty || 0);
       total += price * qty;
 
-      const imgSrc = resolveImagePath(item.image) || fallbackImgTag(item.name);
+      const imgSrc = resolveImagePath(item.image) || fallbackImgTag();
 
       cartItemsContainer.innerHTML += `
         <div class="cart-item">
           <div class="cart-item-image">
-            <img src="${imgSrc}" alt="${item.name || ''}" onerror="this.src='${fallbackImgTag(item.name)}'">
+            <img src="${imgSrc}" alt="${item.name || ''}" onerror="this.src='${fallbackImgTag()}'">
           </div>
 
           <div class="cart-item-details">
@@ -336,9 +329,9 @@ document.addEventListener('DOMContentLoaded', () => {
     updateCartBadge();
   });
 
-  // ✅ IMPORTANT FIX: store resolved image path in cart
-  window.addToCart = (item) => {
+  window.addToCart = item => {
     const existing = cart.find(c => String(c.id) === String(item.menu_id));
+
     if (existing) {
       existing.qty++;
     } else {
@@ -346,20 +339,18 @@ document.addEventListener('DOMContentLoaded', () => {
         id: item.menu_id,
         name: item.name,
         price: parseFloat(item.price),
-        image: resolveImagePath(item.image), // ✅ FIXED HERE
+        image: resolveImagePath(item.image),
         qty: 1
       });
     }
+
     renderCart();
     updateCartBadge();
   };
 
-  renderCart(); // render saved cart on load
-  updateCartBadge(); // show badge on page load
+  renderCart();
+  updateCartBadge();
 
-  // ===============================
-  // PROCEED TO PAYMENT
-  // ===============================
   const summaryOverlay = document.querySelector('.order-summary-overlay');
   const closeSummaryBtn = document.querySelector('.close-summary-btn');
   const confirmPaymentBtn = document.querySelector('.confirm-payment-btn');
@@ -381,11 +372,11 @@ document.addEventListener('DOMContentLoaded', () => {
   closeSummaryBtn?.addEventListener('click', closeSummary);
   summaryOverlay?.addEventListener('click', closeSummary);
 
-confirmPaymentBtn?.addEventListener('click', () => {
-  cart = [];
-  localStorage.removeItem('cart');
-  renderCart();
-  updateCartBadge();
-  closeSummary();
-});
+  confirmPaymentBtn?.addEventListener('click', () => {
+    cart = [];
+    localStorage.removeItem('cart');
+    renderCart();
+    updateCartBadge();
+    closeSummary();
+  });
 });
