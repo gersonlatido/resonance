@@ -313,7 +313,7 @@
         <label for="status">Status</label>
         <select id="status" name="status">
           <option value="all" {{ $status === 'all' ? 'selected' : '' }}>All</option>
-          <option value="ok"  {{ $status === 'ok' ? 'selected' : '' }}>OK</option>
+          <option value="ok"  {{ $status === 'ok' ? 'selected' : '' }}>HEALTHY</option>
           <option value="low" {{ $status === 'low' ? 'selected' : '' }}>Low</option>
           <option value="out" {{ $status === 'out' ? 'selected' : '' }}>Out</option>
         </select>
@@ -388,7 +388,7 @@
                   @elseif($isLow)
                     <span class="pill low">LOW</span>
                   @else
-                    <span class="pill ok">OK</span>
+                    <span class="pill ok">HEALTHY</span>
                   @endif
                 </td>
               </tr>

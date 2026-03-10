@@ -10,24 +10,29 @@ class UserManagementController extends Controller
 {
     /*
     |--------------------------------------------------------------------------
-    | SHOW ALL USERS
+    | SHOW USER MANAGEMENT PAGE
     |--------------------------------------------------------------------------
+    | One page only:
+    | - left side = user list
+    | - right side = add form
     */
     public function index()
     {
-        $users = User::orderBy('employee_id', 'asc')->get();
+       $users = User::orderByRaw("CAST(SUBSTRING(employee_id, 4) AS UNSIGNED) ASC")->get();
+        $editUser = null;
 
-        return view('admin.user-management', compact('users'));
+        return view('admin.user-management', compact('users', 'editUser'));
     }
 
     /*
     |--------------------------------------------------------------------------
-    | SHOW CREATE USER FORM
+    | OPTIONAL CREATE REDIRECT
     |--------------------------------------------------------------------------
+    | Since we are using one page only, redirect create to index.
     */
     public function create()
     {
-        return view('admin.user-create');
+        return redirect()->route('admin.users.index');
     }
 
     /*
@@ -37,36 +42,39 @@ class UserManagementController extends Controller
     */
     public function store(Request $request)
     {
-        $request->validate([
+        $validated = $request->validate([
             'name' => 'required|string|max:255',
             'username' => 'required|string|max:255|unique:users,username',
-            'email' => 'nullable|email',
-            'password' => 'required|min:6',
-            'position' => 'required|in:admin,cashier',
+            'email' => 'nullable|email|max:255',
+            'password' => 'required|string|min:6',
+            'position' => 'required|in:Admin,Cashier',
         ]);
 
         User::create([
-            'name' => $request->name,
-            'username' => $request->username,
-            'email' => $request->email,
-            'password' => Hash::make($request->password),
-            'position' => $request->position,
+            'name' => $validated['name'],
+            'username' => $validated['username'],
+            'email' => $validated['email'] ?? null,
+            'password' => Hash::make($validated['password']),
+            'position' => $validated['position'],
         ]);
 
-        return redirect()->route('admin.users.index')
+        return redirect()
+            ->route('admin.users.index')
             ->with('success', 'User created successfully.');
     }
 
     /*
     |--------------------------------------------------------------------------
-    | SHOW EDIT USER
+    | SHOW EDIT MODE ON SAME PAGE
     |--------------------------------------------------------------------------
+    | Same blade, but with editUser filled.
     */
     public function edit($employee_id)
     {
-        $user = User::where('employee_id', $employee_id)->firstOrFail();
+        $users = User::orderBy('employee_id', 'asc')->get();
+        $editUser = User::where('employee_id', $employee_id)->firstOrFail();
 
-        return view('admin.user-edit', compact('user'));
+        return view('admin.user-management', compact('users', 'editUser'));
     }
 
     /*
@@ -78,27 +86,27 @@ class UserManagementController extends Controller
     {
         $user = User::where('employee_id', $employee_id)->firstOrFail();
 
-        $request->validate([
+        $validated = $request->validate([
             'name' => 'required|string|max:255',
             'username' => 'required|string|max:255|unique:users,username,' . $user->employee_id . ',employee_id',
-            'email' => 'nullable|email',
-            'position' => 'required|in:admin,cashier',
+            'email' => 'nullable|email|max:255',
+            'position' => 'required|in:Admin,Cashier',
+            'password' => 'nullable|string|min:6',
         ]);
 
-        $user->update([
-            'name' => $request->name,
-            'username' => $request->username,
-            'email' => $request->email,
-            'position' => $request->position,
-        ]);
+        $user->name = $validated['name'];
+        $user->username = $validated['username'];
+        $user->email = $validated['email'] ?? null;
+        $user->position = $validated['position'];
 
-        if ($request->filled('password')) {
-            $user->update([
-                'password' => Hash::make($request->password)
-            ]);
+        if (!empty($validated['password'])) {
+            $user->password = Hash::make($validated['password']);
         }
 
-        return redirect()->route('admin.users.index')
+        $user->save();
+
+        return redirect()
+            ->route('admin.users.index')
             ->with('success', 'User updated successfully.');
     }
 
@@ -110,10 +118,10 @@ class UserManagementController extends Controller
     public function destroy($employee_id)
     {
         $user = User::where('employee_id', $employee_id)->firstOrFail();
-
         $user->delete();
 
-        return redirect()->route('admin.users.index')
+        return redirect()
+            ->route('admin.users.index')
             ->with('success', 'User deleted successfully.');
     }
 }
