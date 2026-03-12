@@ -40,6 +40,9 @@
       background:var(--sidebar);
       padding:18px 14px;
       border-right:1px solid rgba(0,0,0,.06);
+        position:sticky;
+      top:0;
+      height:100vh;
     }
     .sidebar .brand{
       display:flex;
@@ -194,6 +197,7 @@
       box-shadow:var(--shadow-soft);
       overflow:hidden;
     }
+    
     .board-header{
       display:flex;
       align-items:center;
@@ -373,6 +377,9 @@
   @if($isAdmin || $isCashier)
     <div class="side-section-title">Cashier Transaction</div>
     <nav class="nav">
+
+    <a href="{{ route('admin.dashboard.analytics') }}"   class="{{ request()->routeIs('admin.dashboard.analytics') ? 'active' : '' }}">Dashboard</a>
+
       <a href="{{ route('admin.dashboard') }}"
          class="{{ request()->routeIs('admin.dashboard') ? 'active' : '' }}">Order Management</a>
 
@@ -381,6 +388,8 @@
 
       <a href="{{ route('admin.daily-sales-report') }}"
          class="{{ request()->routeIs('admin.daily-sales-report') ? 'active' : '' }}">Sales Report</a>
+
+
     </nav>
   @endif
 

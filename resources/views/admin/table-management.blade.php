@@ -444,6 +444,8 @@
       @if($isAdmin || $isCashier)
         <div class="side-section-title">Cashier Transaction</div>
         <nav class="nav">
+   <a href="{{ route('admin.dashboard.analytics') }}"   class="{{ request()->routeIs('admin.dashboard.analytics') ? 'active' : '' }}">Dashboard</a>
+
           <a href="{{ route('admin.dashboard') }}"
              class="{{ request()->routeIs('admin.dashboard') ? 'active' : '' }}">
             Order Management
@@ -628,7 +630,7 @@
 
 <script>
 const csrf = '{{ csrf_token() }}';
-const isAdmin = @json($isAdmin);
+const canToggleTables = @json($isAdmin || $isCashier);
 
 const confirmOverlay = document.getElementById('confirmOverlay');
 const confirmText = document.getElementById('confirmText');
@@ -640,7 +642,7 @@ let autoRefreshTimer = null;
 
 /* ===== OPEN CONFIRM MODAL ===== */
 function openConfirmModal(card) {
-  if (!isAdmin) return;
+  if (!canToggleTables) return;
 
   selectedCard = card;
 
@@ -660,7 +662,7 @@ function closeConfirmModal() {
 
 /* ===== TOGGLE TABLE ===== */
 async function toggleTable(card) {
-  if (!isAdmin) return;
+  if (!canToggleTables) return;
 
   const tableNo = card.dataset.table;
 
@@ -693,9 +695,9 @@ document.querySelectorAll('.tcard').forEach(card => {
     openConfirmModal(card);
   });
 
-  if (!isAdmin) {
-    card.style.cursor = 'default';
-  }
+if (!canToggleTables) {
+  card.style.cursor = 'default';
+}
 });
 
 /* ===== CONFIRM BUTTON ===== */

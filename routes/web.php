@@ -146,7 +146,8 @@ Route::middleware(['auth', 'role:admin,cashier'])->group(function () {
     */
     Route::get('admin/dashboard', [AdminController::class, 'index'])->name('admin.dashboard');
     Route::post('admin/storeOrdersData', [AdminController::class, 'storeOrdersData'])->name('admin.storeOrdersData');
-
+Route::get('/admin/dashboard-analytics', [AdminController::class, 'analytics'])
+    ->name('admin.dashboard.analytics');
     /*
     |-----------------------------------------------------------------------
     | DAILY SALES REPORT

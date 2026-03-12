@@ -9,7 +9,7 @@
   <style>
     :root{
       --panel:#ffffff;
-      --sidebar:#e7e5e4;
+  --sidebar:#e4e3e3;
       --text:#1f2937;
       --muted:#6b7280;
       --orange:#f59e0b;
@@ -35,39 +35,38 @@
       color:var(--text);
     }
 
-    .shell{
+   .shell{
       width:100%;
       min-height:100vh;
       display:grid;
       grid-template-columns:240px 1fr;
     }
 
-    .sidebar{
+  .sidebar{
       background:var(--sidebar);
       padding:18px 14px;
-      border-right:1px solid rgba(0,0,0,.04);
+      border-right:1px solid rgba(0,0,0,.06);
+        position:sticky;
+      top:0;
+      height:100vh;
     }
-
     .sidebar .brand{
       display:flex;
       align-items:center;
       justify-content:center;
-      gap:10px;
-      padding:6px 6px 16px;
+      padding:6px 6px 14px;
     }
-
     .logo-box{
-      width:118px;
+      width:120px;
       height:58px;
       background:#fff;
-      border-radius:14px;
+      border-radius:10px;
       display:flex;
       align-items:center;
       justify-content:center;
       overflow:hidden;
-      box-shadow:0 4px 14px rgba(0,0,0,.08);
+      box-shadow:0 2px 8px rgba(0,0,0,.08);
     }
-
     .logo-box img{
       width:100%;
       height:100%;
@@ -78,46 +77,39 @@
     .side-section-title{
       font-size:11px;
       font-weight:800;
-      color:#374151;
+      color:#1f2937;
       margin:14px 6px 8px;
       text-transform:uppercase;
-      letter-spacing:.4px;
-      opacity:.9;
+      opacity:.85;
     }
-
     .nav{
       display:flex;
       flex-direction:column;
       gap:8px;
       padding:0 6px;
     }
-
     .nav a{
       text-decoration:none;
-      font-size:14px;
-      padding:11px 13px;
+      font-size:13px;
+      padding:10px 12px;
       border-radius:999px;
-      color:#111827;
+      color:#111;
       display:flex;
       align-items:center;
       gap:8px;
       transition:.15s ease;
-      background:rgba(255,255,255,.65);
+      background:rgba(255,255,255,.55);
       border:1px solid rgba(0,0,0,.04);
-      font-weight:600;
     }
-
-    .nav a:hover{
-      background:rgba(255,184,30,.22);
-      transform:translateY(-1px);
-    }
-
+    .nav a:hover{ background:rgba(255,184,30,.25); }
     .nav a.active{
       background:var(--orange);
       color:#111;
       font-weight:800;
-      box-shadow:0 6px 16px rgba(245,158,11,.28);
+      border-color:rgba(0,0,0,.06);
+      box-shadow:0 6px 14px rgba(0,0,0,.12);
     }
+
 
     .content{
       padding:24px 22px;
@@ -781,6 +773,7 @@
 
     <div class="side-section-title">Cashier Transaction</div>
     <nav class="nav">
+      <a href="{{ route('admin.dashboard.analytics') }}"   class="{{ request()->routeIs('admin.dashboard.analytics') ? 'active' : '' }}">Dashboard</a>
       <a href="{{ route('admin.dashboard') ?? '#' }}">Order Management</a>
       <a href="{{ route('admin.table-management') ?? '#' }}">Table Management</a>
       <a href="{{ route('admin.daily-sales-report') }}"

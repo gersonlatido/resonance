@@ -44,6 +44,13 @@ class AdminController extends Controller
         ));
     }
 
+
+    public function analytics()
+{
+    return view('admin.dashboard-analytics');
+}
+
+
     /**
      * SALES REPORT PAGE
      */

@@ -26,31 +26,75 @@
     }
 
     .shell{ width:100%; min-height:100vh; display:grid; grid-template-columns:240px 1fr; }
-    .sidebar{ background:var(--sidebar); padding:18px 14px; border-right:1px solid rgba(0,0,0,.06); }
-    .brand{ display:flex; justify-content:center; padding:6px 6px 14px; }
+    .sidebar{
+      background:var(--sidebar);
+      padding:18px 14px;
+      border-right:1px solid rgba(0,0,0,.06);
+        position:sticky;
+      top:0;
+      height:100vh;
+    }
+    .sidebar .brand{
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      padding:6px 6px 14px;
+    }
     .logo-box{
-      width:120px; height:58px; background:#fff; border-radius:10px;
-      display:flex; align-items:center; justify-content:center; overflow:hidden;
+      width:120px;
+      height:58px;
+      background:#fff;
+      border-radius:10px;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      overflow:hidden;
       box-shadow:0 2px 8px rgba(0,0,0,.08);
     }
-    .logo-box img{ width:100%; height:100%; object-fit:contain; padding:6px; }
+    .logo-box img{
+      width:100%;
+      height:100%;
+      object-fit:contain;
+      padding:6px;
+    }
 
     .side-section-title{
-      font-size:11px; font-weight:800; color:#1f2937;
-      margin:14px 6px 8px; text-transform:uppercase; opacity:.85;
+      font-size:11px;
+      font-weight:800;
+      color:#1f2937;
+      margin:14px 6px 8px;
+      text-transform:uppercase;
+      opacity:.85;
     }
-    .nav{ display:flex; flex-direction:column; gap:8px; padding:0 6px; }
+    .nav{
+      display:flex;
+      flex-direction:column;
+      gap:8px;
+      padding:0 6px;
+    }
     .nav a{
-      text-decoration:none; font-size:13px;
-      padding:10px 12px; border-radius:999px;
-      color:#111; background:rgba(255,255,255,.55);
-      border:1px solid rgba(0,0,0,.04); transition:.15s ease;
+      text-decoration:none;
+      font-size:13px;
+      padding:10px 12px;
+      border-radius:999px;
+      color:#111;
+      display:flex;
+      align-items:center;
+      gap:8px;
+      transition:.15s ease;
+      background:rgba(255,255,255,.55);
+      border:1px solid rgba(0,0,0,.04);
     }
     .nav a:hover{ background:rgba(255,184,30,.25); }
     .nav a.active{
-      background:var(--orange); font-weight:900;
+      background:var(--orange);
+      color:#111;
+      font-weight:800;
+      border-color:rgba(0,0,0,.06);
       box-shadow:0 6px 14px rgba(0,0,0,.12);
     }
+
+
 
     .content{ padding:22px 24px; }
 
@@ -251,32 +295,73 @@
   // keep current query params for downloads
   $qs = request()->query();
 @endphp
+ @php
+    $userPosition = strtolower(auth()->user()->position ?? '');
+    $isAdmin = $userPosition === 'admin';
+    $isCashier = $userPosition === 'cashier';
+  @endphp
 
-<div class="shell">
+  <div class="shell">
 
-  <!-- Sidebar -->
-  <aside class="sidebar">
-    <div class="brand">
-      <div class="logo-box">
-        <img src="{{ asset('images/logo-image.png') }}" alt="Silog Cafe Logo" />
+    <aside class="sidebar">
+      <div class="brand">
+        <div class="logo-box">
+          <img src="{{ asset('images/logo-image.png') }}" alt="Silog Cafe Logo" />
+        </div>
       </div>
-    </div>
 
-    <div class="side-section-title">Cashier Transaction</div>
-    <nav class="nav">
-      <a href="{{ route('admin.dashboard') }}" class="{{ request()->routeIs('admin.dashboard') ? 'active' : '' }}">Order Management</a>
-      <a href="{{ route('admin.table-management') }}" class="{{ request()->routeIs('admin.table-management') ? 'active' : '' }}">Table Management</a>
-      <a href="{{ route('admin.daily-sales-report') }}" class="{{ request()->routeIs('admin.daily-sales-report') ? 'active' : '' }}">Sales Report</a>
-    </nav>
+      @if($isAdmin || $isCashier)
+        <div class="side-section-title">Cashier Transaction</div>
+        <nav class="nav">
+   <a href="{{ route('admin.dashboard.analytics') }}"   class="{{ request()->routeIs('admin.dashboard.analytics') ? 'active' : '' }}">Dashboard</a>
 
-    <div class="side-section-title" style="margin-top:18px;">Admin Management</div>
-    <nav class="nav">
-      <a href="{{ route('admin.menu-management') }}" class="{{ request()->routeIs('admin.menu-management') ? 'active' : '' }}">Menu Management</a>
-      <a href="{{ route('admin.feedbacks') }}" class="{{ request()->routeIs('admin.feedbacks') ? 'active' : '' }}">Feedback Management</a>
-      <a href="{{ route('admin.inventory') }}" class="{{ request()->routeIs('admin.inventory') ? 'active' : '' }}">Inventory Management</a>
-      <a href="{{ route('admin.sales-stock-reports') }}" class="active">Stock Reports</a>
-    </nav>
-  </aside>
+          <a href="{{ route('admin.dashboard') }}"
+             class="{{ request()->routeIs('admin.dashboard') ? 'active' : '' }}">
+            Order Management
+          </a>
+
+          <a href="{{ route('admin.table-management') }}"
+             class="{{ request()->routeIs('admin.table-management') ? 'active' : '' }}">
+            Table Management
+          </a>
+
+          <a href="{{ route('admin.daily-sales-report') }}"
+             class="{{ request()->routeIs('admin.daily-sales-report') ? 'active' : '' }}">
+            Sales Report
+          </a>
+        </nav>
+      @endif
+
+      @if($isAdmin)
+        <div class="side-section-title" style="margin-top:18px;">Admin Management</div>
+        <nav class="nav">
+          <a href="{{ route('admin.menu-management') }}"
+             class="{{ request()->routeIs('admin.menu-management') ? 'active' : '' }}">
+            Menu Management
+          </a>
+
+          <a href="{{ route('admin.feedbacks') }}"
+             class="{{ request()->routeIs('admin.feedbacks') ? 'active' : '' }}">
+            Feedback Management
+          </a>
+
+          <a href="{{ route('admin.inventory') }}"
+             class="{{ request()->routeIs('admin.inventory') ? 'active' : '' }}">
+            Inventory Management
+          </a>
+
+          <a href="{{ route('admin.sales-stock-reports') }}"
+             class="{{ request()->routeIs('admin.sales-stock-reports') ? 'active' : '' }}">
+            Stock Reports
+          </a>
+
+          <a href="{{ route('admin.users.index') }}"
+             class="{{ request()->routeIs('admin.users.*') ? 'active' : '' }}">
+            User Management
+          </a>
+        </nav>
+      @endif
+    </aside>
 
   <main class="content">
     <div class="header">

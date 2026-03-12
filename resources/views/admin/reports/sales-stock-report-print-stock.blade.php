@@ -306,7 +306,7 @@
                 @elseif($isLow)
                   <span class="pill low">LOW</span>
                 @else
-                  <span class="pill ok">OK</span>
+                  <span class="pill ok">HEALTHY</span>
                 @endif
               </td>
             </tr>
