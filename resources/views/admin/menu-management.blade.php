@@ -470,56 +470,62 @@
 
 <body>
   <div class="shell">
-    <aside class="sidebar">
-      <div class="brand">
-        <div class="logo-box">
-          <img src="{{ asset('images/logo-image.png') }}" alt="Silog Cafe Logo" />
-        </div>
-      </div>
 
-      <div class="side-section-title">Cashier Transaction</div>
-      <nav class="nav">
-   <a href="{{ route('admin.dashboard.analytics') }}"   class="{{ request()->routeIs('admin.dashboard.analytics') ? 'active' : '' }}">Dashboard</a>
+    <!-- Sidebar -->
+   <aside class="sidebar">
+  <div class="brand">
+    <div class="logo-box">
+      <img src="{{ asset('images/logo-image.png') }}" alt="Silog Cafe Logo" />
+    </div>
+  </div>
 
-        <a href="{{ route('admin.dashboard') }}"
-           class="{{ request()->routeIs('admin.dashboard') ? 'active' : '' }}">
-          Order Management
-        </a>
+  @php
+    $userPosition = strtolower(auth()->user()->position ?? '');
+    $isAdmin = $userPosition === 'admin';
+    $isCashier = $userPosition === 'cashier';
+  @endphp
 
-        <a href="{{ route('admin.table-management') }}"
-           class="{{ request()->routeIs('admin.table-management') ? 'active' : '' }}">
-          Table Management
-        </a>
+  {{-- Cashier + Admin --}}
+  @if($isAdmin || $isCashier)
+    <div class="side-section-title">Cashier Transaction</div>
+    <nav class="nav">
 
-        <a href="{{ route('admin.daily-sales-report') }}"
-           class="{{ request()->routeIs('admin.daily-sales-report') ? 'active' : '' }}">
-          Sales Report
-        </a>
-      </nav>
+    <a href="{{ route('admin.dashboard.analytics') }}"   class="{{ request()->routeIs('admin.dashboard.analytics') ? 'active' : '' }}">Dashboard</a>
 
-      <div class="side-section-title" style="margin-top:18px;">Admin Management</div>
-      <nav class="nav">
-        <a href="{{ route('admin.menu-management') }}"
-           class="{{ request()->routeIs('admin.menu-management') ? 'active' : '' }}">
-          Menu Management
-        </a>
+      <a href="{{ route('admin.dashboard') }}"
+         class="{{ request()->routeIs('admin.dashboard') ? 'active' : '' }}">Order Management</a>
 
-        <a href="{{ route('admin.feedbacks') }}"
-           class="{{ request()->routeIs('admin.feedbacks') ? 'active' : '' }}">
-          Feedback Management
-        </a>
+      <a href="{{ route('admin.table-management') }}"
+         class="{{ request()->routeIs('admin.table-management') ? 'active' : '' }}">Table Management</a>
 
-        <a href="{{ route('admin.inventory') }}"
-           class="{{ request()->routeIs('admin.inventory') ? 'active' : '' }}">
-          Inventory Management
-        </a>
+      <a href="{{ route('admin.daily-sales-report') }}"
+         class="{{ request()->routeIs('admin.daily-sales-report') ? 'active' : '' }}">Sales Report</a>
 
-        <a href="{{ route('admin.sales-stock-reports') }}"
-           class="{{ request()->routeIs('admin.sales-stock-reports') ? 'active' : '' }}">
-          Stock Reports
-        </a>
-      </nav>
-    </aside>
+
+    </nav>
+  @endif
+
+  {{-- Admin only --}}
+  @if($isAdmin)
+    <div class="side-section-title" style="margin-top:18px;">Admin Management</div>
+    <nav class="nav">
+      <a href="{{ route('admin.menu-management') }}"
+         class="{{ request()->routeIs('admin.menu-management') ? 'active' : '' }}">Menu Management</a>
+
+      <a href="{{ route('admin.feedbacks') }}"
+         class="{{ request()->routeIs('admin.feedbacks') ? 'active' : '' }}">Feedback Management</a>
+
+      <a href="{{ route('admin.inventory') }}"
+         class="{{ request()->routeIs('admin.inventory') ? 'active' : '' }}">Inventory Management</a>
+
+      <a href="{{ route('admin.sales-stock-reports') }}"
+         class="{{ request()->routeIs('admin.sales-stock-reports') ? 'active' : '' }}">Stock Reports</a>
+
+      <a href="{{ route('admin.users.index') }}"
+         class="{{ request()->routeIs('admin.users.*') ? 'active' : '' }}">User Management</a>
+    </nav>
+  @endif
+</aside>
 
     <main class="content">
       <div class="topbar">
