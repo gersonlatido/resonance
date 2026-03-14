@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Feedback Management</title>
-
+<link rel="shortcut icon" href="{{ asset('images/Logogogo.png') }}">
   <style>
     :root{
       --panel: #ffffff;         /* main white panel */

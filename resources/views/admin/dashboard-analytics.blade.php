@@ -6,7 +6,7 @@
   <meta name="csrf-token" content="{{ csrf_token() }}">
   <title>Dashboard Analytics</title>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-
+<link rel="shortcut icon" href="{{ asset('images/Logogogo.png') }}">
   <style>
     :root{
       --bg:#fffdf8;

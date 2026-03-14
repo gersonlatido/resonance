@@ -7,6 +7,7 @@
 <title>Payment Receipt</title>
 
 <link rel="stylesheet" href="{{ asset('css/app.css') }}">
+<link rel="shortcut icon" href="{{ asset('images/Logogogo.png') }}">
 
 <style>
 /* ✅ Smooth page fade */

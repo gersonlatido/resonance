@@ -4,6 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <meta name="csrf-token" content="{{ csrf_token() }}">
+  <link rel="shortcut icon" href="{{ asset('images/Logogogo.png') }}">
   <title>Order Management</title>
 
   <style>
@@ -567,6 +568,7 @@
                         <option value="5">5 min</option>
                         <option value="10">10 min</option>
                         <option value="15">15 min</option>
+                         <option value="30">30 min</option>
                       </select>
                     </div>
 

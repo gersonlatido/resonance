@@ -23,9 +23,9 @@ class AdminController extends Controller
             ->whereIn($statusCol, ['preparing', 'serving'])
             ->count();
 
-        $pendingCount = Order::where('payment_status', 'paid')
-            ->where($statusCol, 'pending')
-            ->count();
+      $preparingCount = Order::where('payment_status', 'paid')
+    ->where($statusCol, 'pending') // still 'pending' in DB, just label it differently
+    ->count();
 
         $cancelledCount = Order::where('payment_status', 'paid')
             ->where($statusCol, 'cancelled')
@@ -38,7 +38,7 @@ class AdminController extends Controller
         return view('admin.dashboard', compact(
             'orders',
             'activeCount',
-            'pendingCount',
+            'preparingCount',
             'cancelledCount',
             'servedCount'
         ));
@@ -569,32 +569,37 @@ class AdminController extends Controller
         return null;
     }
 
-    public function tableManagement()
-    {
-        $tables = Table::orderBy('number')->get()->keyBy('number');
+  public function tableManagement()
+{
+    $tables = Table::orderBy('number')->get()->keyBy('number');
 
-        $statusCol = $this->detectStatusColumn() ?? 'status';
+    $statusCol = $this->detectStatusColumn() ?? 'status';
 
-        $orders = Order::orderBy('created_at', 'asc')->get();
+    // ✅ Only count PAID orders
+    $orders = Order::where('payment_status', 'paid')
+        ->orderBy('created_at', 'asc')
+        ->get();
 
-        foreach ($orders as $o) {
-            $raw = $o->{$statusCol} ?? $o->status ?? '';
-            $o->status = strtolower(trim((string) $raw));
-        }
-
-        $activeCount    = $orders->whereIn('status', ['preparing', 'serving'])->count();
-        $pendingCount   = $orders->where('status', 'pending')->count();
-        $cancelledCount = $orders->where('status', 'cancelled')->count();
-        $servedCount    = $orders->where('status', 'served')->count();
-
-        return view('admin.table-management', compact(
-            'tables',
-            'activeCount',
-            'pendingCount',
-            'cancelledCount',
-            'servedCount'
-        ));
+    foreach ($orders as $o) {
+        $raw = $o->{$statusCol} ?? $o->status ?? '';
+        $o->status = strtolower(trim((string) $raw));
     }
+
+    // ✅ Correct counts
+  // Correct counts
+$activeCount      = $orders->whereIn('status', ['preparing', 'serving'])->count();
+$preparingCount    = $orders->where('status', 'pending')->count(); // renamed
+$cancelledCount    = $orders->where('status', 'cancelled')->count();
+$servedCount       = $orders->where('status', 'served')->count();
+
+return view('admin.table-management', compact(
+    'tables',
+    'activeCount',
+    'preparingCount', // changed
+    'cancelledCount',
+    'servedCount'
+));
+}
 
     public function toggleTable(Request $request, $number)
     {

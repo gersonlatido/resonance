@@ -7,6 +7,7 @@
 
     <!-- CSS -->
     <link rel="stylesheet" href="{{ asset('css/app.css') }}">
+    <link rel="shortcut icon" href="{{ asset('images/Logogogo.png') }}">
 
     <!-- JS -->
     <script src="{{ asset('js/app.js') }}" defer></script>
@@ -118,13 +119,13 @@
       <div class="fp-cat-label">Pasta</div>
     </a>
 
-    <a href="{{ route('menu.chicken') }}"
-       class="fp-cat {{ request()->routeIs('menu.chicken') ? 'is-active' : '' }}">
-      <div class="fp-cat-card">
-        <img src="{{ asset('images/unli-basic.png') }}" alt="Chicken">
-      </div>
-      <div class="fp-cat-label">Chicken</div>
-    </a>
+     <a href="{{ route('menu.chicken') }}"
+   class="fp-cat {{ request()->routeIs('menu.chicken') ? 'is-active' : '' }}">
+  <div class="fp-cat-card">
+    <img src="{{ asset('images/burger.png') }}" alt="Burgers">
+  </div>
+  <div class="fp-cat-label">Burgers</div>
+</a>
 
     <a href="{{ route('menu.drinks') }}"
        class="fp-cat {{ request()->routeIs('menu.drinks') ? 'is-active' : '' }}">

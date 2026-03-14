@@ -8,6 +8,8 @@
     <!-- CSS -->
     <link rel="stylesheet" href="{{ asset('css/app.css') }}">
 
+<link rel="shortcut icon" href="{{ asset('images/Logogogo.png') }}">
+
     <!-- JS -->
     <script src="{{ asset('js/app.js') }}" defer></script>
 </head>

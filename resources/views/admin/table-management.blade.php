@@ -7,6 +7,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <link rel="shortcut icon" href="{{ asset('images/Logogogo.png') }}">
   <title>Table Management</title>
 
   <style>
@@ -422,6 +423,8 @@
     $userPosition = strtolower(auth()->user()->position ?? '');
     $isAdmin = $userPosition === 'admin';
     $isCashier = $userPosition === 'cashier';
+$availableCount = $tables->filter(fn($t) => $t->is_available)->count();
+          
   @endphp
 
   <div class="shell">
@@ -507,13 +510,13 @@
           <div class="icon active">A</div>
         </div>
 
-        <div class="stat">
-          <div>
-            <div class="label">Pending Orders</div>
-            <div class="value">{{ $pendingCount ?? 0 }}</div>
-          </div>
-          <div class="icon pending">P</div>
-        </div>
+     <div class="stat">
+  <div>
+    <div class="label">Available Tables</div>
+    <div class="value">{{ $availableCount ?? 0 }}</div>
+  </div>
+  <div class="icon active">A</div>
+</div>
 
         <div class="stat">
           <div>
@@ -729,7 +732,7 @@ function startAutoRefresh() {
     if (!modalOpen && !pageHidden) {
       window.location.reload();
     }
-  }, 3000);
+  }, 5000);
 }
 
 startAutoRefresh();
