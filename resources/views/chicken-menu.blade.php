@@ -118,13 +118,13 @@
       <div class="fp-cat-label">Pasta</div>
     </a>
 
-    <a href="{{ route('menu.chicken') }}"
-       class="fp-cat {{ request()->routeIs('menu.chicken') ? 'is-active' : '' }}">
-      <div class="fp-cat-card">
-        <img src="{{ asset('images/unli-basic.png') }}" alt="Chicken">
-      </div>
-      <div class="fp-cat-label">Chicken</div>
-    </a>
+  <a href="{{ route('menu.chicken') }}"
+   class="fp-cat {{ request()->routeIs('menu.chicken') ? 'is-active' : '' }}">
+  <div class="fp-cat-card">
+    <img src="{{ asset('images/burger.png') }}" alt="Burgers">
+  </div>
+  <div class="fp-cat-label">Burgers</div>
+</a>
 
     <a href="{{ route('menu.drinks') }}"
        class="fp-cat {{ request()->routeIs('menu.drinks') ? 'is-active' : '' }}">
@@ -157,7 +157,7 @@
 </div>
              
            <!-- Chicken Section -->
-            <div class="chicken-category"><h2>Unlimited Premium</h2></div>
+            <div class="chicken-category"><h2>Classic Burgers</h2></div>
            <div class="unlimited-premium-container">
                 <!-- <div class="menu-item">
                     <div class="menu-item-image"><img src="/images/all-day-breakfast-entrees/beefsilog.png" alt=""></div>
@@ -176,10 +176,10 @@
                 </div> -->
            </div>
 
-         <div class="chicken-category"><h2>Chicken Wings</h2></div>
+         <div class="chicken-category"><h2>Chicken Burgers</h2></div>
           <div class="chicken-wings-container"> </div> 
 
-              <div class="chicken-category"><h2>Chicken Chops</h2></div>
+              <div class="chicken-category"><h2>Special Burgers</h2></div>
             <div class="chicken-chops-container">
                 <!-- <div class="menu-item">
                     <div class="menu-item-image"><img src="/images/all-day-breakfast-entrees/beefsilog.png" alt=""></div>

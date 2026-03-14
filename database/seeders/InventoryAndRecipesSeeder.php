@@ -73,12 +73,16 @@ class InventoryAndRecipesSeeder extends Seeder
             ['name'=>'Cream of Mushroom','unit'=>'ml','reorder'=>1000],
             ['name'=>'Evap Milk','unit'=>'ml','reorder'=>1200],
 
-            // ===== CHICKEN MENU =====
+            // ===== BURGER / CHICKEN PAGE INGREDIENTS =====
             ['name'=>'Chicken Wings','unit'=>'pcs','reorder'=>60],
             ['name'=>'Flour','unit'=>'g','reorder'=>2000],
             ['name'=>'Wings Sauce','unit'=>'ml','reorder'=>1200],
             ['name'=>'Breadcrumbs','unit'=>'g','reorder'=>1000],
             ['name'=>'Spice Mix','unit'=>'g','reorder'=>500],
+            ['name'=>'Burger Bun','unit'=>'pcs','reorder'=>40],
+            ['name'=>'Lettuce','unit'=>'g','reorder'=>500],
+            ['name'=>'Mayonnaise','unit'=>'ml','reorder'=>1000],
+            ['name'=>'Ketchup','unit'=>'ml','reorder'=>1000],
 
             // ===== FRAPPES =====
             ['name'=>'Cream Base','unit'=>'g','reorder'=>1500],

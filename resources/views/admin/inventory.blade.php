@@ -992,7 +992,7 @@
   $hardInsufficient = ($stock <= 0) || ($need > 0 && $stock < $need);
   $lowWarning = ($stock > 0 && $stock <= $reorder);
 @endphp
-                          @endphp
+                        
 
                           <li>
                             <strong>{{ $ingName }}</strong>

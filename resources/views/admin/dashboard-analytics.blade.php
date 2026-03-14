@@ -1115,9 +1115,9 @@
               <span>Go back to your current dashboard page.</span>
             </a>
 
-            <a class="quick-link" href="{{ route('admin.inventory') }}">
-              <strong>Inventory Management</strong>
-              <span>Check ingredient stock and updates.</span>
+            <a class="quick-link" href="{{ route('admin.table-management') }}">
+              <strong>Table Management</strong>
+              <span>Manage and update table statuses.</span>
             </a>
 
             <a class="quick-link" href="{{ route('admin.daily-sales-report') }}">

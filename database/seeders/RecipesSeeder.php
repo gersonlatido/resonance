@@ -13,7 +13,7 @@ class RecipesSeeder extends Seeder
         // Helper: get ingredient id by exact ingredient name
         $id = fn ($name) => Ingredient::where('name', $name)->value('id');
 
-        // ✅ This is your menu → ingredient mapping
+        // Menu → ingredient mapping
         $menus = [
             ['menu_id'=>'MENU001', 'lines'=>[
                 ['Beef Tapa Pack',200], ['Rice',200], ['Egg',1], ['Garlic',5], ['Oil',10],
@@ -71,14 +71,94 @@ class RecipesSeeder extends Seeder
                 ['Cheese',40], ['Garlic',10], ['Butter',15], ['Black Pepper',2],
             ]],
 
+            // ===============================
+            // UPDATED BURGER RECIPES
+            // ===============================
+
+            // MENU016 = CLASSIC BURGER
+            ['menu_id'=>'MENU016', 'lines'=>[
+                ['Burger Bun',1],
+                ['Beef',120],
+                ['Cheese',20],
+                ['Lettuce',15],
+                ['Tomato',20],
+                ['Onion',15],
+                ['Mayonnaise',15],
+                ['Ketchup',10],
+                ['Fries Pack',120],
+                ['Oil',80],
+                ['Salt',2],
+                ['Black Pepper',2],
+            ]],
+
+            // MENU017 = DOUBLE CHEESE BURGER
+            ['menu_id'=>'MENU017', 'lines'=>[
+                ['Burger Bun',1],
+                ['Beef',200],
+                ['Cheese',35],
+                ['Lettuce',15],
+                ['Tomato',20],
+                ['Onion',20],
+                ['Mayonnaise',15],
+                ['Ketchup',10],
+                ['Fries Pack',150],
+                ['Oil',90],
+                ['Salt',3],
+                ['Black Pepper',2],
+            ]],
+
+            // MENU018 = CRISPY CHICKEN BURGER
             ['menu_id'=>'MENU018', 'lines'=>[
-                ['Chicken Wings',5], ['Flour',40], ['Oil',300], ['Wings Sauce',40], ['Salt',2], ['Black Pepper',2],
+                ['Burger Bun',1],
+                ['Chicken Breast',140],
+                ['Flour',30],
+                ['Egg',1],
+                ['Breadcrumbs',30],
+                ['Lettuce',15],
+                ['Tomato',15],
+                ['Onion',10],
+                ['Mayonnaise',15],
+                ['Fries Pack',120],
+                ['Oil',120],
+                ['Salt',2],
+                ['Black Pepper',2],
             ]],
+
+            // MENU019 = SPICY CHICKEN BURGER
             ['menu_id'=>'MENU019', 'lines'=>[
-                ['Chicken Wings',3], ['Flour',25], ['Oil',200], ['Wings Sauce',30], ['Salt',2], ['Black Pepper',2],
+                ['Burger Bun',1],
+                ['Chicken Breast',140],
+                ['Flour',30],
+                ['Egg',1],
+                ['Breadcrumbs',30],
+                ['Spice Mix',8],
+                ['Lettuce',15],
+                ['Tomato',15],
+                ['Onion',10],
+                ['Mayonnaise',15],
+                ['Ketchup',10],
+                ['Fries Pack',120],
+                ['Oil',120],
+                ['Salt',2],
+                ['Black Pepper',2],
             ]],
+
+            // MENU020 = MEGA BURGER
             ['menu_id'=>'MENU020', 'lines'=>[
-                ['Chicken Breast',220], ['Flour',40], ['Egg',1], ['Breadcrumbs',40], ['Oil',350], ['Spice Mix',10],
+                ['Burger Bun',1],
+                ['Beef',180],
+                ['Bacon',35],
+                ['Egg',1],
+                ['Cheese',25],
+                ['Lettuce',15],
+                ['Tomato',20],
+                ['Onion',15],
+                ['Mayonnaise',15],
+                ['Ketchup',10],
+                ['Fries Pack',150],
+                ['Oil',100],
+                ['Salt',3],
+                ['Black Pepper',2],
             ]],
 
             ['menu_id'=>'MENU021', 'lines'=>[
@@ -121,7 +201,6 @@ class RecipesSeeder extends Seeder
             ['menu_id'=>'MENU038', 'lines'=>[['Cheesestick Pack',5]]],
         ];
 
-        // ✅ Clear old recipes (optional, but recommended so you don’t duplicate)
         Recipe::truncate();
 
         $insert = [];
@@ -132,7 +211,6 @@ class RecipesSeeder extends Seeder
 
                 $ingredientId = $id($ingredientName);
                 if (!$ingredientId) {
-                    // skip if ingredient name not found in DB
                     continue;
                 }
 
@@ -146,7 +224,6 @@ class RecipesSeeder extends Seeder
             }
         }
 
-        // Insert only if there is data
         if (!empty($insert)) {
             Recipe::insert($insert);
         }
